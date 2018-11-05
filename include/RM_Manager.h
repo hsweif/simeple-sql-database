@@ -4,6 +4,7 @@
 #include "bufmanager/BufPageManager.h"
 #include "fileio/FileManager.h"
 #include "RecordModule/PageHead.h"
+#include "RecordModule/RM_FileHandle.h"
 #include <cstring>
 #include<cstdlib>
 #include <string>
@@ -20,7 +21,7 @@ private:
 public:
     RM_Manager();
     int createFile(const char* name, int recordSize);
-    bool openFile(const char* name);
+    bool openFile(const char* name, RM_FileHandle &fileHandle);
     int closeFile();
     int deleteFile(const char* name);
 };

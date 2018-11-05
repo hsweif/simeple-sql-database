@@ -227,5 +227,11 @@ public:
 	void reLoad(uint* da) {
 		data = da;
 	}
+	void show(){
+		cout<<size<<endl;
+		for (int i = 0; i < size;++i){
+			cout<<data[i]<<endl;
+		}		
+	}
 };
 #endif

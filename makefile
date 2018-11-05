@@ -5,7 +5,7 @@ vpath %.h include
 cmd = g++
 opt = -c -o
 
-main: PageHead.o RM_Manager.o
+main: PageHead.o RM_FileHandle.o RM_Manager.o
 	$(cmd) -o main $^ 
 %.o : %.cpp
 	$(cmd) $(opt) $@ $<
