@@ -1,4 +1,4 @@
-#include "../include/RecordManager.h"
+#include "../include/RecordModule/RecordManager.h"
 
 RecordManager::RecordManager(){
     //从main执行路径算起

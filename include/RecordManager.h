@@ -1,6 +1,7 @@
 #include "bufmanager/BufPageManager.h"
 #include "fileio/FileManager.h"
 #include <string>
+#include <string.h>
 #include <iostream>
 
 using namespace std;
