@@ -1,15 +1,21 @@
 #ifndef RM_MANAGER 
 #define RM_MANAGER 
 
+/* Local test
+ *
 #include "bufmanager/BufPageManager.h"
 #include "fileio/FileManager.h"
 #include "RecordModule/PageHead.h"
 #include "RecordModule/RM_FileHandle.h"
+*/
 #include <cstring>
-#include<cstdlib>
 #include <string>
 #include <string.h>
 #include <iostream>
+#include "../bufmanager/BufPageManager.h"
+#include "../fileio/FileManager.h"
+#include "RM_FileHandle.h"
+#include "RM_PageHead.h"
 
 using namespace std;
 class RM_Manager{
