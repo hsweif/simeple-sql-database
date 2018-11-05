@@ -21,6 +21,10 @@ bool RecordManager::openFile(const char* name){
     return this->fileManager->openFile(fileName, this->fileID);
 }
 
+int RecordManager::closeFile(){
+    return this->fileManager->closeFile(this->fileID);
+}
+
 int main(){
     RecordManager *rmg = new RecordManager();
     rmg->createFile("test");
