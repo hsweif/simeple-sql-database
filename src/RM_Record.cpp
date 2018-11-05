@@ -8,14 +8,14 @@ RM_Record::RM_Record()
 	mRid = id;
 }
 
-int RM_Record::SetRecord(char *pData,int size,RID id){
+int RM_Record::SetRecord(BufType pData,int size,RID id){
 	mData = pData;
 	recordSize = size;
 	mRid = id;
 	return 0;
 }
 
-int RM_Record::GetData(char *&pData) const
+int RM_Record::GetData(BufType pData) const
 {
 	if(recordSize == -1 || mData == NULL)
 		return 1;
@@ -29,4 +29,12 @@ int RM_Record::GetRid(RID &id) const
 		return 1;
 	id = mRid;
 	return 0;	
+}
+
+int RM_Record::getSize(int &sz) const {
+	if(recordSize == -1) {
+		return 1;
+	}
+	sz = recordSize;
+	return 0;
 }

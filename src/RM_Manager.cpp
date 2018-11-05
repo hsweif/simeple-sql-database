@@ -1,4 +1,4 @@
-#include "../include/RM_Manager.h"
+#include "../include/RecordModule/RM_Manager.h"
 
 RM_Manager::RM_Manager(){
     //从main执行路径算起
@@ -32,18 +32,10 @@ int RM_Manager::closeFile(){
 }
 
 int RM_Manager::deleteFile(const char* name) {
+    // TODO: Delete file
     char fileName[50];
     strcpy(fileName, this->dataPath);
     strcat(fileName, name);
     return 0;
 }
 
-int main(){
-    RM_Manager *rmg = new RM_Manager();
-    rmg->createFile("test1", 10);
-    string test = rmg->openFile("test1") ? "successfully opened" : "fail to open";
-    cout << test << endl;
-    int n = rmg->deleteFile("test");
-    cout << n << endl;
-    return 0;
-}
