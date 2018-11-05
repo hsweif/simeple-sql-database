@@ -1,4 +1,10 @@
 #include "../include/RecordModule/RM_FileHandle.h"
+
+RM_FileHandle::RM_FileHandle(int id, int sz) {
+	this->fileId = id;
+	this->recordSize = sz;
+}
+
 int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec) const{
 	int page, slot;
 	if(rid.GetPageNum(page) > 0 || rid.GetSlotNum(slot) > 0) {

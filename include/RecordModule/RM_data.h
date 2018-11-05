@@ -1,21 +1,24 @@
-#ifndef RC_DATA
-#define RC_DATA
+#ifndef RM_DATA
+#define RM_DATA
 
 #include "../utils/pagedef.h"
 #include <vector>
+#include <string>
+#include <iostream>
 
-class RC_data{
+using namespace std;
+class RM_data{
 private:
     int length;
     int itemLength;
-    std::vector<char*> arr;
+    std::vector<string> arr;
 public:
-    RC_data();
-    RC_data(std::vector<char*> title, int itl);
+    RM_data();
+    RM_data(std::vector<string> title, int itl);
     int dataLenth();
-    int getSerializeRecord(std::vector<char*> data, BufType buf, int &recordSize);
-    std::vector<char*> title();
-    std::vector<char*> getRecord(BufType serializedBuf);
+    BufType getSerializeRecord(std::vector<string> data, int &recordSize);
+    std::vector<string> title();
+    std::vector<string> getRecord(BufType serializedBuf, int length);
 };
 
-#endif // !RC_DATA
+#endif // !RM_data

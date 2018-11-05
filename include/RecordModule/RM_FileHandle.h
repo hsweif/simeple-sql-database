@@ -12,7 +12,8 @@ private:
     int recordSize;
   
 public:
-    RM_FileHandle  ();                                  // Constructor
+    RM_FileHandle();                                  // Constructor
+    RM_FileHandle(int id, int sz);
     ~RM_FileHandle ();                                  // Destructor
     RM_FileHandle(BufPageManager* bufpm, int fd, int rcz);
     int GetRec         (const RID &rid, RM_Record &rec) const;
