@@ -28,8 +28,9 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     BufType buf = new uint[PAGE_INT_NUM];
     int readResult = this->fileManager->readPage(this->fileID, 0,buf,0);
     BufType pageMap = new uint[PAGE_INT_NUM-3];
-    for(int i = 4;i < PAGE_INT_NUM;i++)
+    for(int i = 4;i < PAGE_INT_NUM;i++) {
         pageMap[i-4] = buf[i];
+    }
     fileHandle.init(this->fileID,buf[0],buf[1],buf[2],buf[3],pageMap);
     return result;
 }

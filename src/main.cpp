@@ -1,6 +1,7 @@
 #include "../include/RecordModule/RM_Manager.h"
 #include "../include/RecordModule/RM_data.h"
 #include "../include/RecordModule/RM_FileHandle.h"
+#include "../include/utils/MyBitMap.h"
 #include <vector>
 #include <string>
 
@@ -47,8 +48,23 @@ void Test(){
     }
 }
 
+void TestBitMap(){
+    BufType buf = new uint[10];
+    for(int i = 0; i < 10; i ++) {
+        buf[i] = 256;
+    }
 
+    MyBitMap *b = new MyBitMap(12<<5, 1);
+	b->show();
+	b->setBit(0,1);
+	b->setBit(1,1);
+	b->setBit(3,1);
+	b->show();
+	b->initConst();
+	cout<< "Left one: " << b->findLeftOne()<<endl;
+}
 int main(){
-    Test();
+    // Test();
+    TestBitMap();
     return 0;
 }

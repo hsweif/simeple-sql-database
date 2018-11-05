@@ -5,6 +5,7 @@
 #include "../fileio/FileManager.h"
 #include "../bufmanager/BufPageManager.h"
 #include "../utils/pagedef.h"
+#include "../utils/MyBitMap.h"
 
 class RM_FileHandle {
 private:
@@ -13,7 +14,7 @@ private:
     int recordPP;
     int recordSum;
     int pageCnt;
-    BufType pageMap;
+    MyBitMap *pageMap;
   
 public:
     RM_FileHandle();
@@ -25,8 +26,9 @@ public:
     // Get a record
     int InsertRec(const RM_Record& pData, RID &rid);       // Insert a new record,
     //   return record id
-    int DeleteRec(const RID &rid);                    // Delete a record
-    int UpdateRec(const RM_Record &rec);              // Update a record
+    int DeleteRec(const RID &rid);
+    int UpdateRec(const RM_Record &rec);
+    int GetSlot(BufType page);
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
 #endif
