@@ -1,31 +1,28 @@
+#ifndef RM_MANAGER 
+#define RM_MANAGER 
+
 #include "bufmanager/BufPageManager.h"
 #include "fileio/FileManager.h"
+#include "RecordModule/PageHead.h"
+#include <cstring>
+#include<cstdlib>
 #include <string>
 #include <string.h>
 #include <iostream>
 
 using namespace std;
-
-#ifndef RECORD_MANAGER 
-
-/**
- * 宏定义第一个页文件各参数的offset
- */
-#define LEN_POS 0
-#define SUM_POS 4
-#define EMPTY_POS 8
-
-class RecordManager{
+class RM_Manager{
 private:
     char *dataPath;
     FileManager *fileManager;
     int fileID;
     static int RID;
 public:
-    RecordManager();
-    bool createFile(const char* name);
+    RM_Manager();
+    int createFile(const char* name, int recordSize);
     bool openFile(const char* name);
     int closeFile();
+    int deleteFile(const char* name);
 };
 
-#endif // CREATE
+#endif // RM_MANAGER

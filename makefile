@@ -5,10 +5,10 @@ vpath %.h include
 cmd = g++
 opt = -c -o
 
-main: RecordManager.o
+main: PageHead.o RM_Manager.o
 	$(cmd) -o main $^ 
 %.o : %.cpp
 	$(cmd) $(opt) $@ $<
 clean:
-	rm main
 	rm -f *.o
+	rm main
