@@ -17,7 +17,7 @@ int RM_data::dataLenth(){
 BufType RM_data::getSerializeRecord(std::vector<string> data, int &recordSize) {
     int max_cnt = data.size() * itemLength;
     recordSize = max_cnt * sizeof(uint);
-    BufType buf = new uint[max_cnt]; 
+    BufType buf = new uint[max_cnt];
     int l = data.size();
     int cnt = 0;
     for(int i = 0; i < l; i ++) {

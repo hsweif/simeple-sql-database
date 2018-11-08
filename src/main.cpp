@@ -47,8 +47,24 @@ void Test(){
     }
 }
 
+void test1(){
+    RM_Manager *rmg = new RM_Manager();
+    RM_FileHandle *handler = new RM_FileHandle();
+    rmg->createFile("helloworld", 2);
+    string test = rmg->openFile("helloworld", *handler) ? "successfully opened" : "fail to open";
+    BufType buf = new uint[2];
+    buf[0] = 114514;
+    buf[1] = 233333;
+    RM_Record pData;
+    RID insertId(1,0);
+    pData.SetRecord(buf,2,insertId);
+    handler->InsertRec(pData);
+    cout << test << endl;
+    handler->show();
+	rmg->closeFile();
+}
 
 int main(){
-    Test();
+    test1();
     return 0;
 }

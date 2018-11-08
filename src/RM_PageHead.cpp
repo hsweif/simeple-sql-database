@@ -1,5 +1,6 @@
 #include "../include/RecordModule/RM_PageHead.h"
-
+#include <iostream>
+using namespace std;
 PageHead::PageHead(){
 }
 
@@ -8,6 +9,7 @@ PageHead::PageHead(int rl, int rpp, int rsum){
     memset(buf, 0, PAGE_INT_NUM);
     buf[0] = rl;//record length
     buf[1] = rpp;//record per page
+    cout<<"rpp"<<rpp<<endl;
     buf[2] = rsum;//record sum
     buf[3] = 1;//page sum
     for(int i = 4;i < PAGE_INT_NUM;i++)

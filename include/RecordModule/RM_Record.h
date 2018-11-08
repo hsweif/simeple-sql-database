@@ -10,11 +10,11 @@ private:
 	BufType mData;
 public:
 	RM_Record  ();                     // Constructor
-	~RM_Record ();                     // Destructor
+	~RM_Record (){};                     // Destructor
 	int SetRecord	(BufType pData,int size,RID id);
-	int GetData    (BufType pData) const;   // Set pData to point to
+	BufType GetData () const;   // Set pData to point to
 	//   the record's contents
 	int GetRid     (RID &rid) const;       // Get the record id
-	int getSize(int &sz) const;
+	int GetSize(int &sz) const;
 };
 #endif

@@ -10,17 +10,17 @@ RM_Record::RM_Record()
 
 int RM_Record::SetRecord(BufType pData,int size,RID id){
 	mData = pData;
+	cout << "mData" << mData[0] << mData[1] << endl;
 	recordSize = size;
 	mRid = id;
 	return 0;
 }
 
-int RM_Record::GetData(BufType pData) const
+BufType RM_Record::GetData() const
 {
-	if(recordSize == -1 || mData == NULL)
-		return 1;
-	pData = mData;
-	return 0;
+	if (recordSize == -1 || mData == NULL)
+		return NULL;
+	return mData;
 }
 
 int RM_Record::GetRid(RID &id) const
@@ -31,7 +31,7 @@ int RM_Record::GetRid(RID &id) const
 	return 0;	
 }
 
-int RM_Record::getSize(int &sz) const {
+int RM_Record::GetSize(int &sz) const {
 	if(recordSize == -1) {
 		return 1;
 	}

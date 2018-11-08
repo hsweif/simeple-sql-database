@@ -22,6 +22,7 @@ class RM_Manager{
 private:
     char *dataPath;
     FileManager *fileManager;
+    BufPageManager *bufPageManager;
     int fileID;
     static int RID;
 public:
