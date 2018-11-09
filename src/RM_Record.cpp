@@ -10,7 +10,6 @@ RM_Record::RM_Record()
 
 int RM_Record::SetRecord(BufType pData,int size,RID id){
 	mData = pData;
-	cout << "mData" << mData[0] << mData[1] << endl;
 	recordSize = size;
 	mRid = id;
 	return 0;

@@ -15,22 +15,25 @@ private:
     int recordSum;
     int pageCnt;
     int recordMapSize;
+	int firstPageBufIndex;
+	int bufLastIndex = -1;
 	uint* pageUintMap;
 	uint* recordUintMap;
     MyBitMap* pageBitMap;
     MyBitMap* recordBitMap;//current reading page's map
     BufPageManager *mBufpm;
+	BufType readBuf;
 public:
     RM_FileHandle();
     RM_FileHandle(int id, int sz);
     ~RM_FileHandle();                                  // Destructor
-    RM_FileHandle(BufPageManager* bufpm, int fd, int rcz);
+	int updateHead();
+	RM_FileHandle(BufPageManager* bufpm, int fd, int rcz);
     int GetRec(const RID &rid, RM_Record &rec) const;
-    int init(int _fileId, int _recordSize, int _recordPP, int _recordSum, int _pageCnt, BufType _pageMap, BufPageManager* _bufpm);
+    int init(int _fileId, BufPageManager* _bufpm);
     // Get a record
     int InsertRec(const RM_Record& pData);       // Insert a new record,
     //   return record id
-    RID checkSpace();
     int DeleteRec(const RID &rid);                    // Delete a record
     int UpdateRec(const RM_Record &rec);  
     void show();            // Update a record

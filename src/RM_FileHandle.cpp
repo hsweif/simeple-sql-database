@@ -4,18 +4,29 @@ using namespace std;
 BufType reset;
 RM_FileHandle::RM_FileHandle() {
 	if (reset == NULL)
-		reset = new uint[2048];
-	for (int i = 0; i < 2048; i++)
-		reset[i] = 0;
+		reset = new uint[PAGE_INT_NUM];
+	for (int i = 0; i < PAGE_INT_NUM; i++)
+		reset[i] = 0xFFFFFFFF;
 }
 
 RM_FileHandle::RM_FileHandle(int id, int sz) {
 	this->fileId = id;
 	this->recordSize = sz;
-}
+}	
 
-RID RM_FileHandle::checkSpace() {
-
+int RM_FileHandle::updateHead() {
+	BufType readBuf = this->mBufpm->getPage(this->fileId, 0, firstPageBufIndex);
+	readBuf[0] = recordSize;
+	readBuf[1] = recordPP;
+	cout << "PP" << recordPP << endl;
+	readBuf[2] = recordSum;
+	cout << "sum" << recordSum << endl;
+	readBuf[3] = pageCnt;
+	cout << "Cnt" << pageCnt << endl;
+	for (int i = 0; i < PAGE_INT_NUM - 4; i++) {
+		readBuf[i + 4] = pageUintMap[i];
+	}
+	this->mBufpm->markDirty(firstPageBufIndex);
 }
 
 int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec) const{
@@ -32,16 +43,22 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec) const{
 	return 0;
 }
 
-int RM_FileHandle::init(int _fileId, int _recordSize, int _recordPP, int _recordSum, int _pageCnt, BufType _pageMap, BufPageManager *_bufpm) 
+int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm) 
 {
 	fileId = _fileId;
-	recordSize = _recordSize;
-	recordPP = _recordPP;
-	recordSum = _recordSum;
-	pageCnt = _pageCnt;
-	pageUintMap = _pageMap;
-	pageBitMap = new MyBitMap((PAGE_INT_NUM-3)<<5,pageUintMap);
 	mBufpm = _bufpm;
+	//cout << "test" << endl;
+	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
+	recordSize = firstPage[0];
+	recordPP = firstPage[1];
+	recordSum = firstPage[2];
+	pageCnt = firstPage[3];
+	pageUintMap = new uint[PAGE_INT_NUM - 4];
+	for (int i = 0; i < PAGE_INT_NUM - 4; i++) {
+		pageUintMap[i] = firstPage[i + 4];
+	}
+	pageBitMap = new MyBitMap((PAGE_INT_NUM-4)<<5,pageUintMap);
+	//pageBitMap->show();
 	if(recordPP%32 == 0)
 		recordMapSize = recordPP/32;
 	else
@@ -50,33 +67,41 @@ int RM_FileHandle::init(int _fileId, int _recordSize, int _recordPP, int _record
 	return 0;
 }
 
-
 int RM_FileHandle::InsertRec(const RM_Record& pData){
+	//check size
 	int dataSize;
-	cout<<"PP"<<this->recordPP<<endl;
-	cout<<"mapSize"<<this->recordMapSize<<endl;
 	pData.GetSize(dataSize);
 	if(dataSize != this->recordSize)
 		return 1;
-	RID dataId;
-	pData.GetRid(dataId);
-	int page,slot;
-	if(dataId.GetPageNum(page) > 0 || dataId.GetSlotNum(slot) > 0) {
-		return 1;
+	//check space
+	int pageIndex = pageBitMap->findLeftOne();
+	//cout << "pageIndex" << pageIndex << endl;
+	if (pageIndex + 1 >= pageCnt)//current pages can't be used
+	{
+		this->mBufpm->fileManager->writePage(this->fileId, pageIndex + 1, reset, 0);
+		pageCnt = pageIndex + 2;
 	}
-	if(slot >= this->recordPP)
-		return 1;
+	int page = pageIndex+1;
+	//cout << "page" << page << endl;
 	BufType bufData = pData.GetData();
 	//cout << "buf" << bufData[0] << bufData[1] << endl;
-	if (page >= this->pageCnt)
-		this->mBufpm->fileManager->writePage(this->fileId, page, reset, 0);
 	int bufIndex;
-	BufType readBuf = this->mBufpm->getPage(this->fileId,page,bufIndex);
-	for (int i = 0; i < this->recordMapSize; i++) {
-		recordUintMap[i] = readBuf[i];
+	readBuf = this->mBufpm->getPage(this->fileId, page, bufIndex);
+	if (bufLastIndex != bufIndex)
+	{
+		for (int i = 0; i < this->recordMapSize; i++) {
+			recordUintMap[i] = readBuf[i];
+		}
+		recordBitMap = new MyBitMap(recordMapSize << 5, recordUintMap);
 	}
-	recordBitMap = new MyBitMap(recordMapSize<<5,recordUintMap);
-	recordBitMap->setBit(slot, 1);
+	//recordBitMap->show();
+	int slot = recordBitMap->findLeftOne();
+	//cout << "slot" << slot << endl;
+	if (slot >= recordPP || slot < 0) {
+		cout << "codeError" << endl;
+		return 1;
+	}
+	recordBitMap->setBit(slot, 0);
 	//recordBitMap->show();
 	//cout << "record"<<recordUintMap[0] << endl;
 	for (int i = 0; i < recordSize; i++) {
@@ -86,29 +111,37 @@ int RM_FileHandle::InsertRec(const RM_Record& pData){
 	for (int i = 0; i < this->recordMapSize; i++) {
 		readBuf[i] = recordUintMap[i];
 	}
+	recordSum++;
+	if (recordBitMap->findLeftOne() >= recordPP)
+		pageBitMap->setBit(page - 1, 0);
 	this->mBufpm->markDirty(bufIndex);
+	bufLastIndex = bufIndex;
 	//cout<<page<<" "<<slot<<endl;
-
-/*	FileManager *fm = new FileManager();
-	int page, slot;
-	if(rid.GetPageNum(page) > 0 || rid.GetSlotNum(slot) > 0) {
-		return 1;
-	}
-	BufType buf = new uint[PAGE_INT_NUM], data;
-	fm->readPage(this->fileId, page, buf, 0);
-	int rSize;
-	if(pData.getSize(rSize) || pData.GetData(data)) {
-		return 1;
-	}
-	for(int i = 0; i < rSize; i ++) {
-		buf[slot * rSize + i] = data[i];
-	}
-	fm->writePage(this->fileId, page, buf, 0);*/
 	return 0;
 }
 
-int RM_FileHandle::DeleteRec(const RID &rid){
-
+int RM_FileHandle::DeleteRec(const RID &rid) {
+	int page, slot;
+	rid.GetPageNum(page);
+	rid.GetSlotNum(slot);
+	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
+		return 1;
+	}
+	int bufIndex;
+	readBuf = this->mBufpm->getPage(this->fileId, page, bufIndex);
+	if (bufLastIndex != bufIndex)
+	{
+		for (int i = 0; i < this->recordMapSize; i++) {
+			recordUintMap[i] = readBuf[i];
+		}
+		recordBitMap = new MyBitMap(recordMapSize << 5, recordUintMap);
+	}
+	recordBitMap->setBit(slot, 1);
+	//recordBitMap->show();
+	recordSum--;
+	pageBitMap->setBit(page - 1, 1);
+	this->mBufpm->markDirty(bufIndex);
+	bufLastIndex = bufIndex;
 	return 0;
 }
 

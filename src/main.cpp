@@ -50,21 +50,46 @@ void Test(){
 void test1(){
     RM_Manager *rmg = new RM_Manager();
     RM_FileHandle *handler = new RM_FileHandle();
-    rmg->createFile("helloworld", 2);
-    string test = rmg->openFile("helloworld", *handler) ? "successfully opened" : "fail to open";
-    BufType buf = new uint[2];
-    buf[0] = 114514;
-    buf[1] = 233333;
+    rmg->createFile("helloworld1", 500);
+    string test = rmg->openFile("helloworld1", *handler) ? "successfully opened" : "fail to open";
+    BufType buf = new uint[500];
+	for(int i = 0;i < 500;i++)
+		buf[i] = 0;
     RM_Record pData;
-    RID insertId(1,0);
-    pData.SetRecord(buf,2,insertId);
+	RID insertId(1, 0);
+	RID deleteId(1, 0);
+    pData.SetRecord(buf,500,insertId);
     handler->InsertRec(pData);
-    cout << test << endl;
-    handler->show();
-	rmg->closeFile();
+	//cout << endl;
+	handler->InsertRec(pData);
+	//cout << endl;
+	handler->InsertRec(pData);
+	//cout << endl;
+	handler->InsertRec(pData);
+	//cout << endl;
+	handler->DeleteRec(deleteId);
+	//cout << endl;
+	handler->InsertRec(pData);
+	//cout << endl;
+	handler->InsertRec(pData);
+	//cout << endl;
+    //cout << test << endl;
+    //handler->show();
+	rmg->closeFile(*handler);
 }
 
+void testBitmap() {
+	
+	MyBitMap *b = new MyBitMap(2 << 5, 2);
+	b->show();
+	cout << "left"<<b->findLeftOne() << endl;
+	b->setBit(33, 1);
+	cout << "left" << b->findLeftOne() << endl;
+	//b->setBit(3, 1);
+	b->show();
+}
 int main(){
+	MyBitMap::initConst();
     test1();
     return 0;
 }

@@ -15,20 +15,19 @@ using namespace std;
 #define MAX_INNER_NUM 67
 //#define MOD 61
 #define BIAS 5
-
 extern unsigned char h[61];
 
 
 class MyBitMap {
 protected:
-//	static const int LEAF_BIT = 32;
-//	static const int MAX_LEVEL = 5;
-//	static const int MAX_INNER_NUM = 10;
-//	static const int MOD = 61;
-//	static unsigned char h[MOD];
+	//	static const int LEAF_BIT = 32;
+	//	static const int MAX_LEVEL = 5;
+	//	static const int MAX_INNER_NUM = 10;
+	//	static const int MOD = 61;
+	//	static unsigned char h[MOD];
 	static uint getMask(int k) {
 		uint s = 0;
-		for (int i = 0; i < k; ++ i) {
+		for (int i = 0; i < k; ++i) {
 			s += (1 << i);
 		}
 		return s;
@@ -66,7 +65,8 @@ protected:
 		int index = (i << BIAS) + j;
 		if (start == 0) {
 			return getLeafData(index);
-		} else {
+		}
+		else {
 			//cout << start - bitNum + index << endl;
 			return inner[start - bitNum + index];
 		}
@@ -78,10 +78,10 @@ protected:
 		while (s > LEAF_BIT) {
 			int wordNum = (s >> BIAS);
 			//cout << rootIndex << " " << s << " " << wordNum << endl;
-			for (int i = 0; i < wordNum; ++ i) {
+			for (int i = 0; i < wordNum; ++i) {
 				uint w = 0;
 				//cout << "---------------------------------------" << endl;
-				for (int j = 0; j < LEAF_BIT; ++ j) {
+				for (int j = 0; j < LEAF_BIT; ++j) {
 					//cout << i << endl;
 					uint k = (1 << j);
 					uint c = childWord(rootIndex, s, i, j);
@@ -91,14 +91,14 @@ protected:
 				}
 				inner[rootIndex + i] = w;
 			}
-			rootLevel ++;
+			rootLevel++;
 			rootIndex += wordNum;
 			s = wordNum;
 		}
 		rootBit = s;
 		int i = 0;
 		uint w = 0;
-		for (int j = 0; j < rootBit; ++ j) {
+		for (int j = 0; j < rootBit; ++j) {
 			uint k = (1 << j);
 			uint c = childWord(rootIndex, s, i, j);
 			if (c != 0) {
@@ -145,26 +145,26 @@ protected:
 		}*/
 		int nPos = (pos << BIAS) + index;
 		if (level == 0) {
-		//	cout << "npos " << nPos << endl;
+			//	cout << "npos " << nPos << endl;
 			return nPos;
 		}
 		return _findLeftOne(level - 1, offset - prevLevelCap, nPos, (prevLevelCap << BIAS));
 	}
 public:
-//	static const int BIAS;/* = 5;*/
-//	static void initConst();
-	/* {
-		for (int i = 0; i < 32; ++ i) {
-			unsigned int k = (1 << i);
-			MyBitMap::h[MyBitMap::_hash(k)] = i;
+	//	static const int BIAS;/* = 5;*/
+	//	static void initConst();
+		/* {
+			for (int i = 0; i < 32; ++ i) {
+				unsigned int k = (1 << i);
+				MyBitMap::h[MyBitMap::_hash(k)] = i;
+			}
 		}
-	}
-	*/
+		*/
 	static int _hash(uint i) {
 		return i % 61;
 	}
 	static void initConst() {
-		for (int i = 0; i < 32; ++ i) {
+		for (int i = 0; i < 32; ++i) {
 			unsigned int k = (1 << i);
 			h[_hash(k)] = i;
 		}
@@ -180,7 +180,7 @@ public:
 		pos = (index >> BIAS);
 		bit = index - (pos << BIAS);
 	}
-	uint data0(){
+	uint data0() {
 		return data[0];
 	}
 	void setBit(int index, uint k) {
@@ -206,7 +206,10 @@ public:
 		//cout << data[0] << endl;
 		uint lb = lowbit(getLeafData(i));
 		int index = h[_hash(lb)];
-		return (i << BIAS) + index;
+		int result = (i << BIAS) + index;
+		if (!data[0] && !result)
+			return -1;
+		return result;
 	}
 	MyBitMap(int cap, uint k) {
 		size = (cap >> BIAS);
@@ -215,7 +218,7 @@ public:
 		if (k == 1) {
 			fill = 0xffffffff;
 		}
-		for (int i = 0; i < size; ++ i) {
+		for (int i = 0; i < size; ++i) {
 			data[i] = fill;
 		}
 		init();
@@ -228,11 +231,10 @@ public:
 	void reLoad(uint* da) {
 		data = da;
 	}
-	void show(){
-		cout<<size<<endl;
-		for (int i = 0; i < size;++i){
-			cout<<data[i]<<endl;
-		}		
+
+	void show() {
+		for (int i = 0; i < size; i++)
+			cout << data[i] << endl;
 	}
 };
 #endif

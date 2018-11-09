@@ -29,7 +29,7 @@ public:
     RM_Manager();
     int createFile(const char* name, int recordSize);
     bool openFile(const char* name, RM_FileHandle &fileHandle);
-    int closeFile();
+    int closeFile(RM_FileHandle &fileHandle);
     int deleteFile(const char* name);
 };
 
