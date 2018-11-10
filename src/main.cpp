@@ -105,7 +105,8 @@ void testBitmap() {
 	b->show();
 }
 int main(){
-	MyBitMap::initConst();
+    MyBitMap::initConst();
     test1();
+    // Test();
     return 0;
 }
