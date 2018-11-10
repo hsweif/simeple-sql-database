@@ -19,31 +19,46 @@ void Test(){
     // string test = rmg->openFile("test", *handler) ? "successfully opened" : "fail to open";
     // cout << test << endl;
 
-    vector<string> vec;
-    cout << "Please input 3 titles" << endl;
+    vector<RM_node> vec;
+    vector<string> title;
+    vector<int> type;
+    cout << "Please input 2 titles" << endl;
     string tmp;
-    for(int i = 0; i < 3; i ++) {
+    for(int i = 0; i < 2; i ++) {
         cin >> tmp;
-        vec.push_back(tmp);
+        title.push_back(tmp);
+        type.push_back(STR_TYPE);
     }
     int recordSize = 10;
-    RM_data *data = new RM_data(vec, recordSize);
+    RM_data *data = new RM_data(title, type);
     while(true) {
         vec.clear();
-        cout << "Please input 3 items" << endl;
-        for(int i = 0; i < 3; i ++) {
+        cout << "Please input 2 items" << endl;
+        for(int i = 0; i < 2; i ++) {
             cin >> tmp;
-            vec.push_back(tmp);
+            RM_node node;
+            node.setCtx(tmp);
+            vec.push_back(node);
         }
-        BufType buf = data->getSerializeRecord(vec, recordSize);
-        for(int i = 0; i < 10; i ++) {
-            cout << buf[i] << " ";
+        BufType buf = new uint;
+        if(data->getSerializeRecord(&buf, vec, recordSize)){
+            cout << "error" << endl;
         }
-        vector<string> result = data->getRecord(buf, recordSize);
-        vector<string> title = data->title();
+        cout << "new rec " << buf << endl;
+
+        // for(int i = 0; i < recordSize; i ++) {
+        //     cout << (uint) buf[i] << " ";
+        // }
+        vector<RM_node> result; 
+        if(data->getRecord(result, buf, recordSize)) {
+            cout << "error to get Record" << endl;
+        }
+        cout << "\nnew result size: " << result.size() << endl;
+        vector<string> title1 = data->title();
         cout << "deserialized: " << result.size() <<  endl;
         for(int i = 0; i < result.size(); i ++) {
-            cout << title[i] << " " << result[i] << endl;
+            cout << title1[i] << ":";
+            cout << *(result[i].ctx) << endl;
         }
     }
 }
@@ -64,7 +79,7 @@ void TestBitMap(){
 	cout<< "Left one: " << b->findLeftOne()<<endl;
 }
 int main(){
-    // Test();
-    TestBitMap();
+    Test();
+    // TestBitMap();
     return 0;
 }

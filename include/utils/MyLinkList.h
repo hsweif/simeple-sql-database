@@ -6,6 +6,8 @@ private:
 	struct ListNode {
 		int next;
 		int prev;
+		BufType ctx; // Node context
+		uint type; // How to decode ctx
 	};
 	int cap;
 	int LIST_NUM;
