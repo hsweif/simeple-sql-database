@@ -6,6 +6,7 @@
 #include "../bufmanager/BufPageManager.h"
 #include "../utils/pagedef.h"
 #include <iostream>
+#include "../utils/MyBitMap.h"
 
 class RM_FileHandle {
 private:

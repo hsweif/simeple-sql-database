@@ -1,4 +1,3 @@
-#include "../include/utils/MyBitMap.h"
 #include <iostream>
 using namespace std;
 int main()
