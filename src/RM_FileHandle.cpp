@@ -30,19 +30,54 @@ int RM_FileHandle::updateHead() {
 	this->mBufpm->markDirty(firstPageBufIndex);
 }
 
-int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec) const
+int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 {
 	int page, slot;
-	if (rid.GetPageNum(page) > 0 || rid.GetSlotNum(slot) > 0)
-	{
+	rid.GetPageNum(page);
+	rid.GetSlotNum(slot);
+	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
 		return 1;
 	}
-	BufType buf = new uint[PAGE_INT_NUM];
-	BufType result = new uint[this->recordSize];
-	FileManager *fm = new FileManager();
-	fm->readPage(this->fileId, page, buf, 0);
-	result = &buf[slot * this->recordSize];
-	rec.SetRecord(result, this->recordSize, rid);
+	int bufIndex;
+	readBuf = this->mBufpm->getPage(this->fileId, page, bufIndex);
+	BufType pData = new uint[recordSize];
+	for (int i = 0; i < recordSize; i++) {
+		pData[i] = readBuf[recordMapSize + i + slot * recordSize];
+	}
+	rec.SetRecord(pData, recordSize, rid);
+	return 0;
+}
+
+int RM_FileHandle::UpdateRec(const RM_Record &rec) {
+	RID rid;
+	rec.GetRid(rid);
+	int page, slot;
+	rid.GetPageNum(page);
+	rid.GetSlotNum(slot);
+	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
+		return 1;
+	}
+	int bufIndex;
+	readBuf = this->mBufpm->getPage(this->fileId, page, bufIndex);
+	if (bufLastIndex != bufIndex)
+	{
+		for (int i = 0; i < this->recordMapSize; i++) {
+			recordUintMap[i] = readBuf[i];
+		}
+		recordBitMap = new MyBitMap(recordMapSize << 5, recordUintMap);
+	}
+	BufType upBuf = rec.GetData();
+	for (int i = 0; i < recordSize; i++)
+		readBuf[recordMapSize + i + slot * recordSize] = upBuf[i];
+	if (recordBitMap->getBit(slot))//1
+	{
+		recordBitMap->setBit(slot, 0);
+		recordSum++;
+		if (recordBitMap->findLeftOne() >= recordPP)
+			pageBitMap->setBit(page - 1, 0);
+	}
+	this->mBufpm->markDirty(bufIndex);
+	bufLastIndex = bufIndex;
 	return 0;
 }
 
@@ -148,13 +183,41 @@ int RM_FileHandle::DeleteRec(const RID &rid) {
 	return 0;
 }
 
-int RM_FileHandle::UpdateRec(const RM_Record &rec)
-{
-	return 0;
-}
-
 void RM_FileHandle::show(){
 	cout<<fileId<<endl;
 	cout<<recordPP<<endl;
 	cout<<recordSize<<endl;
+}
+
+/**
+ * TODO: 改写成二级跳转
+ * 解析传入的页，回传最左边的空位offset
+ * @page 传入一页 
+ */
+int RM_FileHandle::GetSlot(BufType page)
+{
+	int offset = 0;
+	bool found = false;
+	while(!found && offset < PAGE_INT_NUM)
+	{
+		int upper = offset + recordSize;
+		bool flag = true;
+		for(int i = offset; i < upper; i ++)
+		{
+			if(page[i] != 0)
+			{
+				flag = false;
+				break;
+			}
+		}
+		if(!flag)
+		{
+			offset = upper;
+		}
+		else
+		{
+			found = true;
+			break;
+		}
+	}
 }
