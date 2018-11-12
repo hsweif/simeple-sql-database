@@ -70,10 +70,18 @@ void test1(){
     string test = rmg->openFile("helloworld1", *handler) ? "successfully opened" : "fail to open";
     BufType buf = new uint[500];
 	for(int i = 0;i < 500;i++)
-		buf[i] = 0;
+		buf[i] = i;
+	BufType upBuf = new uint[500];
+	for (int i = 0; i < 500; i++)
+		upBuf[i] = 0;
     RM_Record pData;
-	RID insertId(1, 0);
+	RID insertId(1, 0);//useless
 	RID deleteId(1, 0);
+	RID queryId(1, 1);
+	RID upId(1, 1);
+	RM_Record rec;
+	RM_Record upRec;
+	upRec.SetRecord(upBuf,500, upId);
     pData.SetRecord(buf,500,insertId);
     handler->InsertRec(pData);
 	//cout << endl;
@@ -88,6 +96,11 @@ void test1(){
 	handler->InsertRec(pData);
 	//cout << endl;
 	handler->InsertRec(pData);
+	handler->UpdateRec(upRec);
+	handler->GetRec(queryId, rec);
+	BufType recBuf = rec.GetData();
+	//for (int i = 0; i < 500; i++)
+	//	cout << recBuf[i] << endl;
 	//cout << endl;
     //cout << test << endl;
     //handler->show();

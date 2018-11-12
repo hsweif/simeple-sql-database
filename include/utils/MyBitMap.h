@@ -195,6 +195,13 @@ public:
 		//cout << p << " " << c << endl;
 		updateInner(0, 0, p, (size >> BIAS), c);
 	}
+	bool getBit(int index) {
+		int pos = (index >> BIAS);
+		int bit = index - (pos << BIAS);
+		if (data[pos] & (1 << bit))
+			return true;
+		return false;
+	}
 	int findLeftOne() {
 		int i = _findLeftOne(rootLevel, rootIndex, 0, rootBit);
 		/*
