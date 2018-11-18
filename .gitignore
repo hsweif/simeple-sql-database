@@ -3,3 +3,5 @@ database/
 main
 *.exe
 .vscode*
+.idea/
+cmake-build-debug/
