@@ -1,2 +1,2 @@
 AUX_SOURCE_DIRECTORY(. DIR_IM)
-ADD_LIBRARY ( IndexModule ${DIR_IM})
+ADD_LIBRARY ( IndexModule ${DIR_IM} IndexHandle.cpp)

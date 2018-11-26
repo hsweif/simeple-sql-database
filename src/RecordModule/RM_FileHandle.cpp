@@ -87,7 +87,6 @@ int RM_FileHandle::UpdateRec(const RM_Record &rec) {
 
 int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 {
-	this->indexBPTree = new bplus_tree(indexName);
 	fileId = _fileId;
 	mBufpm = _bufpm;
 	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
@@ -153,21 +152,8 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
 
-	/**
-	 * Insert to the index
-	 * Suppose zero as main key
-	 */
-	 RID rid;
-	 if(pData.GetRid(rid)) {
-	 	cout << "fail to get rid" << endl;
-	 }
-
-	 string str;
-	 if(pData.GetColumn(0, &str)) {
-		 cout << "fail to get column" << endl;
-	 }
-	 bpt::key_t kt(str.c_str());
-	 this->indexBPTree->insert(kt, rid);
+	 // TODO: support different key value
+	 this->indexHandle->InsertRecord(pData);
 	 return 0;
 }
 
@@ -188,11 +174,13 @@ int RM_FileHandle::DeleteRec(const RID &rid) {
 		recordBitMap = new MyBitMap(recordMapSize << 5, recordUintMap);
 	}
 	recordBitMap->setBit(slot, 1);
-	//recordBitMap->show();
 	recordSum--;
 	pageBitMap->setBit(page - 1, 1);
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
+
+	// TODO: remove from index
+
 	return 0;
 }
 
@@ -240,3 +228,7 @@ int RM_FileHandle::RecordNum() const
 	return recordSum;
 }
 
+void RM_FileHandle::SetTitle(vector<string> t) {
+    title = t;
+    this->indexHandle = new IM::IndexHandle(title);
+}

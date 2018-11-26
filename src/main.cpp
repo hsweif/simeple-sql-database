@@ -33,6 +33,8 @@ void Test(){
     RM_Record *record = new RM_Record(type);
     string test = rmg->openFile("helloworld2", *handler) ? "successfully opened" : "fail to open";
     cout << test << endl;
+    RM_Record pData, nData;
+    RID rid;
     while(cnt --) {
         vec.clear();
         cout << "Please input 2 items" << endl;
@@ -46,16 +48,15 @@ void Test(){
         if(record->GetSerializeRecord(&buf, vec, recordSize)){
             cout << "error" << endl;
         }
-        RM_Record pData, nData;
         pData.SetType(type);
         pData.SetRecord(buf, recordSize, RID(1,0));
-        RID rid;
         handler->InsertRec(pData);
         if(pData.GetRid(rid)) {
             cout << "error to get rid" << endl;
         }
         handler->GetRec(rid, nData);
     }
+    handler->DeleteRec(rid);
     RM_FileScan *fileScan = new RM_FileScan(type);
     fileScan->OpenScan(*handler, 0, 0, 0);
 }

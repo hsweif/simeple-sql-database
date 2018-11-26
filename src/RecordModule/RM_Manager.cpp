@@ -26,6 +26,7 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     char fileName[50];
     strcpy(fileName, this->dataPath);
     strcat(fileName, name);
+    // FIXME: index file 现在要手动创建
     char txt[7] = ".index";
     bool result = this->fileManager->openFile(fileName, this->fileID);
     strcat(fileName, txt);
