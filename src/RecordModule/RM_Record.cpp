@@ -101,6 +101,9 @@ RM_Record::RM_Record(vector<int> _type)
 
 int RM_Record::SetRecord(BufType pData,int size,RID id){
 	mData = pData;
+	if(mData == NULL) {
+	    cout << "mData is null" << endl;
+    }
 	recordSize = size;
 	mRid = id;
 	return 0;
@@ -138,7 +141,7 @@ int RM_Record::GetSize(int &sz) const {
 void RM_Record::Print()
 {
     vector<RM_node> result;
-    if(this->GetNodes(result, this->GetData(), recordSize)) {
+    if(this->GetNodes(result, this->GetData())) {
         cout << "error to get Record" << endl;
     }
     for(int i = 0; i < result.size(); i ++) {
@@ -195,11 +198,11 @@ int RM_Record::GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recor
 }
 
 
-int RM_Record::GetNodes(vector<RM_node> &result, BufType serializedBuf, int bufLength)
+int RM_Record::GetNodes(vector<RM_node> &result, BufType serializedBuf)
 {
     vector<RM_node> vec;
     int cnt = 0;
-    int l = type.size();
+    int l = (int)type.size();
     for (int i = 0; i < l; i++)
     {
         if(type[i] == INT_TYPE || type[i] == FLOAT_TYPE)
@@ -239,3 +242,38 @@ int RM_Record::GetNodes(vector<RM_node> &result, BufType serializedBuf, int bufL
     return 0;
 }
 
+int RM_Record::GetColumn(int col, string *content)
+{
+    vector<RM_node> result;
+    if(this->mData == NULL) {
+        cout << "mData is null, 2" << endl;
+    }
+    this->GetNodes(result, this->mData);
+    if(col >= result.size()) {
+        printf("%d %lu\n", col, result.size());
+        return 1;
+    }
+    int strLength = ITEM_LENGTH;
+    int offset = 0;
+    uint mask = 255;
+    char c[strLength];
+    BufType context = result[col].ctx;
+    int cnt = 0;
+    for (int j = 0; j < strLength; j++)
+    {
+        uint tmp = (context[cnt] & (mask << offset)) >> offset;
+        c[j] = (char)tmp;
+        if (offset == 24)
+        {
+            cnt++;
+            offset = 0;
+        }
+        else
+        {
+            offset += 8;
+        }
+    }
+    string tmp(c);
+    *content = tmp;
+    return 0;
+}

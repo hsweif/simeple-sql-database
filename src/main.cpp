@@ -26,6 +26,7 @@ void Test(){
     }
     RM_Manager *rmg = new RM_Manager();
     RM_FileHandle *handler = new RM_FileHandle();
+    handler->SetTitle(title);
     int recordSize = 2 * ITEM_LENGTH/4;
     rmg->createFile("helloworld2", recordSize);
     int cnt = 3;
@@ -46,6 +47,7 @@ void Test(){
             cout << "error" << endl;
         }
         RM_Record pData, nData;
+        pData.SetType(type);
         pData.SetRecord(buf, recordSize, RID(1,0));
         RID rid;
         handler->InsertRec(pData);

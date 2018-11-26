@@ -26,8 +26,10 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     char fileName[50];
     strcpy(fileName, this->dataPath);
     strcat(fileName, name);
+    char txt[7] = ".index";
     bool result = this->fileManager->openFile(fileName, this->fileID);
-    fileHandle.init(this->fileID,this->bufPageManager);
+    strcat(fileName, txt);
+    fileHandle.init(this->fileID,this->bufPageManager, fileName);
     return result;
 }
 

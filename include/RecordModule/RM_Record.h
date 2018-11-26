@@ -48,7 +48,8 @@ public:
 	int GetRid     (RID &rid) const;       // Get the record id
 	int GetSize(int &sz) const;
 	int GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recordSize);
-	int GetNodes(vector<RM_node> &result, BufType serializedBuf, int length);
+	int GetNodes(vector<RM_node> &result, BufType serializedBuf);
+	int GetColumn(int col, string *content);
 	void Print();
 };
 #endif

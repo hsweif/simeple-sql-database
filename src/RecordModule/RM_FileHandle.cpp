@@ -3,10 +3,13 @@
 using namespace std;
 BufType reset;
 RM_FileHandle::RM_FileHandle() {
-	if (reset == NULL)
+	if (reset == NULL) {
 		reset = new uint[PAGE_INT_NUM];
-	for (int i = 0; i < PAGE_INT_NUM; i++)
+	}
+	for (int i = 0; i < PAGE_INT_NUM; i++) {
 		reset[i] = 0xFFFFFFFF;
+	}
+
 }
 
 RM_FileHandle::RM_FileHandle(int id, int sz)
@@ -82,8 +85,9 @@ int RM_FileHandle::UpdateRec(const RM_Record &rec) {
 	return 0;
 }
 
-int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm) 
+int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 {
+	this->indexBPTree = new bplus_tree(indexName);
 	fileId = _fileId;
 	mBufpm = _bufpm;
 	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
@@ -104,7 +108,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	return 0;
 }
 
-int RM_FileHandle::InsertRec(const RM_Record& pData){
+int RM_FileHandle::InsertRec(RM_Record& pData){
 	//check size
 	int dataSize;
 	pData.GetSize(dataSize);
@@ -148,7 +152,23 @@ int RM_FileHandle::InsertRec(const RM_Record& pData){
 		pageBitMap->setBit(page - 1, 0);
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
-	return 0;
+
+	/**
+	 * Insert to the index
+	 * Suppose zero as main key
+	 */
+	 RID rid;
+	 if(pData.GetRid(rid)) {
+	 	cout << "fail to get rid" << endl;
+	 }
+
+	 string str;
+	 if(pData.GetColumn(0, &str)) {
+		 cout << "fail to get column" << endl;
+	 }
+	 bpt::key_t kt(str.c_str());
+	 this->indexBPTree->insert(kt, rid);
+	 return 0;
 }
 
 int RM_FileHandle::DeleteRec(const RID &rid) {
