@@ -6,11 +6,13 @@ IndexHandle::IndexHandle()
 {
     indexNum = 0;
     colNum = 0;
+    indexPath = "../database/index/";
 }
 
 IndexHandle::IndexHandle(vector<string> tt)
 {
     IndexHandle();
+    indexPath = "../database/index/";
     title = tt;
     colNum = title.size();
     for(int i = 0; i < colNum; i ++) {
@@ -24,13 +26,22 @@ int IndexHandle::CreateIndex(char *indexName, int pos)
     int cnt = 0;
     list<node>::iterator iter = index.begin();
     while(iter != index.end()) {
+        cout << iter->item << endl;
         if(indexStr == iter->item) {
             return 1;
         }
         iter ++;
     }
     isIndex[pos] = true;
-    bpt::bplus_tree *bpTree = new bpt::bplus_tree(indexName);
+    string indexFileName = indexPath + indexStr;
+    fstream indexFile;
+    indexFile.open(indexFileName, ios::in);
+    if(!indexFile) {
+        cout << "Index file doesn't exist" << endl;
+    }
+
+    cout << "index path: " << indexFileName << endl;
+    bpt::bplus_tree *bpTree = new bpt::bplus_tree((char*)indexFileName.data());
     index.push_back(node(indexStr, bpTree));
     return 0;
 }
@@ -71,5 +82,35 @@ int IndexHandle::InsertRecord(RM_Record &record)
         }
     }
 }
+
+int IndexHandle::SearchRange(vector<RM_Record> &result, bpt::key_t &left, bpt::key_t &right, int comOP, int col)
+{
+    // TODO: Undone.
+    // FIXME: Temporarily set to 0
+    col = 0;
+    vector<RM_Record> records;
+    RID rid;
+    list<node>::iterator iter = index.begin();
+    for(int i = 0; i < colNum; i ++)
+    {
+        if(isIndex[i])
+        {
+            string test = "dd";
+            bpt::key_t kt((char*)test.data());
+            if(iter->bpTree->search(kt, &rid) == -1) {
+                cout << "fail to search: " << test << endl;
+            } else{
+                cout << "success to search: " << test << endl;
+            }
+            int x = 0, y = 0;
+            rid.GetPageNum(x);
+            rid.GetSlotNum(y);
+            //TODO: 增加透过RID直接找到Record的功能
+            cout << "result test: " << x << " " << y << endl;
+            iter ++;
+        }
+    }
+}
+
 
 }

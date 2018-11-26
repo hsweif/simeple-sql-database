@@ -29,10 +29,11 @@ private:
     MyBitMap* recordBitMap;//current reading page's map
     BufPageManager *mBufpm;
 	BufType readBuf;
-	IM::IndexHandle *indexHandle;
 	vector<string> title;
 
 public:
+    // FIXME: should be private
+	IM::IndexHandle *indexHandle;
     RM_FileHandle();
     RM_FileHandle(int id, int sz);
     ~RM_FileHandle();                                  // Destructor

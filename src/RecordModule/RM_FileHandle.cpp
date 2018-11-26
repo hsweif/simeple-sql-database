@@ -231,4 +231,8 @@ int RM_FileHandle::RecordNum() const
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
     this->indexHandle = new IM::IndexHandle(title);
+    // Use 0 as the main key
+    cout << "check: " << t.size() << endl;
+    cout << title[0] << endl;
+    this->indexHandle->CreateIndex((char*)title[0].data(), 0);
 }

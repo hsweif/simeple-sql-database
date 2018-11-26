@@ -4,6 +4,7 @@
 #include <list>
 #include <iostream>
 #include <string>
+#include <fstream>
 #include "../RecordModule/RM_Record.h"
 
 #include "bpt.h"
@@ -32,12 +33,14 @@ private:
     vector<bool> isIndex;
     int indexNum;
     int colNum;
+    string indexPath;
 public:
     IndexHandle();
     IndexHandle(vector<string> tt);
     int CreateIndex(char *indexName, int pos);
     int DeleteIndex(char *indexName, int pos);
     int InsertRecord(RM_Record &record);
+    int SearchRange(vector<RM_Record> &result, bpt::key_t &left, bpt::key_t &right, int comOP, int col);
 };
 
 }

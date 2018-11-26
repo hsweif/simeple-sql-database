@@ -1,7 +1,9 @@
 #include "RecordModule/RM_Manager.h"
 #include "RecordModule/RM_FileHandle.h"
 #include "RecordModule/RM_FileScan.h"
+#include "IndexModule/IndexHandle.h"
 #include "utils/MyBitMap.h"
+#include "IndexModule/bpt.h"
 #include <vector>
 #include <string>
 
@@ -59,6 +61,12 @@ void Test(){
     handler->DeleteRec(rid);
     RM_FileScan *fileScan = new RM_FileScan(type);
     fileScan->OpenScan(*handler, 0, 0, 0);
+    IM::IndexHandle *indexHandle = handler->indexHandle;
+    // FIXME: Should not directly call in main
+    vector<RM_Record> tmpvec;
+    string tmpstr = "aa";
+    bpt::key_t kt((char*)tmpstr.data());
+    indexHandle->SearchRange(tmpvec, kt, kt, 0, 0);
 }
 
 void test1(){
