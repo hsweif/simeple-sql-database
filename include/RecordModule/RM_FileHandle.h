@@ -36,8 +36,10 @@ public:
     int InsertRec(const RM_Record& pData);       // Insert a new record,
     //   return record id
     int DeleteRec(const RID &rid);                    // Delete a record
-    int UpdateRec(const RM_Record &rec);  
-    void show();            
+    int UpdateRec(const RM_Record &rec);
+    int RecordNum() const;
+    int PageNum() const {return pageCnt;}
+    void show();
 	int GetSlot(BufType page);
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };

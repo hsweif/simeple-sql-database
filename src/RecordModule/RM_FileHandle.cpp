@@ -35,8 +35,6 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	int page, slot;
 	rid.GetPageNum(page);
 	rid.GetSlotNum(slot);
-	printf("left index %d\n", pageBitMap->findLeftOne());
-	printf("page %d / slot %d /pageCnt %d/ recordPP %d\n", page,slot, pageCnt, recordPP);
 	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
 		cout << "fail to get rec" << endl;
 		return 1;
@@ -48,7 +46,6 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 		pData[i] = readBuf[recordMapSize + i + slot * recordSize];
 	}
 	rec.SetRecord(pData, recordSize, rid);
-	cout << "get rec: " << rec.GetData() << endl;
 	return 0;
 }
 
@@ -89,7 +86,6 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 {
 	fileId = _fileId;
 	mBufpm = _bufpm;
-	//cout << "test" << endl;
 	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
 	recordSize = firstPage[0];
 	recordPP = firstPage[1];
@@ -111,9 +107,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 int RM_FileHandle::InsertRec(const RM_Record& pData){
 	//check size
 	int dataSize;
-	// printf("recordSum %d\n", recordSum);
 	pData.GetSize(dataSize);
-	//FIXME: The datasize and recordSize doesn't equal.
 	if(dataSize != this->recordSize)
 	{
 		printf("data size error: %d/ %d\n", dataSize, this->recordSize);
@@ -220,3 +214,9 @@ int RM_FileHandle::GetSlot(BufType page)
 		}
 	}
 }
+
+int RM_FileHandle::RecordNum() const
+{
+	return recordSum;
+}
+

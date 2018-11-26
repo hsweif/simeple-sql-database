@@ -1,9 +1,10 @@
 #include "RecordModule/RM_Manager.h"
-#include "RecordModule/RM_data.h"
 #include "RecordModule/RM_FileHandle.h"
+#include "RecordModule/RM_FileScan.h"
 #include "utils/MyBitMap.h"
 #include <vector>
 #include <string>
+
 
 // 原先声明在头文件里的全局变量。。。
 int current = 0;
@@ -27,9 +28,11 @@ void Test(){
     RM_FileHandle *handler = new RM_FileHandle();
     int recordSize = 2 * ITEM_LENGTH/4;
     rmg->createFile("helloworld2", recordSize);
+    int cnt = 3;
+    RM_Record *record = new RM_Record(type);
     string test = rmg->openFile("helloworld2", *handler) ? "successfully opened" : "fail to open";
-    RM_data *data = new RM_data(title, type);
-    while(true) {
+    cout << test << endl;
+    while(cnt --) {
         vec.clear();
         cout << "Please input 2 items" << endl;
         for(int i = 0; i < 2; i ++) {
@@ -39,36 +42,20 @@ void Test(){
             vec.push_back(node);
         }
         BufType buf = new uint;
-        cout << "recordSize" << recordSize << endl;
-        if(data->getSerializeRecord(&buf, vec, recordSize)){
+        if(record->GetSerializeRecord(&buf, vec, recordSize)){
             cout << "error" << endl;
         }
-        cout << "new rec " << buf << endl;
         RM_Record pData, nData;
         pData.SetRecord(buf, recordSize, RID(1,0));
         RID rid;
-        if(pData.GetRid(rid))
+        handler->InsertRec(pData);
+        if(pData.GetRid(rid)) {
             cout << "error to get rid" << endl;
-        handler->InsertRec(pData);
-        handler->InsertRec(pData);
-        handler->InsertRec(pData);
-        handler->InsertRec(pData);
-        handler->InsertRec(pData);
-        handler->InsertRec(pData);
+        }
         handler->GetRec(rid, nData);
-        cout << "gotr rec " << nData.GetData() << endl;
-        vector<RM_node> result; 
-        if(data->getRecord(result, nData.GetData(), recordSize)) {
-            cout << "error to get Record" << endl;
-        }
-        cout << "\nnew result size: " << result.size() << endl;
-        vector<string> title1 = data->title();
-        cout << "deserialized: " << result.size() <<  endl;
-        for(int i = 0; i < result.size(); i ++) {
-            cout << title1[i] << ":";
-            cout << *(result[i].ctx) << endl;
-        }
     }
+    RM_FileScan *fileScan = new RM_FileScan(type);
+    fileScan->OpenScan(*handler, 0, 0, 0);
 }
 
 void test1(){
@@ -101,11 +88,6 @@ void test1(){
 	handler->UpdateRec(upRec);
 	handler->GetRec(queryId, rec);
 	BufType recBuf = rec.GetData();
-	//for (int i = 0; i < 500; i++)
-	//	cout << recBuf[i] << endl;
-	//cout << endl;
-    //cout << test << endl;
-    //handler->show();
 	rmg->closeFile(*handler);
 }
 
