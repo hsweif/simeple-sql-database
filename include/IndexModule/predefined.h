@@ -1,7 +1,9 @@
 #ifndef PREDEFINED_H
 #define PREDEFINED_H
 
+
 #include <string.h>
+#include <string>
 #include "../RecordModule/RID.h"
 
 namespace bpt {
@@ -16,7 +18,8 @@ struct key_t {
 
     key_t(const char *str = "")
     {
-        bzero(k, sizeof(k));
+        //bzero(k, sizeof(k));
+        memset(k,'0',strlen(k));
         strcpy(k, str);
     }
 };

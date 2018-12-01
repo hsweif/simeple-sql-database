@@ -1,0 +1,13 @@
+D:/git_projects/DBProject113b/build/CMakeFiles/edit_cache.dir
+D:/git_projects/DBProject113b/build/CMakeFiles/main.dir
+D:/git_projects/DBProject113b/build/CMakeFiles/rebuild_cache.dir
+D:/git_projects/DBProject113b/build/CMakeFiles/create.dir
+D:/git_projects/DBProject113b/build/CMakeFiles/show.dir
+D:/git_projects/DBProject113b/build/CMakeFiles/use.dir
+D:/git_projects/DBProject113b/build/CMakeFiles/drop.dir
+D:/git_projects/DBProject113b/build/src/RecordModule/CMakeFiles/RecordModule.dir
+D:/git_projects/DBProject113b/build/src/RecordModule/CMakeFiles/edit_cache.dir
+D:/git_projects/DBProject113b/build/src/RecordModule/CMakeFiles/rebuild_cache.dir
+D:/git_projects/DBProject113b/build/src/IndexModule/CMakeFiles/IndexModule.dir
+D:/git_projects/DBProject113b/build/src/IndexModule/CMakeFiles/edit_cache.dir
+D:/git_projects/DBProject113b/build/src/IndexModule/CMakeFiles/rebuild_cache.dir

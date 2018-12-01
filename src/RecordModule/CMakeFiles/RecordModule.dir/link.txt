@@ -1,0 +1,2 @@
+C:\MinGW\bin\ar.exe qc libRecordModule.a  CMakeFiles/RecordModule.dir/RID.cpp.obj CMakeFiles/RecordModule.dir/RM_FileHandle.cpp.obj CMakeFiles/RecordModule.dir/RM_FileScan.cpp.obj CMakeFiles/RecordModule.dir/RM_Manager.cpp.obj CMakeFiles/RecordModule.dir/RM_PageHead.cpp.obj CMakeFiles/RecordModule.dir/RM_Record.cpp.obj
+C:\MinGW\bin\ranlib.exe libRecordModule.a
