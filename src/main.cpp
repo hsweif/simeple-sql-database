@@ -26,7 +26,7 @@ void Test(){
         title.push_back(tmp);
         type.push_back(STR_TYPE);
     }
-    RM_Manager *rmg = new RM_Manager();
+    RM_Manager *rmg = new RM_Manager("test");
     RM_FileHandle *handler = new RM_FileHandle();
     handler->SetTitle(title);
     int recordSize = 2 * ITEM_LENGTH/4;
@@ -70,7 +70,7 @@ void Test(){
 }
 
 void test1(){
-    RM_Manager *rmg = new RM_Manager();
+    RM_Manager *rmg = new RM_Manager("test");
     RM_FileHandle *handler = new RM_FileHandle();
     rmg->createFile("helloworld1", 500);
     string test = rmg->openFile("helloworld1", *handler) ? "successfully opened" : "fail to open";

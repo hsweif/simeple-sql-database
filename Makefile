@@ -136,6 +136,19 @@ create/fast:
 .PHONY : create/fast
 
 #=============================================================================
+# Target rules for targets named show
+
+# Build rule for target.
+show: cmake_check_build_system
+	$(MAKE) -f CMakeFiles\Makefile2 show
+.PHONY : show
+
+# fast build rule for target.
+show/fast:
+	$(MAKE) -f CMakeFiles\show.dir\build.make CMakeFiles/show.dir/build
+.PHONY : show/fast
+
+#=============================================================================
 # Target rules for targets named use
 
 # Build rule for target.
@@ -268,6 +281,33 @@ src/main.cpp.s:
 	$(MAKE) -f CMakeFiles\main.dir\build.make CMakeFiles/main.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/show.obj: src/show.cpp.obj
+
+.PHONY : src/show.obj
+
+# target to build an object file
+src/show.cpp.obj:
+	$(MAKE) -f CMakeFiles\show.dir\build.make CMakeFiles/show.dir/src/show.cpp.obj
+.PHONY : src/show.cpp.obj
+
+src/show.i: src/show.cpp.i
+
+.PHONY : src/show.i
+
+# target to preprocess a source file
+src/show.cpp.i:
+	$(MAKE) -f CMakeFiles\show.dir\build.make CMakeFiles/show.dir/src/show.cpp.i
+.PHONY : src/show.cpp.i
+
+src/show.s: src/show.cpp.s
+
+.PHONY : src/show.s
+
+# target to generate assembly for a file
+src/show.cpp.s:
+	$(MAKE) -f CMakeFiles\show.dir\build.make CMakeFiles/show.dir/src/show.cpp.s
+.PHONY : src/show.cpp.s
+
 src/use.obj: src/use.cpp.obj
 
 .PHONY : src/use.obj
@@ -305,6 +345,7 @@ help:
 	@echo ... main
 	@echo ... rebuild_cache
 	@echo ... create
+	@echo ... show
 	@echo ... use
 	@echo ... drop
 	@echo ... RecordModule
@@ -318,6 +359,9 @@ help:
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s
+	@echo ... src/show.obj
+	@echo ... src/show.i
+	@echo ... src/show.s
 	@echo ... src/use.obj
 	@echo ... src/use.i
 	@echo ... src/use.s

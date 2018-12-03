@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+D:/git_projects/DBProject113b/src/drop.cpp
+iostream
+-
+string
+-
+CommandModule/dataBaseManager.h
+D:/git_projects/DBProject113b/src/CommandModule/dataBaseManager.h
+
+include/CommandModule/dataBaseManager.h
+dirent.h
+-
+iostream
+-
+string
+-
+string.h
+-
+stdio.h
+-
+sys/types.h
+-
+

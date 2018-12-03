@@ -79,6 +79,8 @@ use_EXTERNAL_OBJECTS =
 
 use.exe: CMakeFiles/use.dir/src/use.cpp.obj
 use.exe: CMakeFiles/use.dir/build.make
+use.exe: src/RecordModule/libRecordModule.a
+use.exe: src/IndexModule/libIndexModule.a
 use.exe: CMakeFiles/use.dir/linklibs.rsp
 use.exe: CMakeFiles/use.dir/objects1.rsp
 use.exe: CMakeFiles/use.dir/link.txt

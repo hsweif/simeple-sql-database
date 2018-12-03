@@ -179,7 +179,8 @@ clean: CMakeFiles/show.dir/clean
 # Target rules for target CMakeFiles/use.dir
 
 # All Build rule for target.
-CMakeFiles/use.dir/all:
+CMakeFiles/use.dir/all: src/RecordModule/CMakeFiles/RecordModule.dir/all
+CMakeFiles/use.dir/all: src/IndexModule/CMakeFiles/IndexModule.dir/all
 	$(MAKE) -f CMakeFiles\use.dir\build.make CMakeFiles/use.dir/depend
 	$(MAKE) -f CMakeFiles\use.dir\build.make CMakeFiles/use.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=D:\git_projects\DBProject113b\build\CMakeFiles --progress-num=19,20 "Built target use"
@@ -192,7 +193,7 @@ all: CMakeFiles/use.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/use.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start D:\git_projects\DBProject113b\build\CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start D:\git_projects\DBProject113b\build\CMakeFiles 12
 	$(MAKE) -f CMakeFiles\Makefile2 CMakeFiles/use.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start D:\git_projects\DBProject113b\build\CMakeFiles 0
 .PHONY : CMakeFiles/use.dir/rule

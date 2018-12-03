@@ -2,6 +2,7 @@ D:/git_projects/DBProject113b/CMakeFiles/edit_cache.dir
 D:/git_projects/DBProject113b/CMakeFiles/main.dir
 D:/git_projects/DBProject113b/CMakeFiles/rebuild_cache.dir
 D:/git_projects/DBProject113b/CMakeFiles/create.dir
+D:/git_projects/DBProject113b/CMakeFiles/show.dir
 D:/git_projects/DBProject113b/CMakeFiles/use.dir
 D:/git_projects/DBProject113b/CMakeFiles/drop.dir
 D:/git_projects/DBProject113b/src/RecordModule/CMakeFiles/RecordModule.dir

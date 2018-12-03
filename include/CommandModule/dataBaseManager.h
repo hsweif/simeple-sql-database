@@ -1,3 +1,5 @@
+#ifndef DB_MANAGER
+#define DB_MANAGER
 #include<dirent.h>
 #include<iostream>
 #include<string>
@@ -51,7 +53,7 @@ int showDB(char* dbName){
     while(entry=readdir(dir))
     {
     	if(strcmp(entry->d_name,".") != 0 && strcmp(entry->d_name,"..") != 0){
-    		printf("filename%d=%s\n",i,entry->d_name);
+    		printf("tablename%d=%s\n",i,entry->d_name);
 	    	i++;
     	}
 
@@ -59,3 +61,4 @@ int showDB(char* dbName){
     closeDB(dir);
     return 0;
 }
+#endif

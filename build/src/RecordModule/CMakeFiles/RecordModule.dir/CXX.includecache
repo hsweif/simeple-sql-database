@@ -72,18 +72,6 @@ string
 vector
 -
 
-../include/RecordModule/RM_FileScan.h
-RM_FileHandle.h
-../include/RecordModule/RM_FileHandle.h
-RM_Record.h
-../include/RecordModule/RM_Record.h
-RID.h
-../include/RecordModule/RID.h
-iostream
--
-vector
--
-
 ../include/RecordModule/RM_Manager.h
 bufmanager/BufPageManager.h
 ../include/RecordModule/bufmanager/BufPageManager.h
@@ -197,16 +185,6 @@ sys/stat.h
 -
 dirent.h
 -
-
-D:/git_projects/DBProject113b/src/RecordModule/RM_FileHandle.cpp
-RecordModule/RM_FileHandle.h
-D:/git_projects/DBProject113b/src/RecordModule/RecordModule/RM_FileHandle.h
-iostream
--
-
-D:/git_projects/DBProject113b/src/RecordModule/RM_FileScan.cpp
-RecordModule/RM_FileScan.h
-D:/git_projects/DBProject113b/src/RecordModule/RecordModule/RM_FileScan.h
 
 D:/git_projects/DBProject113b/src/RecordModule/RM_Manager.cpp
 RecordModule/RM_Manager.h
