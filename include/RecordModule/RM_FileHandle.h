@@ -32,7 +32,7 @@ private:
     BufPageManager *mBufpm;
 	BufType readBuf;
 	vector<string> title;
-	vector<uint> type;
+	vector<int> type;
 	bool isValidChar(uint c);
 
 public:
@@ -53,7 +53,7 @@ public:
     int PageNum() const {return pageCnt;}
     void SetTitle(vector<string> t);
     void PrintTitle();
-    void SetType(vector<uint> tp);
+    void SetType(vector<int> tp);
     void show();
 	int GetSlot(BufType page);
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)

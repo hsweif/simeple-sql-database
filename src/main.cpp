@@ -21,6 +21,10 @@ void Test(){
     vector<int> type;
     cout << "Please input 2 titles" << endl;
     string tmp;
+    /**
+     * Because we suppose all item is string now.
+     */
+    int recordSize = 2 * ITEM_LENGTH/4;
     for(int i = 0; i < 2; i ++) {
         cin >> tmp;
         title.push_back(tmp);
@@ -28,12 +32,12 @@ void Test(){
     }
     RM_Manager *rmg = new RM_Manager();
     RM_FileHandle *handler = new RM_FileHandle();
-    handler->SetTitle(title);
-    int recordSize = 2 * ITEM_LENGTH/4;
-    rmg->createFile("helloworld2", recordSize);
-    int cnt = 3;
-    RM_Record *record = new RM_Record(type);
+    // rmg->createFile("helloworld2", recordSize);
     string test = rmg->openFile("helloworld2", *handler) ? "successfully opened" : "fail to open";
+    int cnt = 3;
+    handler->SetTitle(title);
+    handler->SetType(type);
+    RM_Record *record = new RM_Record(type);
     cout << test << endl;
     RM_Record pData, nData;
     RID rid;
@@ -60,6 +64,7 @@ void Test(){
     }
     handler->DeleteRec(rid);
     RM_FileScan *fileScan = new RM_FileScan(type);
+    handler->PrintTitle();
     fileScan->OpenScan(*handler, 0, 0, 0);
     IM::IndexHandle *indexHandle = handler->indexHandle;
     // FIXME: Should not directly call in main
@@ -67,6 +72,7 @@ void Test(){
     string tmpstr = "aa";
     bpt::key_t kt((char*)tmpstr.data());
     indexHandle->SearchRange(tmpvec, kt, kt, 0, 0);
+    rmg->closeFile(*handler);
 }
 
 void test1(){

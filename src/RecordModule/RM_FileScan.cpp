@@ -16,7 +16,6 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int attrKey, int attrType, 
     int pageCount = fileHandle.PageNum();
     int page = 1, slot = 0;
     int cnt = 0;
-    cout << sum << endl;
     while(cnt < sum)
     {
         RID rid(page, slot);

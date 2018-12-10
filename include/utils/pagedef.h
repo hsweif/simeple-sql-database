@@ -17,7 +17,7 @@
 /**
  * 页首的保留信号量
  */
-#define HEAD_OFFSET 4
+#define HEAD_OFFSET 5
 /*
  * 页面字节数以2为底的指数
  */

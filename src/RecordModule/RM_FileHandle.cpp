@@ -27,6 +27,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	recordSum = firstPage[2];
 	pageCnt = firstPage[3];
 	colNum = firstPage[4];
+	cout << recordSize << " " << colNum << endl;
 	type.clear();
 	title.clear();
 	/**
@@ -285,17 +286,15 @@ int RM_FileHandle::RecordNum() const
 	return recordSum;
 }
 
-void RM_FileHandle::SetType(vector<uint> tp)
+void RM_FileHandle::SetType(vector<int> tp)
 {
 	type = tp;
 	colNum = tp.size();
-	updateHead();
 }
 
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
-	// updateHead();
     this->indexHandle = new IM::IndexHandle(title);
     // Use 0 as the main key
     cout << "check: " << t.size() << endl;
