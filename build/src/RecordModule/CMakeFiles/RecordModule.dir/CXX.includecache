@@ -15,6 +15,10 @@ string
 -
 fstream
 -
+sys/stat.h
+-
+errno.h
+-
 ../RecordModule/RM_Record.h
 ../include/RecordModule/RM_Record.h
 bpt.h
@@ -71,6 +75,28 @@ string
 -
 vector
 -
+cstdlib
+-
+fstream
+-
+sys/stat.h
+-
+stdlib.h
+-
+stdio.h
+-
+
+../include/RecordModule/RM_FileScan.h
+RM_FileHandle.h
+../include/RecordModule/RM_FileHandle.h
+RM_Record.h
+../include/RecordModule/RM_Record.h
+RID.h
+../include/RecordModule/RID.h
+iostream
+-
+vector
+-
 
 ../include/RecordModule/RM_Manager.h
 bufmanager/BufPageManager.h
@@ -97,6 +123,8 @@ RM_FileHandle.h
 ../include/RecordModule/RM_FileHandle.h
 RM_PageHead.h
 ../include/RecordModule/RM_PageHead.h
+sys/stat.h
+-
 
 ../include/RecordModule/RM_PageHead.h
 cstring
@@ -186,7 +214,23 @@ sys/stat.h
 dirent.h
 -
 
+D:/git_projects/DBProject113b/src/RecordModule/RM_FileHandle.cpp
+RecordModule/RM_FileHandle.h
+D:/git_projects/DBProject113b/src/RecordModule/RecordModule/RM_FileHandle.h
+iostream
+-
+
+D:/git_projects/DBProject113b/src/RecordModule/RM_FileScan.cpp
+RecordModule/RM_FileScan.h
+D:/git_projects/DBProject113b/src/RecordModule/RecordModule/RM_FileScan.h
+
 D:/git_projects/DBProject113b/src/RecordModule/RM_Manager.cpp
 RecordModule/RM_Manager.h
 D:/git_projects/DBProject113b/src/RecordModule/RecordModule/RM_Manager.h
+
+D:/git_projects/DBProject113b/src/RecordModule/RM_Record.cpp
+../include/RecordModule/RM_Record.h
+D:/git_projects/DBProject113b/src/include/RecordModule/RM_Record.h
+iostream
+-
 

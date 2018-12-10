@@ -15,6 +15,10 @@ string
 -
 fstream
 -
+sys/stat.h
+-
+errno.h
+-
 ../RecordModule/RM_Record.h
 ../include/RecordModule/RM_Record.h
 bpt.h
@@ -71,6 +75,16 @@ string
 -
 vector
 -
+cstdlib
+-
+fstream
+-
+sys/stat.h
+-
+stdlib.h
+-
+stdio.h
+-
 
 ../include/RecordModule/RM_FileScan.h
 RM_FileHandle.h
@@ -109,6 +123,8 @@ RM_FileHandle.h
 ../include/RecordModule/RM_FileHandle.h
 RM_PageHead.h
 ../include/RecordModule/RM_PageHead.h
+sys/stat.h
+-
 
 ../include/RecordModule/RM_PageHead.h
 cstring
