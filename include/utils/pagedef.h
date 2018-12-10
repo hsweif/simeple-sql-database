@@ -14,6 +14,10 @@
  * 一个页面中的整数个数
  */
 #define PAGE_INT_NUM 2048
+/**
+ * 页首的保留信号量
+ */
+#define HEAD_OFFSET 5
 /*
  * 页面字节数以2为底的指数
  */
