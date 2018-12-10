@@ -9,10 +9,10 @@ IndexHandle::IndexHandle()
     indexPath = "../database/index/";
 }
 
-IndexHandle::IndexHandle(vector<string> tt)
+IndexHandle::IndexHandle(vector<string> tt, string idxPath)
 {
     IndexHandle();
-    indexPath = "../database/index/";
+    indexPath = idxPath;
     title = tt;
     colNum = title.size();
     for(int i = 0; i < colNum; i ++) {
@@ -38,6 +38,8 @@ int IndexHandle::CreateIndex(char *indexName, int pos)
     indexFile.open(indexFileName, ios::in);
     if(!indexFile) {
         cout << "Index file doesn't exist" << endl;
+        indexFile.open(indexFileName, ios::out);
+        indexFile.close();
     }
 
     cout << "index path: " << indexFileName << endl;

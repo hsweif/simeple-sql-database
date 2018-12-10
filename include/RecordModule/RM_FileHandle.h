@@ -10,6 +10,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cstdlib>
+#include <fstream>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 
 using namespace bpt;
 using namespace std;
@@ -31,6 +37,7 @@ private:
     MyBitMap* recordBitMap;//current reading page's map
     BufPageManager *mBufpm;
 	BufType readBuf;
+	string indexPath;
 	vector<string> title;
 	vector<int> type;
 	bool isValidChar(uint c);
@@ -53,9 +60,12 @@ public:
     int PageNum() const {return pageCnt;}
     void SetTitle(vector<string> t);
     void PrintTitle();
+    void SetFilePath();
     void SetType(vector<int> tp);
+    vector<int> GetType();
     void show();
 	int GetSlot(BufType page);
+	static int CreateDir(string dirPath);
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
 

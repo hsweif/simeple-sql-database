@@ -24,12 +24,14 @@ int RM_Manager::createFile(const char* name, int recordSize) {
 
 bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     char fileName[50];
+    char dirSym[10] = "_index/";
     strcpy(fileName, this->dataPath);
     strcat(fileName, name);
-    // FIXME: index file 现在要手动创建
-    char txt[7] = ".index";
     bool result = this->fileManager->openFile(fileName, this->fileID);
-    strcat(fileName, txt);
+    strcat(fileName, dirSym);
+    string idx(fileName);
+    RM_FileHandle::CreateDir(idx);
+    // FIXME: index file 现在要手动创建
     fileHandle.init(this->fileID,this->bufPageManager, fileName);
     return result;
 }

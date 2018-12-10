@@ -16,6 +16,7 @@
 #include "../fileio/FileManager.h"
 #include "RM_FileHandle.h"
 #include "RM_PageHead.h"
+#include <sys/stat.h>
 
 using namespace std;
 class RM_Manager{
