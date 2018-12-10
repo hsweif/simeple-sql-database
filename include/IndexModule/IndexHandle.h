@@ -5,6 +5,9 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sys/stat.h>
+#include <errno.h>
+
 #include "../RecordModule/RM_Record.h"
 
 #include "bpt.h"
@@ -36,7 +39,7 @@ private:
     string indexPath;
 public:
     IndexHandle();
-    IndexHandle(vector<string> tt);
+    IndexHandle(vector<string> tt, string idxPath);
     int CreateIndex(char *indexName, int pos);
     int DeleteIndex(char *indexName, int pos);
     int InsertRecord(RM_Record &record);

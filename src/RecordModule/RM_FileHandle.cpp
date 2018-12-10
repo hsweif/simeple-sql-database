@@ -11,7 +11,8 @@ RM_FileHandle::RM_FileHandle() {
 	}
 
 }
-
+RM_FileHandle::~RM_FileHandle() {
+}
 RM_FileHandle::RM_FileHandle(int id, int sz)
 {
 	this->fileId = id;
@@ -19,6 +20,7 @@ RM_FileHandle::RM_FileHandle(int id, int sz)
 }	
 int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 {
+	this->indexPath = string(indexName);
 	fileId = _fileId;
 	mBufpm = _bufpm;
 	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
@@ -33,12 +35,14 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	/**
 	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
 	 */
+	cout << "init" << endl;
 	for(int i = 0; i < colNum; i ++) {
 		type.push_back(firstPage[HEAD_OFFSET+i]);
-		BufType colName = &firstPage[HEAD_OFFSET+i+colNum];
+		BufType colName = &firstPage[HEAD_OFFSET+(i*(ITEM_LENGTH/4))+colNum];
 		uint mask = (1<<8) - 1;
 		char c[16];
 		int cnt = 0;
+		memset(c, 0, sizeof(c));
 		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
 		    for(int shift = 0; shift < 32; shift += 8) {
 		    	uint num = ((colName[k] >> shift) & mask);
@@ -52,6 +56,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 			}
 		}
 		string str(c);
+		cout << str << endl;
 		title.push_back(str);
 	}
 	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
@@ -67,6 +72,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 		recordMapSize = recordPP/32+1;
 	}
 	recordUintMap = new uint[recordMapSize];
+	cout << "Length: " << colNum << " " << type.size() << endl;
 	return 0;
 }
 
@@ -91,8 +97,9 @@ int RM_FileHandle::updateHead() {
 	for(int i = 0; i < colNum; i ++) {
 	    readBuf[HEAD_OFFSET+i] = type[i];
 		int cnt = 0, l = title[i].length();
+		cout << "test " << title[i] << l << endl;
 		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
-		    int pos = HEAD_OFFSET + i + colNum + k;
+		    int pos = HEAD_OFFSET + colNum + (i*(ITEM_LENGTH/4)) + k;
 			readBuf[pos] = 0;
 		    for(int shift = 0; shift < 32; shift += 8) {
 		        if(cnt < l) {
@@ -100,6 +107,7 @@ int RM_FileHandle::updateHead() {
                     cnt ++;
 				}
 			}
+			// cout << "pos: " << pos << "/" << readBuf[pos] << endl;
 		}
 	}
 	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
@@ -128,6 +136,11 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	}
 	rec.SetRecord(pData, recordSize, rid);
 	return 0;
+}
+
+vector<int> RM_FileHandle::GetType()
+{
+	return this->type;
 }
 
 int RM_FileHandle::UpdateRec(const RM_Record &rec) {
@@ -211,7 +224,7 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 	bufLastIndex = bufIndex;
 
 	 // TODO: support different key value
-	 this->indexHandle->InsertRecord(pData);
+	 // this->indexHandle->InsertRecord(pData);
 	 return 0;
 }
 
@@ -295,12 +308,8 @@ void RM_FileHandle::SetType(vector<int> tp)
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
-    this->indexHandle = new IM::IndexHandle(title);
-    // Use 0 as the main key
-    cout << "check: " << t.size() << endl;
-    cout << title[0] << endl;
+    this->indexHandle = new IM::IndexHandle(title, this->indexPath);
     this->indexHandle->CreateIndex((char*)title[0].data(), 0);
-
 }
 
 void RM_FileHandle::PrintTitle()
@@ -310,4 +319,10 @@ void RM_FileHandle::PrintTitle()
 		cout << title[i] << " | ";
 	}
 	cout << endl;
+}
+
+int RM_FileHandle::CreateDir(string dirPath)
+{
+   	string command = "mkdir -p " + dirPath;
+    system(command.c_str());
 }

@@ -12,6 +12,18 @@ using namespace std;
 int current = 0;
 int tt = 0;
 unsigned char h[61];
+int checkType(string type) {
+	if (type == "int")
+		return INT_TYPE;
+	else if (type == "string")
+		return STR_TYPE;
+	else if (type == "float")
+		return FLOAT_TYPE;
+	else if (type == "description")
+		return DESCRIPTION;
+	else
+		return ERR_TYPE;
+}
 int main(int argc, char* argv[]) {
 	if (argc != 3) {
 		cout << "input error" << endl;
@@ -41,41 +53,93 @@ int main(int argc, char* argv[]) {
 	while (command != "exit") {
 		char *c = (char*)command.c_str();
 		p = strtok(c, " ");
-		if(!p){
+		if (!p) {
 			printf("input command error\n");
 			getline(cin, command);
 			continue;
 		}
 		commandWord[0] = p;
 		p = strtok(NULL, " ");
-		if(!p){
+		if (!p) {
 			printf("input command error\n");
 			getline(cin, command);
 			continue;
-		}		
+		}
 		commandWord[1] = p;
 		p = strtok(NULL, "");//all of last
-		if(!p){
+		if (!p) {
 			printf("input command error\n");
 			getline(cin, command);
 			continue;
 		}
 		commandWord[2] = p;
 		printf("%s\n", p);
-		if(commandWord[0] == "create" && commandWord[1] == "TABLE"){
-			rmg->createFile(commandWord[2].c_str(),10);
+		if (commandWord[0] == "create" && commandWord[1] == "TABLE") {
+			vector<string> title;
+			vector<int> varType;
+			const char *sep = ", ";
+			//string str = "asd(int a,string b,int c,bool d)";
+			int pos1 = commandWord[2].find("(");
+			int pos2 = commandWord[2].find(")");
+			string tableName = commandWord[2].substr(0, pos1);
+			//cout << tableName << endl;
+			string str1 = commandWord[2].substr(pos1 + 1, pos2 - pos1 - 1);
+			//cout << str1 << endl;
+			char *p;
+			char *s = (char *)str1.c_str();
+			int cnt = 0;
+			int recordSize = 0;
+			p = strtok(s, sep);
+			bool innerError = false;
+			while (p) {
+				//printf("%s\n", p);
+				if (cnt % 2 == 0) {
+					title.push_back((string)p);
+				}
+				else {
+					int t = checkType((string)p);
+					if (t == ERR_TYPE) {
+						printf("type error:%s\n", p);
+						innerError = true;
+						break;
+					}
+					else if (t == INT_TYPE || t == FLOAT_TYPE)
+						recordSize++;
+					else if (t == STR_TYPE)
+						recordSize += ITEM_LENGTH / 4;
+					else if (t == DESCRIPTION)
+						recordSize += DESCRIPT_LENGTH / 4;
+					varType.push_back(t);
+				}
+				cnt++;
+				p = strtok(NULL, sep);
+			}
+			if (innerError) {
+				getline(cin, command);
+				continue;
+			}
+			//analyseCommand(commandWord[2]);
+			rmg->createFile(tableName.c_str(), recordSize);
+			RM_FileHandle *handler = new RM_FileHandle();
+			rmg->openFile(tableName.c_str(), *handler);
+			handler->SetType(varType);
+			handler->SetTitle(title);
+			handler->PrintTitle();
+			rmg->closeFile(*handler);
+			delete handler;
 		}
-		else if(commandWord[0] == "drop" && commandWord[1] == "TABLE"){
+		else if (commandWord[0] == "drop" && commandWord[1] == "TABLE") {
 			rmg->deleteFile(commandWord[2].c_str());
-		}		
-		else if(commandWord[0] == "show" && commandWord[1] == "TABLE"){
-			if(commandWord[2] != "ALL")
+		}
+		else if (commandWord[0] == "show" && commandWord[1] == "TABLE") {
+			if (commandWord[2] != "ALL")
 				rmg->showFile(commandWord[2].c_str());
 			else
 				rmg->showAllFile();
-		}	
+		}
 		getline(cin, command);
 	}
 	closeDB(dir);
 	return 0;
 }
+

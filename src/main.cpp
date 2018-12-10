@@ -35,8 +35,10 @@ void Test(){
     // rmg->createFile("helloworld2", recordSize);
     string test = rmg->openFile("helloworld2", *handler) ? "successfully opened" : "fail to open";
     int cnt = 3;
+    handler->PrintTitle();
     handler->SetTitle(title);
-    handler->SetType(type);
+    // handler->SetType(type);
+    type = handler->GetType();
     RM_Record *record = new RM_Record(type);
     cout << test << endl;
     RM_Record pData, nData;

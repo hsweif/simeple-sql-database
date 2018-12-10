@@ -11,6 +11,7 @@
 #define INT_TYPE 0
 #define STR_TYPE 1
 #define FLOAT_TYPE 2
+#define ERR_TYPE -1
 #define DESCRIPTION 3
 #define ITEM_LENGTH 16
 #define DESCRIPT_LENGTH 256

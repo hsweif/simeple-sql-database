@@ -30,13 +30,15 @@ int RM_Manager::createFile(const char* name, int recordSize) {
 
 bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     char fileName[50];
+    char dirSym[10] = "_index/";
     strcpy(fileName, this->dataPath);
     strcat(fileName, name);
-    // FIXME: index file 现在要手动创建
-    char txt[7] = ".index";
     bool result = this->fileManager->openFile(fileName, this->fileID);
-    strcat(fileName, txt);
-    fileHandle.init(this->fileID, this->bufPageManager, fileName);
+    strcat(fileName, dirSym);
+    string idx(fileName);
+    RM_FileHandle::CreateDir(idx);
+    // FIXME: index file 现在要手动创建
+    fileHandle.init(this->fileID,this->bufPageManager, fileName);
     return result;
 }
 
@@ -56,7 +58,12 @@ int RM_Manager::deleteFile(const char* name) {
 
 void RM_Manager::showFile(const char* name) {
     //TODO:show status
+    RM_FileHandle *handler = new RM_FileHandle();
+    openFile(name,*handler);
     printf("%s\n", name);
+    handler->PrintTitle();
+    closeFile(*handler);
+    delete handler;
 }
 
 void RM_Manager::showAllFile() {
