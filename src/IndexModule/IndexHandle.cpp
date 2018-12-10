@@ -83,18 +83,27 @@ int IndexHandle::InsertRecord(RM_Record &record)
     }
 }
 
-int IndexHandle::SearchRange(vector<RM_Record> &result, bpt::key_t &left, bpt::key_t &right, int comOP, int col)
+int IndexHandle::SearchRange(vector<RID> &result, bpt::key_t &left, bpt::key_t &right, int comOP, int col)
 {
     // TODO: Undone.
     // FIXME: Temporarily set to 0
     col = 0;
-    vector<RM_Record> records;
     RID rid;
+    RID *searched;
     list<node>::iterator iter = index.begin();
     for(int i = 0; i < colNum; i ++)
     {
-        if(isIndex[i])
+        if(i == col && isIndex[i])
         {
+            if(comOP == SMALLER)
+            {
+
+            }
+            break;
+        }
+        else if(isIndex[i])
+        {
+            /*
             string test = "dd";
             bpt::key_t kt((char*)test.data());
             if(iter->bpTree->search(kt, &rid) == -1) {
@@ -107,6 +116,7 @@ int IndexHandle::SearchRange(vector<RM_Record> &result, bpt::key_t &left, bpt::k
             rid.GetSlotNum(y);
             //TODO: 增加透过RID直接找到Record的功能
             cout << "result test: " << x << " " << y << endl;
+             */
             iter ++;
         }
     }

@@ -17,21 +17,98 @@ RM_FileHandle::RM_FileHandle(int id, int sz)
 	this->fileId = id;
 	this->recordSize = sz;
 }	
+int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
+{
+	fileId = _fileId;
+	mBufpm = _bufpm;
+	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
+	recordSize = firstPage[0];
+	recordPP = firstPage[1];
+	recordSum = firstPage[2];
+	pageCnt = firstPage[3];
+	colNum = firstPage[4];
+	type.clear();
+	title.clear();
+	/**
+	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
+	 */
+	for(int i = 0; i < colNum; i ++) {
+		type.push_back(firstPage[HEAD_OFFSET+i]);
+		BufType colName = &firstPage[HEAD_OFFSET+i+colNum];
+		uint mask = (1<<8) - 1;
+		char c[16];
+		int cnt = 0;
+		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
+		    for(int shift = 0; shift < 32; shift += 8) {
+		    	uint num = ((colName[k] >> shift) & mask);
+				if(isValidChar(num)) {
+					c[cnt] = (char)num;
+					cnt ++;
+				}
+				else {
+					break;
+				}
+			}
+		}
+		string str(c);
+		title.push_back(str);
+	}
+	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
+	pageUintMap = new uint[PAGE_INT_NUM - offset];
+	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
+		pageUintMap[i] = firstPage[i + offset];
+	}
+	pageBitMap = new MyBitMap((PAGE_INT_NUM - offset) << 5,pageUintMap);
+	if(recordPP%32 == 0) {
+		recordMapSize = recordPP/32;
+	}
+	else {
+		recordMapSize = recordPP/32+1;
+	}
+	recordUintMap = new uint[recordMapSize];
+	return 0;
+}
+
+bool RM_FileHandle::isValidChar(uint c)
+{
+	if(c >= 32 && c <= 124)
+		return true;
+	else
+		return false;
+}
 
 int RM_FileHandle::updateHead() {
 	BufType readBuf = this->mBufpm->getPage(this->fileId, 0, firstPageBufIndex);
 	readBuf[0] = recordSize;
 	readBuf[1] = recordPP;
-	cout << "PP" << recordPP << endl;
 	readBuf[2] = recordSum;
-	cout << "sum" << recordSum << endl;
 	readBuf[3] = pageCnt;
-	cout << "Cnt" << pageCnt << endl;
-	for (int i = 0; i < PAGE_INT_NUM - 4; i++) {
-		readBuf[i + 4] = pageUintMap[i];
+	readBuf[4] = colNum;
+	/**
+	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
+	 */
+	for(int i = 0; i < colNum; i ++) {
+	    readBuf[HEAD_OFFSET+i] = type[i];
+		int cnt = 0, l = title[i].length();
+		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
+		    int pos = HEAD_OFFSET + i + colNum + k;
+			readBuf[pos] = 0;
+		    for(int shift = 0; shift < 32; shift += 8) {
+		        if(cnt < l) {
+                    readBuf[pos] += ((uint)title[i][cnt] << shift);
+                    cnt ++;
+				}
+			}
+		}
+	}
+	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
+	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
+		readBuf[i + offset] = pageUintMap[i];
 	}
 	this->mBufpm->markDirty(firstPageBufIndex);
+	return 0;
 }
+
 
 int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 {
@@ -85,27 +162,7 @@ int RM_FileHandle::UpdateRec(const RM_Record &rec) {
 	return 0;
 }
 
-int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
-{
-	fileId = _fileId;
-	mBufpm = _bufpm;
-	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
-	recordSize = firstPage[0];
-	recordPP = firstPage[1];
-	recordSum = firstPage[2];
-	pageCnt = firstPage[3];
-	pageUintMap = new uint[PAGE_INT_NUM - 4];
-	for (int i = 0; i < PAGE_INT_NUM - 4; i++) {
-		pageUintMap[i] = firstPage[i + 4];
-	}
-	pageBitMap = new MyBitMap((PAGE_INT_NUM-4)<<5,pageUintMap);
-	if(recordPP%32 == 0)
-		recordMapSize = recordPP/32;
-	else
-		recordMapSize = recordPP/32+1;
-	recordUintMap = new uint[recordMapSize];
-	return 0;
-}
+
 
 int RM_FileHandle::InsertRec(RM_Record& pData){
 	//check size
@@ -228,11 +285,30 @@ int RM_FileHandle::RecordNum() const
 	return recordSum;
 }
 
+void RM_FileHandle::SetType(vector<uint> tp)
+{
+	type = tp;
+	colNum = tp.size();
+	updateHead();
+}
+
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
+	colNum = t.size();
+	// updateHead();
     this->indexHandle = new IM::IndexHandle(title);
     // Use 0 as the main key
     cout << "check: " << t.size() << endl;
     cout << title[0] << endl;
     this->indexHandle->CreateIndex((char*)title[0].data(), 0);
+
+}
+
+void RM_FileHandle::PrintTitle()
+{
+	int sz = title.size();
+	for(int i = 0; i < sz; i ++) {
+		cout << title[i] << " | ";
+	}
+	cout << endl;
 }

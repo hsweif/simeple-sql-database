@@ -63,7 +63,7 @@ void Test(){
     fileScan->OpenScan(*handler, 0, 0, 0);
     IM::IndexHandle *indexHandle = handler->indexHandle;
     // FIXME: Should not directly call in main
-    vector<RM_Record> tmpvec;
+    vector<RID> tmpvec;
     string tmpstr = "aa";
     bpt::key_t kt((char*)tmpstr.data());
     indexHandle->SearchRange(tmpvec, kt, kt, 0, 0);

@@ -13,6 +13,7 @@
 
 using namespace bpt;
 using namespace std;
+
 class RM_FileHandle {
 private:
     int fileId;
@@ -23,6 +24,7 @@ private:
     int recordMapSize;
 	int firstPageBufIndex;
 	int bufLastIndex = -1;
+	int colNum;
 	uint* pageUintMap;
 	uint* recordUintMap;
     MyBitMap* pageBitMap;
@@ -30,9 +32,10 @@ private:
     BufPageManager *mBufpm;
 	BufType readBuf;
 	vector<string> title;
+	vector<uint> type;
+	bool isValidChar(uint c);
 
 public:
-    // FIXME: should be private
 	IM::IndexHandle *indexHandle;
     RM_FileHandle();
     RM_FileHandle(int id, int sz);
@@ -49,8 +52,11 @@ public:
     int RecordNum() const;
     int PageNum() const {return pageCnt;}
     void SetTitle(vector<string> t);
+    void PrintTitle();
+    void SetType(vector<uint> tp);
     void show();
 	int GetSlot(BufType page);
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
+
 #endif
