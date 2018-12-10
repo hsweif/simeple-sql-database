@@ -34,12 +34,14 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	/**
 	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
 	 */
+	cout << "init" << endl;
 	for(int i = 0; i < colNum; i ++) {
 		type.push_back(firstPage[HEAD_OFFSET+i]);
 		BufType colName = &firstPage[HEAD_OFFSET+(i*(ITEM_LENGTH/4))+colNum];
 		uint mask = (1<<8) - 1;
 		char c[16];
 		int cnt = 0;
+		memset(c, 0, sizeof(c));
 		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
 		    for(int shift = 0; shift < 32; shift += 8) {
 		    	uint num = ((colName[k] >> shift) & mask);
@@ -53,6 +55,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 			}
 		}
 		string str(c);
+		cout << str << endl;
 		title.push_back(str);
 	}
 	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
@@ -93,7 +96,7 @@ int RM_FileHandle::updateHead() {
 	for(int i = 0; i < colNum; i ++) {
 	    readBuf[HEAD_OFFSET+i] = type[i];
 		int cnt = 0, l = title[i].length();
-		cout << "test" << title[i] << endl;
+		cout << "test " << title[i] << l << endl;
 		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
 		    int pos = HEAD_OFFSET + colNum + (i*(ITEM_LENGTH/4)) + k;
 			readBuf[pos] = 0;
@@ -103,6 +106,7 @@ int RM_FileHandle::updateHead() {
                     cnt ++;
 				}
 			}
+			// cout << "pos: " << pos << "/" << readBuf[pos] << endl;
 		}
 	}
 	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
