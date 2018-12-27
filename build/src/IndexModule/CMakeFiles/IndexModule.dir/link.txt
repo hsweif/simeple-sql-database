@@ -1,2 +1,0 @@
-C:\MinGW\bin\ar.exe qc libIndexModule.a  CMakeFiles/IndexModule.dir/IndexHandle.cpp.obj CMakeFiles/IndexModule.dir/bpt.cpp.obj
-C:\MinGW\bin\ranlib.exe libIndexModule.a
