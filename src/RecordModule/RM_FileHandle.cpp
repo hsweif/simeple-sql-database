@@ -194,7 +194,11 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 
 int RM_FileHandle::SetMainKey(int key)
 {
+	if(key < 0 || key > colNum) {
+		return 1;
+	}
 	mainKey = (uint)key;
+	return 0;
 }
 
 vector<int> RM_FileHandle::GetType()

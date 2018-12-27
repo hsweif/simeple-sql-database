@@ -124,7 +124,7 @@ int bplus_tree::search_range(key_t *left, const key_t &right,
     return i;
 }
 
-int bplus_tree::remove(const key_t& key)
+int bplus_tree::remove(const key_t& key, value_t value)
 {
     internal_node_t parent;
     leaf_node_t leaf;
@@ -147,6 +147,13 @@ int bplus_tree::remove(const key_t& key)
 
     // delete the key
     record_t *to_delete = find(leaf, key);
+    //TODO: Should be checked carefully
+    while(to_delete->value != value) {
+        if(to_delete->key != key) {
+            return -1;
+        }
+        to_delete ++;
+    }
     std::copy(to_delete + 1, end(leaf), to_delete);
     leaf.n--;
 

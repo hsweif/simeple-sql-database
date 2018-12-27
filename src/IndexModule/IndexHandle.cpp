@@ -93,7 +93,7 @@ int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record)
                 iter->bpTree->insert(kt, rid);
             }
             else if(actionType == DELETE) {
-                iter->bpTree->remove(kt);
+                iter->bpTree->remove(kt, rid);
             }
             else if(actionType == UPDATE) {
                 iter->bpTree->update(kt, rid);

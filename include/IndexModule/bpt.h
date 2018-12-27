@@ -77,7 +77,7 @@ public:
     int search(const key_t& key, value_t *value) const;
     int search_range(key_t *left, const key_t &right,
                      value_t *values, size_t max, bool *next = NULL) const;
-    int remove(const key_t& key);
+    int remove(const key_t& key, value_t value);
     int insert(const key_t& key, value_t value);
     int update(const key_t& key, value_t value);
     meta_t get_meta() const {

@@ -17,5 +17,6 @@ public:
 	BufType Serialize();
 	int Deserialize(BufType buf);
 	void show();
+	bool operator != (const RID &b);
 };
 #endif

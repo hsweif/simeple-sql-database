@@ -67,6 +67,7 @@ public:
     void PrintTitle();
     void SetFilePath();
     void SetType(vector<int> tp);
+	int SetMainKey(int key);
     vector<int> GetType();
     void show();
 	int GetSlot(BufType page);
