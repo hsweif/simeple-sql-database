@@ -73,7 +73,11 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 		}
 	}
 
+	// Below is for main key:
 	offset += nullSectLength;
+	mainKey = (uint)firstPage[offset];
+
+	offset ++;
 	pageUintMap = new uint[PAGE_INT_NUM - offset];
 	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
 		pageUintMap[i] = firstPage[i + offset];
@@ -156,7 +160,11 @@ int RM_FileHandle::updateHead() {
 		readBuf[i + offset] = curNum;
 	}
 
+	// Below is for main key:
 	offset += nullSectLength;
+	readBuf[offset] = mainKey;
+
+	offset ++;
 	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
 		readBuf[i + offset] = pageUintMap[i];
 	}
@@ -182,6 +190,11 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	}
 	rec.SetRecord(pData, recordSize, rid);
 	return 0;
+}
+
+int RM_FileHandle::SetMainKey(int key)
+{
+	mainKey = (uint)key;
 }
 
 vector<int> RM_FileHandle::GetType()

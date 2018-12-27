@@ -27,6 +27,7 @@ private:
     int recordPP;
     int recordSum;
     int pageCnt;
+    uint mainKey;
     int recordMapSize;
 	int firstPageBufIndex;
 	int bufLastIndex = -1;
@@ -60,6 +61,8 @@ public:
     int UpdateRec(RM_Record &rec);
     int RecordNum() const;
     int PageNum() const {return pageCnt;}
+    int SetMainKey();
+    int MainKey() const {return mainKey;}
     void SetTitle(vector<string> t);
     void PrintTitle();
     void SetFilePath();
