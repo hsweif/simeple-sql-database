@@ -71,9 +71,10 @@ void Test(){
     IM::IndexHandle *indexHandle = handler->indexHandle;
     // FIXME: Should not directly call in main
     vector<RID> tmpvec;
-    string tmpstr = "aa";
-    bpt::key_t kt((char*)tmpstr.data());
-    indexHandle->SearchRange(tmpvec, kt, kt, 0, 0);
+    char *left = "aa";
+    char *right = "cc";
+    indexHandle->SearchRange(tmpvec, left, right, SMALLER, 0);
+    printf("Result length: %d\n", tmpvec.size());
     rmg->closeFile(*handler);
 }
 

@@ -18,6 +18,17 @@ IndexHandle::IndexHandle(vector<string> tt, string idxPath)
     for(int i = 0; i < colNum; i ++) {
         isIndex.push_back(false);
     }
+    // Temporarily
+    // SetIndex(0, true);
+}
+
+int IndexHandle::SetIndex(int pos, bool value)
+{
+    if(pos >= isIndex.size()) {
+        return 1;
+    }
+    isIndex[pos] = value;
+    return 0;
 }
 
 int IndexHandle::CreateIndex(char *indexName, int pos)
@@ -85,43 +96,39 @@ int IndexHandle::InsertRecord(RM_Record &record)
     }
 }
 
-int IndexHandle::SearchRange(vector<RID> &result, bpt::key_t &left, bpt::key_t &right, int comOP, int col)
+int IndexHandle::SearchRange(vector<RID> &result, char *leftValue, char *rightValue, int comOP, int col)
 {
     // TODO: Undone.
     // FIXME: Temporarily set to 0
-    col = 0;
-    RID rid;
     RID *searched;
-    list<node>::iterator iter = index.begin();
+    result.clear();
+    bpt::key_t left(leftValue);
+    bpt::key_t right(rightValue);
+    int resultNum = 0;
+    auto iter = index.begin();
     for(int i = 0; i < colNum; i ++)
     {
         if(i == col && isIndex[i])
         {
-            if(comOP == SMALLER)
-            {
-
+            bpt::bplus_tree *indexTree = iter->bpTree;
+            if(comOP == SMALLER) {
+                resultNum = indexTree->search_range(&left, right, searched, MAX_RESULT);
+            }
+            else if(comOP == LARGER) {
+                resultNum = indexTree->search_range(&right, left, searched, MAX_RESULT);
             }
             break;
         }
-        else if(isIndex[i])
-        {
-            /*
-            string test = "dd";
-            bpt::key_t kt((char*)test.data());
-            if(iter->bpTree->search(kt, &rid) == -1) {
-                cout << "fail to search: " << test << endl;
-            } else{
-                cout << "success to search: " << test << endl;
-            }
-            int x = 0, y = 0;
-            rid.GetPageNum(x);
-            rid.GetSlotNum(y);
-            //TODO: 增加透过RID直接找到Record的功能
-            cout << "result test: " << x << " " << y << endl;
-             */
+        else if(isIndex[i]) {
             iter ++;
         }
     }
+
+    for(int i = 0; i < resultNum; i ++) {
+        result.push_back(searched[i]);
+    }
+
+    return 0;
 }
 
 

@@ -17,6 +17,9 @@ using namespace std;
 
 namespace IM{
 #define SMALLER 0
+#define LARGER 1
+#define MAX_RESULT 1000
+
 struct node
 {
     string item;
@@ -43,7 +46,8 @@ public:
     int CreateIndex(char *indexName, int pos);
     int DeleteIndex(char *indexName, int pos);
     int InsertRecord(RM_Record &record);
-    int SearchRange(vector<RID> &result, bpt::key_t &left, bpt::key_t &right, int comOP, int col);
+    int SetIndex(int pos, bool value = true);
+    int SearchRange(vector<RID> &result, char* left, char* right, int comOP, int col);
 };
 
 }
