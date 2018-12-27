@@ -222,9 +222,9 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
 
-	 // TODO: support different key value
-	 // this->indexHandle->InsertRecord(pData);
-	 return 0;
+	// TODO: support different key value
+	this->indexHandle->InsertRecord(pData);
+	return 0;
 }
 
 int RM_FileHandle::DeleteRec(const RID &rid) {
