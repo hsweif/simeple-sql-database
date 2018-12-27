@@ -59,7 +59,21 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 		cout << str << endl;
 		title.push_back(str);
 	}
+	// TODO: Add support for null key
+	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
 	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
+	allowNull = new bool[colNum];
+	for(int i = 0, cnt = 0; i < nullSectLength && cnt < colNum; i ++)
+	{
+		uint curNum = (uint)firstPage[i+offset];
+		for(int shift = 0; shift < 32 && cnt < colNum; shift ++)
+		{
+			allowNull[cnt] = (bool)((curNum & (1 << shift)) >> shift);
+			cnt ++;
+		}
+	}
+
+	offset += nullSectLength;
 	pageUintMap = new uint[PAGE_INT_NUM - offset];
 	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
 		pageUintMap[i] = firstPage[i + offset];
@@ -84,13 +98,31 @@ bool RM_FileHandle::isValidChar(uint c)
 		return false;
 }
 
+/**
+ * This function is used to set limit on null value for each column
+ * @param nullInfo A bool array that contains length member for limitation.
+ * @param length Length. Should be equal to column number.
+ * @return
+ */
+int RM_FileHandle::SetNullInfo(bool *nullInfo, int length)
+{
+    if(length != colNum) {
+    	return 1;
+	}
+	allowNull = new bool[length];
+    for(int i = 0; i < length; i ++) {
+    	allowNull[i] = nullInfo[i];
+	}
+	return 0;
+}
+
 int RM_FileHandle::updateHead() {
 	BufType readBuf = this->mBufpm->getPage(this->fileId, 0, firstPageBufIndex);
-	readBuf[0] = recordSize;
-	readBuf[1] = recordPP;
-	readBuf[2] = recordSum;
-	readBuf[3] = pageCnt;
-	readBuf[4] = colNum;
+	readBuf[0] = (uint)recordSize;
+	readBuf[1] = (uint)recordPP;
+	readBuf[2] = (uint)recordSum;
+	readBuf[3] = (uint)pageCnt;
+	readBuf[4] = (uint)colNum;
 	/**
 	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
 	 */
@@ -111,6 +143,20 @@ int RM_FileHandle::updateHead() {
 		}
 	}
 	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
+	// Null section
+	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
+	for(int i = 0, cnt = 0; i < nullSectLength && cnt < colNum; i ++)
+	{
+		uint curNum = 0;
+		for(int shift = 0; shift < 32 && cnt < colNum; shift ++)
+		{
+			curNum += ((int)allowNull[cnt] << shift);
+			cnt ++;
+		}
+		readBuf[i + offset] = curNum;
+	}
+
+	offset += nullSectLength;
 	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
 		readBuf[i + offset] = pageUintMap[i];
 	}
@@ -143,7 +189,7 @@ vector<int> RM_FileHandle::GetType()
 	return this->type;
 }
 
-int RM_FileHandle::UpdateRec(const RM_Record &rec) {
+int RM_FileHandle::UpdateRec(RM_Record &rec) {
 	RID rid;
 	rec.GetRid(rid);
 	int page, slot;
@@ -173,6 +219,8 @@ int RM_FileHandle::UpdateRec(const RM_Record &rec) {
 	}
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
+	// TODO: Update the index
+	this->indexHandle->IndexAction(IM::UPDATE, rec);
 	return 0;
 }
 
@@ -224,7 +272,7 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 	bufLastIndex = bufIndex;
 
 	// TODO: support different key value
-	this->indexHandle->InsertRecord(pData);
+	this->indexHandle->IndexAction(IM::INSERT, pData);
 	return 0;
 }
 
@@ -323,6 +371,8 @@ void RM_FileHandle::PrintTitle()
 
 int RM_FileHandle::CreateDir(string dirPath)
 {
+#ifdef __DARWIN_UNIX03
    	string command = "mkdir -p " + dirPath;
     system(command.c_str());
+#endif
 }

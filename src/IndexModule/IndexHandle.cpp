@@ -76,9 +76,9 @@ int IndexHandle::DeleteIndex(char *indexName, int pos)
     return 1;
 }
 
-int IndexHandle::InsertRecord(RM_Record &record)
+int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record)
 {
-    // TODO
+    // TODO: Need to be checked
     list<node>::iterator iter = index.begin();
     for(int i = 0; i < colNum; i ++)
     {
@@ -88,9 +88,16 @@ int IndexHandle::InsertRecord(RM_Record &record)
             RID rid;
             record.GetColumn(i, &ctx);
             record.GetRid(rid);
-            cout << "insert record index: " << ctx << endl;
             bpt::key_t kt(ctx.c_str());
-            iter->bpTree->insert(kt, rid);
+            if(actionType == INSERT) {
+                iter->bpTree->insert(kt, rid);
+            }
+            else if(actionType == DELETE) {
+                iter->bpTree->remove(kt);
+            }
+            else if(actionType == UPDATE) {
+                iter->bpTree->update(kt, rid);
+            }
             iter ++;
         }
     }

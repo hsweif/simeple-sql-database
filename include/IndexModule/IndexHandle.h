@@ -20,6 +20,10 @@ namespace IM{
 #define LARGER 1
 #define MAX_RESULT 1000
 
+enum IndexAction{
+    UPDATE, DELETE, INSERT
+};
+
 struct node
 {
     string item;
@@ -45,7 +49,7 @@ public:
     IndexHandle(vector<string> tt, string idxPath);
     int CreateIndex(char *indexName, int pos);
     int DeleteIndex(char *indexName, int pos);
-    int InsertRecord(RM_Record &record);
+    int IndexAction(IndexAction actionType, RM_Record &record);
     int SetIndex(int pos, bool value = true);
     int SearchRange(vector<RID> &result, char* left, char* right, int comOP, int col);
 };

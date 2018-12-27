@@ -35,6 +35,7 @@ private:
 	uint* recordUintMap;
     MyBitMap* pageBitMap;
     MyBitMap* recordBitMap;//current reading page's map
+    bool *allowNull;
     BufPageManager *mBufpm;
 	BufType readBuf;
 	string indexPath;
@@ -53,9 +54,10 @@ public:
     int init(int _fileId, BufPageManager* _bufpm, char *indexName);
     // Get a record
     int InsertRec(RM_Record& pData);       // Insert a new record,
+    int SetNullInfo(bool *nullInfo, int length);
     //   return record id
     int DeleteRec(const RID &rid);                    // Delete a record
-    int UpdateRec(const RM_Record &rec);
+    int UpdateRec(RM_Record &rec);
     int RecordNum() const;
     int PageNum() const {return pageCnt;}
     void SetTitle(vector<string> t);
