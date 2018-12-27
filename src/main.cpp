@@ -7,7 +7,6 @@
 #include <vector>
 #include <string>
 
-
 // 原先声明在头文件里的全局变量。。。
 int current = 0;
 int tt = 0;
@@ -122,6 +121,9 @@ void testBitmap() {
 	b->show();
 }
 int main(){
+#ifdef __DARWIN_UNIX03
+    printf("It is on Unix now.\n");
+#endif
     MyBitMap::initConst();
     // test1();
     Test();
