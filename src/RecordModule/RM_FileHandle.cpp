@@ -9,15 +9,21 @@ RM_FileHandle::RM_FileHandle() {
 	for (int i = 0; i < PAGE_INT_NUM; i++) {
 		reset[i] = 0xFFFFFFFF;
 	}
+	this->isInitialized = false;
+}
 
-}
-RM_FileHandle::~RM_FileHandle() {
-}
-RM_FileHandle::RM_FileHandle(int id, int sz)
+RM_FileHandle::~RM_FileHandle()
 {
-	this->fileId = id;
-	this->recordSize = sz;
-}	
+	// AWARE
+	if(isInitialized) {
+        delete pageUintMap;
+        delete recordUintMap;
+        delete recordBitMap;
+        delete mBufpm;
+        delete recordHandler;
+	}
+}
+
 int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 {
 	this->indexPath = string(indexName);
@@ -29,24 +35,26 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	recordSum = firstPage[2];
 	pageCnt = firstPage[3];
 	colNum = firstPage[4];
-	cout << recordSize << " " << colNum << endl;
-	type.clear();
+
+	recordHandler = new RM::RecordHandler(colNum);
+
 	title.clear();
 	/**
 	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
 	 */
 	cout << "init" << endl;
-	for(int i = 0; i < colNum; i ++) {
-		type.push_back(firstPage[HEAD_OFFSET+i]);
-		BufType colName = &firstPage[HEAD_OFFSET+(i*(ITEM_LENGTH/4))+colNum];
+	for(int i = 0; i < colNum; i ++)
+	{
+		recordHandler->SetType(i, (RM::ItemType)firstPage[HEAD_OFFSET+i]);
+		BufType colName = &firstPage[HEAD_OFFSET+(i*(RM::TITLE_LENGTH/4))+colNum];
 		uint mask = (1<<8) - 1;
 		char c[16];
 		int cnt = 0;
 		memset(c, 0, sizeof(c));
-		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
+		for(int k = 0; k < RM::TITLE_LENGTH / 4; k++) {
 		    for(int shift = 0; shift < 32; shift += 8) {
 		    	uint num = ((colName[k] >> shift) & mask);
-				if(isValidChar(num)) {
+				if(recordHandler->isValidChar(num)) {
 					c[cnt] = (char)num;
 					cnt ++;
 				}
@@ -61,8 +69,8 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	}
 	// TODO: Add support for null key
 	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
-	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
-	allowNull = new bool[colNum];
+	int offset = HEAD_OFFSET + colNum + (RM::TITLE_LENGTH/4)*colNum;
+	bool *allowNull = new bool[colNum];
 	for(int i = 0, cnt = 0; i < nullSectLength && cnt < colNum; i ++)
 	{
 		uint curNum = (uint)firstPage[i+offset];
@@ -72,12 +80,21 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 			cnt ++;
 		}
 	}
+	recordHandler->SetNullInfo(allowNull, colNum);
 
 	// Below is for main key:
 	offset += nullSectLength;
 	mainKey = (uint)firstPage[offset];
 
+
+	// Below is for mutable item length;
 	offset ++;
+	for(int i = 0; i < colNum; i ++) {
+		recordHandler->SetItemLength(i, (int)firstPage[i + offset]);
+	}
+
+	// Below is for mapping
+	offset += colNum;
 	pageUintMap = new uint[PAGE_INT_NUM - offset];
 	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
 		pageUintMap[i] = firstPage[i + offset];
@@ -90,35 +107,11 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 		recordMapSize = recordPP/32+1;
 	}
 	recordUintMap = new uint[recordMapSize];
-	cout << "Length: " << colNum << " " << type.size() << endl;
+
+	isInitialized = true;
 	return 0;
 }
 
-bool RM_FileHandle::isValidChar(uint c)
-{
-	if(c >= 32 && c <= 124)
-		return true;
-	else
-		return false;
-}
-
-/**
- * This function is used to set limit on null value for each column
- * @param nullInfo A bool array that contains length member for limitation.
- * @param length Length. Should be equal to column number.
- * @return
- */
-int RM_FileHandle::SetNullInfo(bool *nullInfo, int length)
-{
-    if(length != colNum) {
-    	return 1;
-	}
-	allowNull = new bool[length];
-    for(int i = 0; i < length; i ++) {
-    	allowNull[i] = nullInfo[i];
-	}
-	return 0;
-}
 
 int RM_FileHandle::updateHead() {
 	BufType readBuf = this->mBufpm->getPage(this->fileId, 0, firstPageBufIndex);
@@ -130,12 +123,14 @@ int RM_FileHandle::updateHead() {
 	/**
 	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
 	 */
+	RM::ItemType *type = recordHandler->GetItemType();
+
 	for(int i = 0; i < colNum; i ++) {
 	    readBuf[HEAD_OFFSET+i] = type[i];
 		int cnt = 0, l = title[i].length();
 		cout << "test " << title[i] << l << endl;
-		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
-		    int pos = HEAD_OFFSET + colNum + (i*(ITEM_LENGTH/4)) + k;
+		for(int k = 0; k < RM::TITLE_LENGTH / 4; k++) {
+		    int pos = HEAD_OFFSET + colNum + (i*(RM::TITLE_LENGTH/4)) + k;
 			readBuf[pos] = 0;
 		    for(int shift = 0; shift < 32; shift += 8) {
 		        if(cnt < l) {
@@ -143,10 +138,9 @@ int RM_FileHandle::updateHead() {
                     cnt ++;
 				}
 			}
-			// cout << "pos: " << pos << "/" << readBuf[pos] << endl;
 		}
 	}
-	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
+	int offset = HEAD_OFFSET + colNum + (RM::TITLE_LENGTH/4)*colNum;
 	// Null section
 	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
 	for(int i = 0, cnt = 0; i < nullSectLength && cnt < colNum; i ++)
@@ -154,20 +148,29 @@ int RM_FileHandle::updateHead() {
 		uint curNum = 0;
 		for(int shift = 0; shift < 32 && cnt < colNum; shift ++)
 		{
-			curNum += ((int)allowNull[cnt] << shift);
+			curNum += (recordHandler->IsAllowNull(cnt) << shift);
 			cnt ++;
 		}
 		readBuf[i + offset] = curNum;
 	}
 
-	// Below is for main key:
+	// This is for main key.
 	offset += nullSectLength;
 	readBuf[offset] = mainKey;
 
+	// This is for mutable item length;
 	offset ++;
+	int *itemLength = recordHandler->GetItemLength();
+	for(int i = 0; i < colNum; i ++) {
+		readBuf[i+offset] = itemLength[i];
+	}
+
+	// This is for page mapping
+	offset += colNum;
 	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
 		readBuf[i + offset] = pageUintMap[i];
 	}
+
 	this->mBufpm->markDirty(firstPageBufIndex);
 	return 0;
 }
@@ -201,10 +204,6 @@ int RM_FileHandle::SetMainKey(int key)
 	return 0;
 }
 
-vector<int> RM_FileHandle::GetType()
-{
-	return this->type;
-}
 
 int RM_FileHandle::UpdateRec(RM_Record &rec) {
 	RID rid;
@@ -295,6 +294,8 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 
 int RM_FileHandle::DeleteRec(const RID &rid) {
 	int page, slot;
+	RM_Record record;
+	GetRec(rid, record);
 	rid.GetPageNum(page);
 	rid.GetSlotNum(slot);
 	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
@@ -316,7 +317,7 @@ int RM_FileHandle::DeleteRec(const RID &rid) {
 	bufLastIndex = bufIndex;
 
 	// TODO: remove from index
-
+	this->indexHandle->IndexAction(IM::DELETE, record);
 	return 0;
 }
 
@@ -370,6 +371,20 @@ void RM_FileHandle::SetType(vector<int> tp)
 	colNum = tp.size();
 }
 
+int RM_FileHandle::SetItemAttribute(int pos, int length, RM::ItemType itemType, bool isNull)
+{
+	if(pos >= colNum)	{
+		return 1;
+	}
+	if((itemType == RM::INT || itemType == RM::FLOAT) && length != 1) {
+		return 1;
+	}
+	itemLength[pos] = length;
+	allowNull[pos] = isNull;
+	type[pos] = itemType;
+	return 0;
+}
+
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
@@ -393,3 +408,5 @@ int RM_FileHandle::CreateDir(string dirPath)
     system(command.c_str());
 #endif
 }
+
+

@@ -2,15 +2,9 @@
 #include <iostream>
 using namespace std;
 
-RM_node::RM_node(BufType buf, int l, int t)
-{
-    length = l;
-    ctx = buf;
-    type = t;
-}
-
 void RM_node::setCtx(int n)
 {
+    type = RM::INT;
     length = 1;
     ctx = new uint;
     ctx[0] = (uint) n;
@@ -18,6 +12,7 @@ void RM_node::setCtx(int n)
 
 void RM_node::setCtx(float f)
 {
+    type = RM::FLOAT;
     length = 1;
     ctx = new uint;
     ctx[0] = (uint) f;
@@ -25,48 +20,28 @@ void RM_node::setCtx(float f)
 
 void RM_node::setCtx(string s)
 {
-    int l = 0;
+    type = RM::CHAR;
     int strLength = s.length();
-    type = STR_TYPE;
-    if(strLength < ITEM_LENGTH)
-    {
-        l = ITEM_LENGTH;
-    }
-    else if(strLength < DESCRIPT_LENGTH)
-    {
-        l = DESCRIPT_LENGTH;
-    }
-    else
-    {
-        cout << "[Error] item should not be more than 256 char" << endl;
-        return;
-    }
-    length = l;
-    ctx = new uint[l/4];
-    for(int i = 0; i < l/4; i ++) {
-        ctx[i] = 0;
-    }
+    length = (strLength % 4) ? strLength/4 + 1 : strLength/4;
+    ctx = new uint[length];
+    memset(ctx, 0, sizeof(ctx));
     int cnt = 0;
     int offset = 0;
-    for(int i = 0; i < l; i ++)
+    for(int i = 0; i < strLength; i ++)
     {
-        uint c = 0;
-        if(i < strLength) {
-            c = (uint)s[i] << offset;
-        }
+        uint c = (uint)s[i] << offset;
         ctx[cnt] += c;
-        if(offset != 24)
-        {
+        if(offset != 24) {
             offset += 8;
         }
-        else
-        {
+        else {
             cnt ++;
             offset = 0;
         }
     }
 }
 
+/*
 void RM_node::Print()
 {
     if(type == STR_TYPE)
@@ -86,6 +61,7 @@ void RM_node::Print()
         }
     }
 }
+*/
 
 RM_Record::RM_Record(): recordSize(-1),mData(NULL)
 {
@@ -93,11 +69,6 @@ RM_Record::RM_Record(): recordSize(-1),mData(NULL)
 	mRid = id;
 }
 
-RM_Record::RM_Record(vector<int> _type)
-{
-    type = _type;
-    length = _type.size();
-}
 
 int RM_Record::SetRecord(BufType pData,int size,RID id){
 	mData = pData;
@@ -105,14 +76,17 @@ int RM_Record::SetRecord(BufType pData,int size,RID id){
 	    cout << "mData is null" << endl;
     }
 	recordSize = size;
+	bufSize = size + ((size % 32) ? size/32 + 1 : size/32);
 	mRid = id;
 	return 0;
 }
 
+/*
 void RM_Record::SetType(vector<int> tp)
 {
     this->type = tp;
 }
+*/
 
 BufType RM_Record::GetData() const
 {
@@ -129,6 +103,7 @@ int RM_Record::GetRid(RID &id) const
 	return 0;	
 }
 
+/*
 int RM_Record::GetSize(int &sz) const {
 	if(recordSize == -1) {
 		return 1;
@@ -150,54 +125,75 @@ void RM_Record::Print()
     }
     cout << endl;
 }
-
+*/
 
 int RM_Record::GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recordSize)
 {
-    if (data.size() != type.size())
-    {
-        return 1;
-    }
     int size = 0;
     int data_l = data.size();
     for (int i = 0; i < data_l; i++)
     {
-        if (type[i] == FLOAT_TYPE || type[i] == INT_TYPE)
+        size += data[i].length;
+        /*
+        if (data[i].type == RM::FLOAT || data[i].type == RM::INT)
         {
             size += 1;
             data[i].length = 1;
         }
-        else if (type[i] == STR_TYPE)
+        else if (data[i].type == RM::CHAR)
         {
             int sLength = ITEM_LENGTH / 4;
             size += sLength;
             data[i].length = sLength;
         }
-        else if (type[i] == DESCRIPTION)
+        else if (data[i].type == DESCRIPTION)
         {
             int dLength = DESCRIPT_LENGTH / 4;
             size += dLength;
             data[i].length = dLength;
         }
+        */
     }
     recordSize = size;
-    recordLength = size;
-    BufType buf = new uint[recordSize];
+    int l = (data_l % 32) ? data_l/32 + 1 : data_l/32;
+    this->bufSize = size + l;
+    this->recordSize = size;
+    BufType buf = new uint[bufSize];
+
+    // This loop is used for recording null info
     int cnt = 0;
-    for(int i = 0; i < data_l; i ++)
-    {
-        int node_l = data[i].length;
-        for(int j = 0; j < node_l; j ++)
-        {
-            buf[cnt] = (uint)data[i].ctx[j];
+    for(int i = 0; i < l && cnt < data_l; i ++) {
+        buf[i] = 0;
+        for(int shift = 0; shift < 32 && cnt < data_l; shift ++) {
+            buf[i] += (uint)(data[cnt].isNull << shift);
             cnt ++;
         }
     }
+
+    cnt = 0;
+    for(int i = 0; i < data_l; i ++)
+    {
+        if(data[i].type == RM::CHAR)
+        {
+            int node_l = data[i].length;
+            for(int j = 0; j < node_l; j ++)
+            {
+                buf[cnt+l] = (uint)data[i].ctx[j];
+                cnt ++;
+            }
+        }
+        else if(data[i].type == RM::INT || data[i].type == RM::FLOAT)
+        {
+            buf[cnt+l] = (uint)data[i].ctx[0];
+            cnt ++;
+        }
+    }
+
     *rec = buf;
     return 0;
 }
 
-
+/*
 int RM_Record::GetNodes(vector<RM_node> &result, BufType serializedBuf)
 {
     vector<RM_node> vec;
@@ -241,7 +237,9 @@ int RM_Record::GetNodes(vector<RM_node> &result, BufType serializedBuf)
     result = vec;
     return 0;
 }
+*/
 
+/*
 int RM_Record::GetColumn(int col, string *content)
 {
     vector<RM_node> result;
@@ -276,4 +274,10 @@ int RM_Record::GetColumn(int col, string *content)
     string tmp(c);
     *content = tmp;
     return 0;
+}
+*/
+
+bool RM_Record::IsNull(int pos)
+{
+    return (1 << (pos%32)) & mData[pos/32];
 }

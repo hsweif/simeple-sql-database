@@ -1,9 +1,12 @@
 #include "RecordModule/RM_Manager.h"
 #include "RecordModule/RM_FileHandle.h"
+#include "RecordModule/RecordHandler.h"
 #include "RecordModule/RM_FileScan.h"
+#include "RecordModule/RM_Record.h"
 #include "IndexModule/IndexHandle.h"
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
+#include "CommandModule/dataBaseManager.h"
 #include <vector>
 #include <string>
 
@@ -14,15 +17,38 @@ unsigned char h[61];
 
 using namespace std;
 
+void NewTest()
+{
+	char *dbName = "NewTest";
+	// Test for create DB
+	CreateDB(dbName);
+	DIR *dir = UseDB(dbName);
+	if(dir == NULL) {
+		cout << "Error in opening database." << endl;
+		return;
+	}
+	RM_Manager *rmg = new RM_Manager(dbName);
+	RM_FileHandle *handler = new RM_FileHandle();
+
+	vector<string> title;
+	title.push_back("person");
+	title.push_back("id");
+
+	vector<RM_node> items;
+	RM_node person_a("alex");
+	RM_node id_a(2);
+	items.push_back(person_a);
+	items.push_back(id_a);
+
+	RM_Record
+}
+/*
 void Test(){
     vector<RM_node> vec;
     vector<string> title;
     vector<int> type;
     cout << "Please input 2 titles" << endl;
     string tmp;
-    /**
-     * Because we suppose all item is string now.
-     */
     int recordSize = 2 * ITEM_LENGTH/4;
     for(int i = 0; i < 2; i ++) {
         cin >> tmp;
@@ -76,6 +102,7 @@ void Test(){
     printf("Result length: %d\n", tmpvec.size());
     rmg->closeFile(*handler);
 }
+*/
 
 void test1(){
     RM_Manager *rmg = new RM_Manager("test");
@@ -120,12 +147,15 @@ void testBitmap() {
 	//b->setBit(3, 1);
 	b->show();
 }
+
+
+
 int main(){
 #ifdef __DARWIN_UNIX03
     printf("It is on Unix now.\n");
 #endif
     MyBitMap::initConst();
     // test1();
-    Test();
+    NewTest();
     return 0;
 }
