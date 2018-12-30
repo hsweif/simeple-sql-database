@@ -84,7 +84,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 			cnt ++;
 		}
 	}
-	recordHandler->SetNullInfo(allowNull, colNum);
+    recordHandler->SetNullInfo(allowNull, colNum);
 
 	// Below is for main key:
 	offset += nullSectLength;

@@ -101,7 +101,7 @@ bool RecordHandler::isValidChar(uint c)
 
 int RecordHandler::SetNullInfo(bool *nullInfo, int length)
 {
-    if(length != itemNum) {
+    if(length != itemNum || isInitialized) {
     	return 1;
 	}
     for(int i = 0; i < length; i ++) {
@@ -142,6 +142,15 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     if(items.size() != this->itemNum)   {
         return 1;
     }
+    // 做NULL和主键性质的确认
+
+    for(int i = 0; i < this->itemNum; i ++) {
+        if(items[i].isNull && !this->IsAllowNull(i)){
+            cout << "[ERROR] Fail to make record because found null value in a non-null column." << endl;
+            return 1;
+        }
+    }
+
     int bufSize = 0;
     for(int i = 0; i < this->itemNum; i ++) {
         int tmp = 0;
