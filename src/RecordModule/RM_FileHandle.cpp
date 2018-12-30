@@ -252,6 +252,7 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 
 
 int RM_FileHandle::InsertRec(RM_Record& pData){
+
 	//check size
 	// int dataSize = pData.RecordSize();
 	int dataSize = pData.BufSize();
@@ -260,6 +261,30 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		printf("data size error: %d/ %d\n", dataSize, this->recordSize);
 		return 1;
 	}
+	//TODO: Below is for checking main key.
+	RM_node mkTest;
+	recordHandler->GetColumn(mainKey, pData, mkTest);
+	string keyStr = "";
+	std::stringstream ss;
+	if(mkTest.type == RM::INT) {
+		ss << mkTest.num;
+		ss >> keyStr;
+	}
+	else if(mkTest.type == RM::FLOAT) {
+		ss << mkTest.fNum;
+		ss >> keyStr;
+	}
+	else{
+	    keyStr = mkTest.str;
+	}
+	char *keyChar = new char[keyStr.length()];
+	for(int i = 0; i < keyStr.length(); i ++) {
+		keyChar[i] = keyStr[i];
+	}
+	if(indexHandle->Existed(mainKey, keyChar)){
+	    return 1;
+	}
+
 	//check space
 	int pageIndex = pageBitMap->findLeftOne();
 	if (pageIndex + 1 >= pageCnt)//current pages can't be used

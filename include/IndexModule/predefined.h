@@ -35,6 +35,7 @@ struct key_t {
 };
 
 inline int keycmp(const key_t &a, const key_t &b) {
+    int a_l = strlen(a.k), b_l = strlen(b.k);
     int x = strlen(a.k) - strlen(b.k);
     return x == 0 ? strcmp(a.k, b.k) : x;
 }

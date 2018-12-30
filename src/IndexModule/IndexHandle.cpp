@@ -162,5 +162,34 @@ int IndexHandle::SearchRange(vector<RID> &result, char *leftValue, char *rightVa
     return 0;
 }
 
+bool IndexHandle::Existed(int pos, char *key)
+{
+    if(!isIndex[pos]) {
+        cout << "[Error] The position you asked is not an index at all" << endl;
+        return true;
+    }
+    auto iter = index.begin();
+    for(int i = 0; i < colNum; i ++)
+    {
+        if(i == pos)
+        {
+            bpt::key_t keyValue(key);
+            bpt::bplus_tree *bpTree = iter->bpTree;
+            RID *tmp = new RID;
+            vector<RID> result;
+            int ret = bpTree->search(keyValue, tmp);
+            if(ret == 0) {
+                cout << "[ERROR] There already existed an item with same main key." << endl;
+                return true;
+            } else{
+                return false;
+            }
+        }
+        if(isIndex[i]) {
+            iter ++;
+        }
+    }
+    return true;
+}
 
 }

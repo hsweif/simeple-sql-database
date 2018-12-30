@@ -54,6 +54,7 @@ public:
     int IndexAction(IndexAction actionType, RM_Record &record, RM::RecordHandler *recordHandler);
     int SetIndex(int pos, bool value = true);
     int SearchRange(vector<RID> &result, char* left, char* right, int comOP, int col);
+    bool Existed(int pos, char *key);
 };
 
 }
