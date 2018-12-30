@@ -6,12 +6,18 @@
 
 namespace RM {
 
+/**
+ * Initialize Function
+ * @param length The number of column per record in this table.
+ */
 RecordHandler::RecordHandler(int length)
 {
     itemNum = length;
+    nullSectLength = (itemNum % 32) ? itemNum/32 + 1 : itemNum/32;
     type = new RM::ItemType[length];
     itemLength = new int[length];
     allowNull = new bool[length];
+    recordSize = nullSectLength;
 }
 
 RecordHandler::~RecordHandler()
@@ -59,6 +65,9 @@ int RecordHandler::PrintRecord(const RM_Record &record)
             }
             offset += l;
         }
+        else {
+            printf("WTF miao");
+        }
         if(i != itemNum - 1) {
             printf("|");
         }
@@ -89,16 +98,17 @@ int RecordHandler::SetNullInfo(bool *nullInfo, int length)
 }
 
 int RecordHandler::SetType(int pos, RM::ItemType tp) {
-    if(pos >= itemNum || pos < 0) {
+    if(pos >= itemNum || pos < 0 || isInitialized) {
         return 1;
     }
+    cout << "Set Type: " << tp << endl;
     this->type[pos] = tp;
     return 0;
 }
 
 int RecordHandler::SetItemLength(int pos, int _length)
 {
-    if(pos >= itemNum) {
+    if(pos >= itemNum || pos < 0 || isInitialized) {
         return 1;
     }
     itemLength[pos] = _length;
@@ -167,12 +177,13 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     return 0;
 }
 
-int RecordHandler::GetColumn(int pos, const RM_Record &record, RM_node &result)
+int RecordHandler::GetColumn(int pos, RM_Record &record, RM_node &result)
 {
     if(pos < 0 || pos >= itemNum) {
         return 1;
     }
     BufType ctx = record.GetData();
+    result.isNull = record.IsNull(pos);
     int l = itemLength[pos];
     int offset = 0;
     for(int i = 0; i < pos; i ++) {
@@ -222,14 +233,32 @@ int RecordHandler::GetColumn(int pos, const RM_Record &record, RM_node &result)
 }
 
 
+/**
+ * 用来设定每一列的信息,初始化时应该唯一地使用这个方法
+ * @param pos 第几列，从0开始
+ * @param length 长度，在itemType为CHAR时有意义，代表该栏有多少Char，INT和FLOAT时为1
+ * @param itemType 参见RM的枚举，有INT、FLOAT、CHAR三种类型
+ * @param isNull 该列是否允许NULL
+ * @return
+ */
 int RecordHandler::SetItemAttribute(int pos, int length, RM::ItemType itemType, bool isNull)
 {
+    cout << "Set Item Attr" << endl;
+    // AWARE
+    isInitialized = true;
 	if(pos >= itemNum)	{
 		return 1;
 	}
 	if((itemType == RM::INT || itemType == RM::FLOAT) && length != 1) {
 		return 1;
 	}
+	if(itemType == RM::CHAR) {
+	    int uLength = (length % 4) ? length/4 + 1 : length/4;
+	    recordSize += uLength;
+    }
+    else{
+        recordSize ++;
+    }
 	itemLength[pos] = length;
 	allowNull[pos] = isNull;
 	type[pos] = itemType;

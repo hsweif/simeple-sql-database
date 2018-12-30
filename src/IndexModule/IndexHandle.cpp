@@ -48,6 +48,7 @@ int IndexHandle::CreateIndex(char *indexName, int pos)
     string indexFileName = indexPath + indexStr;
     fstream indexFile;
     indexFile.open(indexFileName, ios::in);
+
     if(!indexFile) {
         cout << "Index file doesn't exist" << endl;
         indexFile.open(indexFileName, ios::out);

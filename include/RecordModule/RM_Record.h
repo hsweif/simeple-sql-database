@@ -27,10 +27,10 @@ struct RM_node
     float fNum;
 
     BufType ctx; //Context of the node
-    RM_node(){}
-    RM_node(int content){setCtx(content);}
-	RM_node(float content){setCtx(content);}
-	RM_node(string content){setCtx(content);}
+    RM_node();
+    RM_node(int content);
+	RM_node(float content);
+	RM_node(string content);
     void setCtx(int n);
     void setCtx(float f);
     void setCtx(string s);

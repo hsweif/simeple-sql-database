@@ -36,7 +36,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	pageCnt = firstPage[3];
 	colNum = firstPage[4];
 
-	if(colNum > 0) {
+	if(colNum > 0 && recordHandler != NULL && !recordHandler->isInitialized) {
 		recordHandler = new RM::RecordHandler(colNum);
 	}
 
@@ -46,7 +46,10 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	 */
 	for(int i = 0; i < colNum; i ++)
 	{
-		recordHandler->SetType(i, (RM::ItemType)firstPage[HEAD_OFFSET+i]);
+		int tp = firstPage[HEAD_OFFSET+i];
+		if(tp != -1) {
+			recordHandler->SetType(i, (RM::ItemType)firstPage[HEAD_OFFSET+i]);
+		}
 		BufType colName = &firstPage[HEAD_OFFSET+(i*(RM::TITLE_LENGTH/4))+colNum];
 		uint mask = (1<<8) - 1;
 		char c[16];
@@ -91,7 +94,10 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	// Below is for mutable item length;
 	offset ++;
 	for(int i = 0; i < colNum; i ++) {
-		recordHandler->SetItemLength(i, (int)firstPage[i + offset]);
+	    int l = (int)firstPage[i + offset];
+	    if(l != -1) {
+			recordHandler->SetItemLength(i, l);
+		}
 	}
 
 	// Below is for mapping
@@ -247,7 +253,7 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 
 int RM_FileHandle::InsertRec(RM_Record& pData){
 	//check size
-	int dataSize = pData.BufSize();
+	int dataSize = pData.RecordSize();
 	if(dataSize != this->recordSize)
 	{
 		printf("data size error: %d/ %d\n", dataSize, this->recordSize);
@@ -387,7 +393,9 @@ void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
     this->indexHandle = new IM::IndexHandle(title, this->indexPath);
-    this->indexHandle->CreateIndex((char*)title[0].data(), 0);
+    for(int i = 0; i < t.size(); i ++) {
+		this->indexHandle->CreateIndex((char*)title[i].data(), i);
+	}
 }
 
 void RM_FileHandle::PrintTitle()

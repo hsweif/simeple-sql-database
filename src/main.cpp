@@ -20,7 +20,7 @@ using namespace std;
 void NewTest()
 {
     cout << "NewTest" << endl;
-	char *dbName = "NewTest11";
+	char *dbName = "NewTest13";
 	// Test for create DB
 	CreateDB(dbName);
 	DIR *dir = UseDB(dbName);
@@ -29,25 +29,30 @@ void NewTest()
 		return;
 	}
 	RM_Manager *rmg = new RM_Manager(dbName);
-	RM_FileHandle *handler = new RM_FileHandle();
-	rmg->createFile(dbName, 3, 2);
-	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-	cout << test << endl;
+	int colNum = 2;
 
+
+	RM_FileHandle *handler = new RM_FileHandle();
+	handler->recordHandler = new RM::RecordHandler(colNum);
+	handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
+	handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
+	int sz = handler->recordHandler->GetRecordSize();
+	rmg->createFile(dbName, sz, colNum);
+	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+
+	// HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
 	vector<string> title;
-	title.push_back("person");
+	title.push_back("name");
 	title.push_back("id");
+	handler->SetTitle(title);
+
+	cout << test << endl;
 
 	vector<RM_node> items;
 	RM_node person_a("alexfan");
 	RM_node id_a(2);
 	items.push_back(person_a);
 	items.push_back(id_a);
-
-	handler->recordHandler = new RM::RecordHandler(2);
-
-	handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
-	handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
 
 	RM_Record record;
 	if(handler->recordHandler->MakeRecord(record, items)) {

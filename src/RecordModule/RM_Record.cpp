@@ -2,6 +2,29 @@
 #include <iostream>
 using namespace std;
 
+RM_node::RM_node()
+{
+    isNull = true;
+}
+
+RM_node::RM_node(int content)
+{
+    isNull = false;
+    setCtx(content);
+}
+
+RM_node::RM_node(float content)
+{
+    isNull = false;
+    setCtx(content);
+}
+
+RM_node::RM_node(string content)
+{
+    isNull = false;
+    setCtx(content);
+}
+
 void RM_node::setCtx(int n)
 {
     type = RM::INT;
