@@ -40,10 +40,6 @@ class RM_Record {
 private:
 	RID mRid;
 	int recordSize;
-	/**
-	 * mData 前recordSize/8位(向上取整)为NULL记录表
-	 * 后recordSize个uint为数据本身
-	 */
 	BufType mData;
 	int bufSize;
 	int colNum;

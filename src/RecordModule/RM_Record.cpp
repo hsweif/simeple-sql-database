@@ -104,11 +104,11 @@ int RM_Record::SetRecord(BufType pData, int size, int cNum){
 	    return 1;
     }
     int offset = (colNum % 32) ? colNum/32 + 1 : colNum/32;
-	recordSize = size;
-	bufSize = size + offset;
-	this->mData = new uint[bufSize];
+	recordSize = size - offset;
+	bufSize = size;
+	this->mData = new uint[size];
 	for(int i = 0; i < size; i ++) {
-	    this->mData[i+offset] = pData[i];
+	    this->mData[i] = pData[i];
     }
 	return 0;
 }
@@ -126,7 +126,7 @@ BufType RM_Record::GetData() const
         return NULL;
     }
     int offset = (colNum % 32) ? colNum/32 + 1 : colNum/32;
-	return mData + offset + 1;
+	return mData + offset;
 }
 
 int RM_Record::GetRid(RID &id) const
@@ -313,5 +313,6 @@ int RM_Record::GetColumn(int col, string *content)
 
 bool RM_Record::IsNull(int pos)
 {
-    return (1 << (pos%32)) & mData[pos/32];
+    int offset = pos % 32;
+    return (bool)(((1 << offset) & mData[pos/32]) >> offset);
 }

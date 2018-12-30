@@ -29,7 +29,7 @@ public:
     RecordHandler(int length);
     bool isValidChar(uint c);
     ~RecordHandler();
-    int PrintRecord(const RM_Record &record);
+    int PrintRecord(RM_Record &record);
     int GetColumn(int pos, RM_Record &record, RM_node &result);
     int SetType(int pos, RM::ItemType tp);
     RM::ItemType* GetItemType() const {return type;}

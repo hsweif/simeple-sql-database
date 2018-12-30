@@ -49,8 +49,10 @@ void NewTest()
 	cout << test << endl;
 
 	vector<RM_node> items;
-	RM_node person_a("alexfan");
-	RM_node id_a(2);
+	RM_node person_a;
+	person_a.type = RM::CHAR;
+	person_a.isNull = true;
+	RM_node id_a(3);
 	items.push_back(person_a);
 	items.push_back(id_a);
 
@@ -58,7 +60,7 @@ void NewTest()
 	if(handler->recordHandler->MakeRecord(record, items)) {
 		cout << "Error to make record." << endl;
 	}
-
+	handler->PrintTitle();
 	handler->recordHandler->PrintRecord(record);
 	handler->InsertRec(record);
 }

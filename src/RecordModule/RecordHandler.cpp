@@ -12,6 +12,7 @@ namespace RM {
  */
 RecordHandler::RecordHandler(int length)
 {
+    isInitialized = false;
     itemNum = length;
     nullSectLength = (itemNum % 32) ? itemNum/32 + 1 : itemNum/32;
     type = new RM::ItemType[length];
@@ -31,7 +32,7 @@ RecordHandler::~RecordHandler()
     delete allowNull;
 }
 
-int RecordHandler::PrintRecord(const RM_Record &record)
+int RecordHandler::PrintRecord(RM_Record &record)
 {
     // TODO: Need to be checked
     BufType content = record.GetData();
@@ -39,34 +40,46 @@ int RecordHandler::PrintRecord(const RM_Record &record)
     for(int i = 0; i < itemNum; i ++) {
         uint item = content[offset];
         if(type[i] == RM::INT) {
-            printf("%d", (int)item);
+            if(!record.IsNull(i)) {
+                printf("%d", (int)item);
+            }
+            else{
+                printf("NULL");
+            }
             offset ++;
         }
         else if(type[i] == RM::FLOAT) {
-            printf("%f", (float)item);
+            if(!record.IsNull(i)) {
+                printf("%f", (float)item);
+            }
+            else{
+                printf("NULL");
+            }
             offset ++;
         }
         else if(type[i] == RM::CHAR) {
             int cnt = 0;
             int l = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
-            for(int k = 0; k < l && cnt < itemLength[i]; k ++)
-            {
-                uint ctx = content[offset + k];
-                uint mask = 255;
-                for(int shift = 0; shift < 32 && cnt < itemLength[i]; shift += 8)
+            if(!record.IsNull(i)) {
+                for(int k = 0; k < l && cnt < itemLength[i]; k ++)
                 {
-                    uint tmp = ((ctx & (mask << shift)) >> shift);
-                    if(isValidChar(tmp)) {
-                        char c = (char)tmp;
-                        printf("%c", c);
+                    uint ctx = content[offset + k];
+                    uint mask = 255;
+                    for(int shift = 0; shift < 32 && cnt < itemLength[i]; shift += 8)
+                    {
+                        uint tmp = ((ctx & (mask << shift)) >> shift);
+                        if(isValidChar(tmp)) {
+                            char c = (char)tmp;
+                            printf("%c", c);
+                        }
+                        cnt ++;
                     }
-                    cnt ++;
                 }
             }
+            else{
+                printf("NULL");
+            }
             offset += l;
-        }
-        else {
-            printf("WTF miao");
         }
         if(i != itemNum - 1) {
             printf("|");
@@ -132,7 +145,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int bufSize = 0;
     for(int i = 0; i < this->itemNum; i ++) {
         int tmp = 0;
-        if(items[i].type == RM::CHAR) {
+        if(type[i] == RM::CHAR) {
             tmp = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
         }
         else{
@@ -148,7 +161,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
 		uint curNum = 0;
 		for(int shift = 0; shift < 32 && cnt < itemNum; shift ++)
 		{
-			curNum += (this->IsAllowNull(cnt) << shift);
+			curNum += (items[cnt].isNull << shift);
 			cnt ++;
 		}
 		buf[i] = curNum;
@@ -158,13 +171,23 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
 	for(int i = 0; i < itemNum && cnt < bufSize; i ++)
 	{
         if(items[i].type == RM::INT || items[i].type == RM::FLOAT) {
-            buf[cnt] = items[i].ctx[0];
+            if(!items[i].isNull) {
+                buf[cnt] = items[i].ctx[0];
+            }
+            else{
+                buf[cnt] = 0;
+            }
             cnt ++;
         }
         else if(items[i].type == RM::CHAR) {
-            int tmp_l = (items[i].length % 4) ? items[i].length/4 + 1 : items[i].length/4;
+            int tmp_l = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
             for(int k = 0; k < tmp_l; k ++) {
-                buf[cnt] = items[i].ctx[k];
+                if(!items[i].isNull) {
+                    buf[cnt] = items[i].ctx[k];
+                }
+                else{
+                    buf[cnt] = 0;
+                }
                 cnt ++;
             }
         }
@@ -173,7 +196,8 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
         }
     }
     // Because cnt+1 = bufSize
-    record.SetRecord(buf, cnt-nullSectLength+1, itemNum);
+    // record.SetRecord(buf, bufSize-nullSectLength+1, itemNum);
+    record.SetRecord(buf, bufSize, itemNum);
     return 0;
 }
 

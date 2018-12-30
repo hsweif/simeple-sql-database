@@ -253,7 +253,8 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 
 int RM_FileHandle::InsertRec(RM_Record& pData){
 	//check size
-	int dataSize = pData.RecordSize();
+	// int dataSize = pData.RecordSize();
+	int dataSize = pData.BufSize();
 	if(dataSize != this->recordSize)
 	{
 		printf("data size error: %d/ %d\n", dataSize, this->recordSize);

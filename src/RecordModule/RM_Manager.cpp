@@ -37,7 +37,6 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     strcat(fileName, dirSym);
     string idx(fileName);
     RM_FileHandle::CreateDir(idx);
-    // FIXME: index file 现在要手动创建
     fileHandle.init(this->fileID,this->bufPageManager, fileName);
     return result;
 }
