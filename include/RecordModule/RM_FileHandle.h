@@ -47,10 +47,10 @@ private:
 	BufType readBuf;
 	string indexPath;
 	vector<string> title;
-	RM::RecordHandler *recordHandler;
 
 public:
 	IM::IndexHandle *indexHandle;
+    RM::RecordHandler *recordHandler;
     RM_FileHandle();
     ~RM_FileHandle();                                  // Destructor
 	int updateHead();
@@ -68,7 +68,6 @@ public:
     void PrintTitle();
     void SetFilePath();
     void SetType(vector<int> tp);
-    int SetItemAttribute(int pos, int length, RM::ItemType itemType, bool isNull);
 	int SetMainKey(int key);
     void show();
 	int GetSlot(BufType page);

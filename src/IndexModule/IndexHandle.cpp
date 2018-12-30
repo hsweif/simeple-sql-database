@@ -1,3 +1,4 @@
+#include <RecordModule/RecordHandler.h>
 #include "IndexModule/IndexHandle.h"
 
 namespace IM{
@@ -76,7 +77,7 @@ int IndexHandle::DeleteIndex(char *indexName, int pos)
     return 1;
 }
 
-int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record)
+int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record, RM::RecordHandler *recordHandler)
 {
     // TODO: Need to be checked
     list<node>::iterator iter = index.begin();
@@ -86,17 +87,39 @@ int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record)
         {
             string ctx;
             RID rid;
-            record.GetColumn(i, &ctx);
             record.GetRid(rid);
-            bpt::key_t kt(ctx.c_str());
-            if(actionType == INSERT) {
-                iter->bpTree->insert(kt, rid);
+            RM_node result;
+            recordHandler->GetColumn(i, record, result);
+            if(result.isNull) {
+                cout << "This column item is null, no need to insert." << endl;
             }
-            else if(actionType == DELETE) {
-                iter->bpTree->remove(kt, rid);
-            }
-            else if(actionType == UPDATE) {
-                iter->bpTree->update(kt, rid);
+            else{
+                if(result.type == RM::INT) {
+                    int n = result.num;
+                    std::stringstream ss;
+                    ss << n;
+                    ss >> ctx;
+                }
+                else if(result.type == RM::FLOAT) {
+                    float f = result.fNum;
+                    std::stringstream ss;
+                    ss << f;
+                    ss >> ctx;
+                }
+                else {
+                    ctx = result.str;
+                }
+
+                bpt::key_t kt(ctx.c_str());
+                if(actionType == INSERT) {
+                    iter->bpTree->insert(kt, rid);
+                }
+                else if(actionType == DELETE) {
+                    iter->bpTree->remove(kt, rid);
+                }
+                else if(actionType == UPDATE) {
+                    iter->bpTree->update(kt, rid);
+                }
             }
             iter ++;
         }

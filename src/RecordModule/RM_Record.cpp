@@ -6,6 +6,7 @@ void RM_node::setCtx(int n)
 {
     type = RM::INT;
     length = 1;
+    num = n;
     ctx = new uint;
     ctx[0] = (uint) n;
 }
@@ -14,15 +15,18 @@ void RM_node::setCtx(float f)
 {
     type = RM::FLOAT;
     length = 1;
+    fNum = f;
     ctx = new uint;
     ctx[0] = (uint) f;
 }
 
 void RM_node::setCtx(string s)
 {
+    str = s;
     type = RM::CHAR;
     int strLength = s.length();
-    length = (strLength % 4) ? strLength/4 + 1 : strLength/4;
+    // length = (strLength % 4) ? strLength/4 + 1 : strLength/4;
+    length = s.length();
     ctx = new uint[length];
     memset(ctx, 0, sizeof(ctx));
     int cnt = 0;
@@ -70,14 +74,19 @@ RM_Record::RM_Record(): recordSize(-1),mData(NULL)
 }
 
 
-int RM_Record::SetRecord(BufType pData,int size,RID id){
-	mData = pData;
-	if(mData == NULL) {
-	    cout << "mData is null" << endl;
+int RM_Record::SetRecord(BufType pData, int size, int cNum){
+    colNum = cNum;
+	if(pData == NULL) {
+	    cout << "pData is null" << endl;
+	    return 1;
     }
+    int offset = (colNum % 32) ? colNum/32 + 1 : colNum/32;
 	recordSize = size;
-	bufSize = size + ((size % 32) ? size/32 + 1 : size/32);
-	mRid = id;
+	bufSize = size + offset;
+	this->mData = new uint[bufSize];
+	for(int i = 0; i < size; i ++) {
+	    this->mData[i+offset] = pData[i];
+    }
 	return 0;
 }
 
@@ -90,9 +99,11 @@ void RM_Record::SetType(vector<int> tp)
 
 BufType RM_Record::GetData() const
 {
-	if (recordSize == -1 || mData == NULL)
-		return NULL;
-	return mData;
+	if (recordSize == -1 || mData == NULL) {
+        return NULL;
+    }
+    int offset = (colNum % 32) ? colNum/32 + 1 : colNum/32;
+	return mData + offset + 1;
 }
 
 int RM_Record::GetRid(RID &id) const

@@ -36,13 +36,14 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	pageCnt = firstPage[3];
 	colNum = firstPage[4];
 
-	recordHandler = new RM::RecordHandler(colNum);
+	if(colNum > 0) {
+		recordHandler = new RM::RecordHandler(colNum);
+	}
 
 	title.clear();
 	/**
 	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
 	 */
-	cout << "init" << endl;
 	for(int i = 0; i < colNum; i ++)
 	{
 		recordHandler->SetType(i, (RM::ItemType)firstPage[HEAD_OFFSET+i]);
@@ -64,7 +65,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 			}
 		}
 		string str(c);
-		cout << str << endl;
+		// cout << str << endl;
 		title.push_back(str);
 	}
 	// TODO: Add support for null key
@@ -191,7 +192,9 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	for (int i = 0; i < recordSize; i++) {
 		pData[i] = readBuf[recordMapSize + i + slot * recordSize];
 	}
-	rec.SetRecord(pData, recordSize, rid);
+	rec.SetRecord(pData, recordSize, colNum);
+	RID nRid = rid;
+	rec.SetRID(nRid);
 	return 0;
 }
 
@@ -236,7 +239,7 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
 	// TODO: Update the index
-	this->indexHandle->IndexAction(IM::UPDATE, rec);
+	this->indexHandle->IndexAction(IM::UPDATE, rec, recordHandler);
 	return 0;
 }
 
@@ -244,8 +247,7 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 
 int RM_FileHandle::InsertRec(RM_Record& pData){
 	//check size
-	int dataSize;
-	pData.GetSize(dataSize);
+	int dataSize = pData.BufSize();
 	if(dataSize != this->recordSize)
 	{
 		printf("data size error: %d/ %d\n", dataSize, this->recordSize);
@@ -274,6 +276,11 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		cout << "codeError" << endl;
 		return 1;
 	}
+
+	//AWARE
+	RID rid(page, slot);
+	pData.SetRID(rid);
+
 	recordBitMap->setBit(slot, 0);
 	for (int i = 0; i < recordSize; i++) {
 		readBuf[recordMapSize + i + slot * recordSize] = bufData[i];
@@ -282,13 +289,14 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		readBuf[i] = recordUintMap[i];
 	}
 	recordSum++;
-	if (recordBitMap->findLeftOne() >= recordPP)
+	if (recordBitMap->findLeftOne() >= recordPP) {
 		pageBitMap->setBit(page - 1, 0);
+	}
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
 
 	// TODO: support different key value
-	this->indexHandle->IndexAction(IM::INSERT, pData);
+	this->indexHandle->IndexAction(IM::INSERT, pData, recordHandler);
 	return 0;
 }
 
@@ -317,7 +325,7 @@ int RM_FileHandle::DeleteRec(const RID &rid) {
 	bufLastIndex = bufIndex;
 
 	// TODO: remove from index
-	this->indexHandle->IndexAction(IM::DELETE, record);
+	this->indexHandle->IndexAction(IM::DELETE, record, recordHandler);
 	return 0;
 }
 
@@ -367,23 +375,13 @@ int RM_FileHandle::RecordNum() const
 
 void RM_FileHandle::SetType(vector<int> tp)
 {
-	type = tp;
 	colNum = tp.size();
+	for(int i = 0; i < colNum; i ++) {
+		recordHandler->SetType(i, (RM::ItemType)tp[i]);
+	}
 }
 
-int RM_FileHandle::SetItemAttribute(int pos, int length, RM::ItemType itemType, bool isNull)
-{
-	if(pos >= colNum)	{
-		return 1;
-	}
-	if((itemType == RM::INT || itemType == RM::FLOAT) && length != 1) {
-		return 1;
-	}
-	itemLength[pos] = length;
-	allowNull[pos] = isNull;
-	type[pos] = itemType;
-	return 0;
-}
+
 
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
@@ -404,8 +402,7 @@ void RM_FileHandle::PrintTitle()
 int RM_FileHandle::CreateDir(string dirPath)
 {
 #ifdef __DARWIN_UNIX03
-   	string command = "mkdir -p " + dirPath;
-    system(command.c_str());
+    mkdir(dirPath.c_str(), S_IRWXU);
 #endif
 }
 

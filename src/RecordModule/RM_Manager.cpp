@@ -13,7 +13,7 @@ RM_Manager::RM_Manager(char *dbName) {
     this->fileID = -1;
 }
 
-int RM_Manager::createFile(const char* name, int recordSize) {
+int RM_Manager::createFile(const char* name, int recordSize, int cNum) {
     printf("%s\n", name);
     FileManager *fm = this->fileManager;
     char fileName[50];
@@ -23,7 +23,7 @@ int RM_Manager::createFile(const char* name, int recordSize) {
     fm->createFile(fileName);
     int fileID;
     fm->openFile(fileName, fileID);
-    PageHead *test = new PageHead(recordSize, (int)(double(PAGE_INT_NUM - 1) / ((double)recordSize + 1 / 32)), 0);
+    PageHead *test = new PageHead(recordSize, (int)(double(PAGE_INT_NUM - 1) / ((double)recordSize + 1 / 32)), 0, cNum);
     fm->writePage(fileID, 0, test->encode2Buf(), 0);
     fm->closeFile(fileID);
 }

@@ -21,7 +21,13 @@ struct RM_node
     int length;
     RM::ItemType type;
     int isNull;
+
+    int num;
+    string str;
+    float fNum;
+
     BufType ctx; //Context of the node
+    RM_node(){}
     RM_node(int content){setCtx(content);}
 	RM_node(float content){setCtx(content);}
 	RM_node(string content){setCtx(content);}
@@ -40,10 +46,11 @@ private:
 	 */
 	BufType mData;
 	int bufSize;
+	int colNum;
 public:
 	RM_Record();
 	~RM_Record (){};
-	int SetRecord	(BufType pData,int size,RID id);
+	int SetRecord	(BufType pData, int size, int cNum);
 	// void SetType(vector<int> tp);
 	BufType GetData () const;   // Set pData to point to
 	//   the record's contents
@@ -54,6 +61,7 @@ public:
 	// int GetNodes(vector<RM_node> &result, BufType serializedBuf);
 	// int GetColumn(int col, string *content);
 	bool IsNull(int pos);
+	int SetRID(RID &rid) { this->mRid = rid;};
 	// void Print();
 };
 #endif

@@ -19,15 +19,15 @@ class RecordHandler
 {
 private:
     int itemNum;
-    int recordSize; // 一条record占多少uint
+    int recordSize; // 一条record总共占多少uint
     RM::ItemType *type;
-    int *itemLength;
+    int *itemLength; // 如果item是CHAR类型的，有几个Char，INT、FLOAT型为1（个uint）无意义
     bool *allowNull;
 public:
     RecordHandler(int length);
     bool isValidChar(uint c);
     ~RecordHandler();
-    void PrintRecord(const RM_Record &record);
+    int PrintRecord(const RM_Record &record);
     int GetColumn(int pos, const RM_Record &record, RM_node &result);
     int SetType(int pos, RM::ItemType tp);
     RM::ItemType* GetItemType() const {return type;}
@@ -35,7 +35,8 @@ public:
     int SetItemLength(int pos, int _length);
     int SetNullInfo(bool *nullInfo, int length);
     int IsAllowNull(int pos);
-    int MakeRecord(RM_Record &record, vector<RM_node> &items, RID rid);
+    int SetItemAttribute(int pos, int length, RM::ItemType itemType, bool isNull);
+    int MakeRecord(RM_Record &record, vector<RM_node> &items);
 };
 
 }

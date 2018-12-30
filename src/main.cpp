@@ -19,7 +19,8 @@ using namespace std;
 
 void NewTest()
 {
-	char *dbName = "NewTest";
+    cout << "NewTest" << endl;
+	char *dbName = "NewTest11";
 	// Test for create DB
 	CreateDB(dbName);
 	DIR *dir = UseDB(dbName);
@@ -29,18 +30,32 @@ void NewTest()
 	}
 	RM_Manager *rmg = new RM_Manager(dbName);
 	RM_FileHandle *handler = new RM_FileHandle();
+	rmg->createFile(dbName, 3, 2);
+	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+	cout << test << endl;
 
 	vector<string> title;
 	title.push_back("person");
 	title.push_back("id");
 
 	vector<RM_node> items;
-	RM_node person_a("alex");
+	RM_node person_a("alexfan");
 	RM_node id_a(2);
 	items.push_back(person_a);
 	items.push_back(id_a);
 
-	RM_Record
+	handler->recordHandler = new RM::RecordHandler(2);
+
+	handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
+	handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
+
+	RM_Record record;
+	if(handler->recordHandler->MakeRecord(record, items)) {
+		cout << "Error to make record." << endl;
+	}
+
+	handler->recordHandler->PrintRecord(record);
+	handler->InsertRec(record);
 }
 /*
 void Test(){
@@ -102,7 +117,6 @@ void Test(){
     printf("Result length: %d\n", tmpvec.size());
     rmg->closeFile(*handler);
 }
-*/
 
 void test1(){
     RM_Manager *rmg = new RM_Manager("test");
@@ -136,6 +150,7 @@ void test1(){
 	BufType recBuf = rec.GetData();
 	rmg->closeFile(*handler);
 }
+*/
 
 void testBitmap() {
 	

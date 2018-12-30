@@ -8,7 +8,7 @@ private:
     BufType buf;
 public:
     PageHead();
-    PageHead(int rl, int rpp, int rsum);
+    PageHead(int rl, int rpp, int rsum, int cNum);
     BufType encode2Buf();
 };
 

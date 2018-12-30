@@ -5,10 +5,12 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <sys/stat.h>
 #include <errno.h>
 
 #include "../RecordModule/RM_Record.h"
+#include "../RecordModule/RecordHandler.h"
 
 #include "bpt.h"
 #include "predefined.h"
@@ -49,7 +51,7 @@ public:
     IndexHandle(vector<string> tt, string idxPath);
     int CreateIndex(char *indexName, int pos);
     int DeleteIndex(char *indexName, int pos);
-    int IndexAction(IndexAction actionType, RM_Record &record);
+    int IndexAction(IndexAction actionType, RM_Record &record, RM::RecordHandler *recordHandler);
     int SetIndex(int pos, bool value = true);
     int SearchRange(vector<RID> &result, char* left, char* right, int comOP, int col);
 };
