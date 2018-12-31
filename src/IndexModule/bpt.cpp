@@ -40,10 +40,12 @@ bplus_tree::bplus_tree(const char *p, bool force_empty)
     memset(path,'0',strlen(path));
     strcpy(path, p);
 
-    if (!force_empty)
+    if (!force_empty) {
         // read tree from file
-        if (map(&meta, OFFSET_META) != 0)
+        if (map(&meta, OFFSET_META) != 0) {
             force_empty = true;
+        }
+    }
 
     if (force_empty) {
         open_file("w+"); // truncate file
@@ -215,8 +217,9 @@ int bplus_tree::insert(const key_t& key, value_t value)
     map(&leaf, offset);
 
     // check if we have the same key
-    if (binary_search(begin(leaf), end(leaf), key))
-        return 1;
+    // HINT: We need to support multiple keys, modified by fxw
+    // if (binary_search(begin(leaf), end(leaf), key))
+    //     return 1;
 
     if (leaf.n == meta.order) {
         // split when full

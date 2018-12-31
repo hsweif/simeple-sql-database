@@ -56,7 +56,7 @@ void NewTest(bool createNewDB, char *dbName)
 	// HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
 	if(createNewDB) {
         vector<RM_node> items;
-        for(int i = 0; i < 20; i ++) {
+        for(int i = 0; i < 10; i ++) {
             items.clear();
             RM_node person_a("person_test");
             RM_node id_a(i/2);
@@ -72,9 +72,9 @@ void NewTest(bool createNewDB, char *dbName)
 
 	}
 
-	printf("Searched result for records with id between %d and %d\n", 3, 35);
+	printf("Searched result for records with id between %d and %d\n", 2, 8);
 	vector<RID> rid;
-	handler->indexHandle->SearchRange(rid, "3", "35", IM::LS, 1);
+	handler->indexHandle->SearchRange(rid, "2", "8", IM::LS, 1);
 	for(int i = 0; i < rid.size(); i ++) {
 		cout << rid[i] << endl;
 	}
