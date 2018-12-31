@@ -22,9 +22,6 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int attrKey, int attrType, 
         RM_Record record;
         if(fileHandle.GetRec(rid, record) == 0)
         {
-            // FIXME
-            // record.SetType(this->typeArr);
-            // record.Print();
             slot ++;
             cnt ++;
         }

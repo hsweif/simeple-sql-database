@@ -43,8 +43,8 @@ void NewTest(bool createNewDB, char *dbName)
 		title.push_back("name");
 		title.push_back("id");
 		handler->SetTitle(title);
+        rmg->createFile(dbName, sz, colNum, *handler);
 		handler->InitIndex(true);
-        rmg->createFile(dbName, sz, colNum);
 	}
 
 	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";

@@ -28,7 +28,7 @@ private:
     static int RID;
 public:
     RM_Manager(char *dbName);
-    int createFile(const char* name, int recordSize, int cNum);
+    int createFile(const char* name, int recordSize, int cNum, RM_FileHandle &fileHandle);
     bool openFile(const char* name, RM_FileHandle &fileHandle);
     int closeFile(RM_FileHandle &fileHandle);
     int deleteFile(const char* name);

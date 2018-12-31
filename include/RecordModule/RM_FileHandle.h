@@ -45,11 +45,11 @@ private:
     MyBitMap* recordBitMap;//current reading page's map
     BufPageManager *mBufpm;
 	BufType readBuf;
-	string indexPath;
 	vector<string> title;
 	int CheckForMainKey(RM_Record &pData);
 
 public:
+	string indexPath;
 	IM::IndexHandle *indexHandle;
     RM::RecordHandler *recordHandler;
 	int CheckForMainKey();
