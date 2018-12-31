@@ -66,6 +66,7 @@ public:
     int PageNum() const {return pageCnt;}
     int GetMainKey() const {return mainKey;}
     void SetTitle(vector<string> t);
+    int InitIndex(bool forceEmpty = false);
     void PrintTitle();
     void SetFilePath();
     void SetType(vector<int> tp);

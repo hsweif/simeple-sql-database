@@ -39,11 +39,12 @@ void NewTest(bool createNewDB, char *dbName)
         handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
         handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
         int sz = handler->recordHandler->GetRecordSize();
+		vector<string> title;
+		title.push_back("name");
+		title.push_back("id");
+		handler->SetTitle(title);
+		handler->InitIndex(true);
         rmg->createFile(dbName, sz, colNum);
-        vector<string> title;
-        title.push_back("name");
-        title.push_back("id");
-        handler->SetTitle(title);
 	}
 
 	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";

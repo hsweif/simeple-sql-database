@@ -42,7 +42,6 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	recordHandler->SetRecordSize(recordSize);
 
 
-	title.clear();
 	vector<string> tmpTitle;
 	/**
 	 * 接下来colNum个uint定义type，再colNum个ITEM_TYPE长度的title
@@ -75,6 +74,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	}
 	if(!recordHandler->isInitialized) {
 		this->SetTitle(tmpTitle);
+	    InitIndex(false);
 	}
 
 	// TODO: Add support for null key
@@ -141,7 +141,7 @@ int RM_FileHandle::updateHead() {
 	for(int i = 0; i < colNum; i ++) {
 	    readBuf[HEAD_OFFSET+i] = type[i];
 		int cnt = 0, l = title[i].length();
-		cout << "test " << title[i] << l << endl;
+		cout << "Update title to head: " << title[i] << l << endl;
 		for(int k = 0; k < RM::TITLE_LENGTH / 4; k++) {
 		    int pos = HEAD_OFFSET + colNum + (i*(RM::TITLE_LENGTH/4)) + k;
 			readBuf[pos] = 0;
@@ -439,10 +439,18 @@ void RM_FileHandle::SetType(vector<int> tp)
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
-    this->indexHandle = new IM::IndexHandle(title, this->indexPath);
-    for(int i = 0; i < t.size(); i ++) {
-		this->indexHandle->CreateIndex((char*)title[i].data(), i);
+}
+
+int RM_FileHandle::InitIndex(bool forceEmpty)
+{
+	if(title.empty() || colNum <= 0) {
+		return 1;
 	}
+	this->indexHandle = new IM::IndexHandle(title, this->indexPath);
+	for(int i = 0; i < title.size(); i ++) {
+		this->indexHandle->CreateIndex((char*)title[i].data(), i, forceEmpty);
+	}
+	return 0;
 }
 
 void RM_FileHandle::PrintTitle()

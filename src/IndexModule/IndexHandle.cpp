@@ -32,7 +32,7 @@ int IndexHandle::SetIndex(int pos, bool value)
     return 0;
 }
 
-int IndexHandle::CreateIndex(char *indexName, int pos)
+int IndexHandle::CreateIndex(char *indexName, int pos, bool forceEmpty)
 {
     string indexStr(indexName);
     int cnt = 0;
@@ -57,8 +57,7 @@ int IndexHandle::CreateIndex(char *indexName, int pos)
     else{
         indexFile.close();
     }
-    cout << "index path: " << indexFileName << endl;
-    bpt::bplus_tree *bpTree = new bpt::bplus_tree((char*)indexFileName.data());
+    bpt::bplus_tree *bpTree = new bpt::bplus_tree((char*)indexFileName.data(), forceEmpty);
     index.push_back(node(indexStr, bpTree));
     return 0;
 }

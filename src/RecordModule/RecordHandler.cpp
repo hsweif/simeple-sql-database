@@ -34,7 +34,6 @@ RecordHandler::~RecordHandler()
 
 int RecordHandler::PrintRecord(RM_Record &record)
 {
-    // TODO: Need to be checked
     BufType content = record.GetData();
     int offset = 0;
     for(int i = 0; i < itemNum; i ++) {

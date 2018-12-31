@@ -53,7 +53,7 @@ private:
 public:
     IndexHandle();
     IndexHandle(vector<string> tt, string idxPath);
-    int CreateIndex(char *indexName, int pos);
+    int CreateIndex(char *indexName, int pos, bool forceEmpty);
     int DeleteIndex(char *indexName, int pos);
     int IndexAction(IndexAction actionType, RM_Record &record, RM::RecordHandler *recordHandler);
     int SetIndex(int pos, bool value = true);
