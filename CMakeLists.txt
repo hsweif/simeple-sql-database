@@ -21,13 +21,13 @@ ${DIR_SRCS}
 
 #6.add executable file，添加要编译的可执行文件
 ADD_EXECUTABLE(main src/main.cpp)
-ADD_EXECUTABLE(create src/create.cpp)
-ADD_EXECUTABLE(drop src/drop.cpp)
-ADD_EXECUTABLE(use src/use.cpp)
-ADD_EXECUTABLE(show src/show.cpp)
+# ADD_EXECUTABLE(create src/create.cpp)
+# ADD_EXECUTABLE(drop src/drop.cpp)
+# ADD_EXECUTABLE(use src/use.cpp)
+# ADD_EXECUTABLE(show src/show.cpp)
 #7.add link library，添加可执行文件所需要的库，比如用到了RecordModule,在src对应的文件夹下定义子cmakelist，就添加该库的名称
 TARGET_LINK_LIBRARIES(main RecordModule)
 TARGET_LINK_LIBRARIES(main IndexModule)
-TARGET_LINK_LIBRARIES(use RecordModule)
-TARGET_LINK_LIBRARIES(use IndexModule)
+# TARGET_LINK_LIBRARIES(use RecordModule)
+# TARGET_LINK_LIBRARIES(use IndexModule)
 link_directories("./sql-parser")

@@ -40,10 +40,12 @@ bplus_tree::bplus_tree(const char *p, bool force_empty)
     memset(path,'0',strlen(path));
     strcpy(path, p);
 
-    if (!force_empty)
+    if (!force_empty) {
         // read tree from file
-        if (map(&meta, OFFSET_META) != 0)
+        if (map(&meta, OFFSET_META) != 0) {
             force_empty = true;
+        }
+    }
 
     if (force_empty) {
         open_file("w+"); // truncate file
@@ -64,7 +66,6 @@ int bplus_tree::search(const key_t& key, value_t *value) const
     if (record != leaf.children + leaf.n) {
         // always return the lower bound
         *value = record->value;
-
         return keycmp(record->key, key);
     } else {
         return -1;
@@ -124,7 +125,7 @@ int bplus_tree::search_range(key_t *left, const key_t &right,
     return i;
 }
 
-int bplus_tree::remove(const key_t& key)
+int bplus_tree::remove(const key_t& key, value_t value)
 {
     internal_node_t parent;
     leaf_node_t leaf;
@@ -147,6 +148,13 @@ int bplus_tree::remove(const key_t& key)
 
     // delete the key
     record_t *to_delete = find(leaf, key);
+    //TODO: Should be checked carefully
+    while(to_delete->value != value) {
+        if(to_delete->key != key) {
+            return -1;
+        }
+        to_delete ++;
+    }
     std::copy(to_delete + 1, end(leaf), to_delete);
     leaf.n--;
 
@@ -209,8 +217,9 @@ int bplus_tree::insert(const key_t& key, value_t value)
     map(&leaf, offset);
 
     // check if we have the same key
-    if (binary_search(begin(leaf), end(leaf), key))
-        return 1;
+    // HINT: We need to support multiple keys, modified by fxw
+    // if (binary_search(begin(leaf), end(leaf), key))
+    //     return 1;
 
     if (leaf.n == meta.order) {
         // split when full

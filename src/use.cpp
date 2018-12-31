@@ -14,15 +14,13 @@ int tt = 0;
 unsigned char h[61];
 int checkType(string type) {
 	if (type == "int")
-		return INT_TYPE;
+		return RM::INT;
 	else if (type == "string")
-		return STR_TYPE;
+		return RM::CHAR;
 	else if (type == "float")
-		return FLOAT_TYPE;
-	else if (type == "description")
-		return DESCRIPTION;
+	    return RM::FLOAT;
 	else
-		return ERR_TYPE;
+		return RM::ERROR;
 }
 int main(int argc, char* argv[]) {
 	if (argc != 3) {
@@ -103,7 +101,7 @@ int main(int argc, char* argv[]) {
 						innerError = true;
 						break;
 					}
-					else if (t == INT_TYPE || t == FLOAT_TYPE)
+					else if (t == RM::INT || t == RM::FLOAT)
 						recordSize++;
 					else if (t == STR_TYPE)
 						recordSize += ITEM_LENGTH / 4;

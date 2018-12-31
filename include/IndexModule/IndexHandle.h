@@ -5,10 +5,12 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <sys/stat.h>
 #include <errno.h>
 
 #include "../RecordModule/RM_Record.h"
+#include "../RecordModule/RecordHandler.h"
 
 #include "bpt.h"
 #include "predefined.h"
@@ -19,6 +21,14 @@ namespace IM{
 #define SMALLER 0
 #define LARGER 1
 #define MAX_RESULT 1000
+
+enum IndexAction{
+    UPDATE, DELETE, INSERT
+};
+
+enum CompOp{
+    GT, LS, GEQ, LEQ, EQ, NEQ
+};
 
 struct node
 {
@@ -43,11 +53,12 @@ private:
 public:
     IndexHandle();
     IndexHandle(vector<string> tt, string idxPath);
-    int CreateIndex(char *indexName, int pos);
+    int CreateIndex(char *indexName, int pos, bool forceEmpty);
     int DeleteIndex(char *indexName, int pos);
-    int InsertRecord(RM_Record &record);
+    int IndexAction(IndexAction actionType, RM_Record &record, RM::RecordHandler *recordHandler);
     int SetIndex(int pos, bool value = true);
-    int SearchRange(vector<RID> &result, char* left, char* right, int comOP, int col);
+    int SearchRange(vector<RID> &result, char* left, char* right, CompOp comOP, int col);
+    bool Existed(int pos, char *key);
 };
 
 }

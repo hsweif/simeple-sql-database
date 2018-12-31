@@ -9,15 +9,21 @@ RM_FileHandle::RM_FileHandle() {
 	for (int i = 0; i < PAGE_INT_NUM; i++) {
 		reset[i] = 0xFFFFFFFF;
 	}
+	this->isInitialized = false;
+}
 
-}
-RM_FileHandle::~RM_FileHandle() {
-}
-RM_FileHandle::RM_FileHandle(int id, int sz)
+RM_FileHandle::~RM_FileHandle()
 {
-	this->fileId = id;
-	this->recordSize = sz;
-}	
+	// AWARE
+	if(isInitialized) {
+        delete pageUintMap;
+        delete recordUintMap;
+        delete recordBitMap;
+        delete mBufpm;
+        delete recordHandler;
+	}
+}
+
 int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 {
 	this->indexPath = string(indexName);
@@ -29,24 +35,32 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	recordSum = firstPage[2];
 	pageCnt = firstPage[3];
 	colNum = firstPage[4];
-	cout << recordSize << " " << colNum << endl;
-	type.clear();
-	title.clear();
+
+	if(colNum > 0 && (recordHandler == NULL || (recordHandler != NULL && !recordHandler->isInitialized))) {
+		recordHandler = new RM::RecordHandler(colNum);
+	}
+	recordHandler->SetRecordSize(recordSize);
+
+
+	vector<string> tmpTitle;
 	/**
-	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
+	 * 接下来colNum个uint定义type，再colNum个ITEM_TYPE长度的title
 	 */
-	cout << "init" << endl;
-	for(int i = 0; i < colNum; i ++) {
-		type.push_back(firstPage[HEAD_OFFSET+i]);
-		BufType colName = &firstPage[HEAD_OFFSET+(i*(ITEM_LENGTH/4))+colNum];
+	for(int i = 0; i < colNum; i ++)
+	{
+		int tp = firstPage[HEAD_OFFSET+i];
+		if(tp != -1) {
+			recordHandler->SetType(i, (RM::ItemType)firstPage[HEAD_OFFSET+i]);
+		}
+		BufType colName = &firstPage[HEAD_OFFSET+(i*(RM::TITLE_LENGTH/4))+colNum];
 		uint mask = (1<<8) - 1;
 		char c[16];
 		int cnt = 0;
 		memset(c, 0, sizeof(c));
-		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
+		for(int k = 0; k < RM::TITLE_LENGTH / 4; k++) {
 		    for(int shift = 0; shift < 32; shift += 8) {
 		    	uint num = ((colName[k] >> shift) & mask);
-				if(isValidChar(num)) {
+				if(recordHandler->isValidChar(num)) {
 					c[cnt] = (char)num;
 					cnt ++;
 				}
@@ -56,10 +70,44 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 			}
 		}
 		string str(c);
-		cout << str << endl;
-		title.push_back(str);
+		tmpTitle.push_back(str);
 	}
-	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
+	if(!recordHandler->isInitialized) {
+		this->SetTitle(tmpTitle);
+	    InitIndex(false);
+	}
+
+	// TODO: Add support for null key
+	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
+	int offset = HEAD_OFFSET + colNum + (RM::TITLE_LENGTH/4)*colNum;
+	bool *allowNull = new bool[colNum];
+	for(int i = 0, cnt = 0; i < nullSectLength && cnt < colNum; i ++)
+	{
+		uint curNum = (uint)firstPage[i+offset];
+		for(int shift = 0; shift < 32 && cnt < colNum; shift ++)
+		{
+			allowNull[cnt] = (bool)((curNum & (1 << shift)) >> shift);
+			cnt ++;
+		}
+	}
+    recordHandler->SetNullInfo(allowNull, colNum);
+
+	// Below is for main key:
+	offset += nullSectLength;
+	mainKey = (uint)firstPage[offset];
+
+
+	// Below is for mutable item length;
+	offset ++;
+	for(int i = 0; i < colNum; i ++) {
+	    int l = (int)firstPage[i + offset];
+	    if(l != -1) {
+			recordHandler->SetItemLength(i, l);
+		}
+	}
+
+	// Below is for mapping
+	offset += colNum;
 	pageUintMap = new uint[PAGE_INT_NUM - offset];
 	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
 		pageUintMap[i] = firstPage[i + offset];
@@ -72,34 +120,30 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 		recordMapSize = recordPP/32+1;
 	}
 	recordUintMap = new uint[recordMapSize];
-	cout << "Length: " << colNum << " " << type.size() << endl;
+
+	isInitialized = true;
 	return 0;
 }
 
-bool RM_FileHandle::isValidChar(uint c)
-{
-	if(c >= 32 && c <= 124)
-		return true;
-	else
-		return false;
-}
 
 int RM_FileHandle::updateHead() {
 	BufType readBuf = this->mBufpm->getPage(this->fileId, 0, firstPageBufIndex);
-	readBuf[0] = recordSize;
-	readBuf[1] = recordPP;
-	readBuf[2] = recordSum;
-	readBuf[3] = pageCnt;
-	readBuf[4] = colNum;
+	readBuf[0] = (uint)recordSize;
+	readBuf[1] = (uint)recordPP;
+	readBuf[2] = (uint)recordSum;
+	readBuf[3] = (uint)pageCnt;
+	readBuf[4] = (uint)colNum;
 	/**
 	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
 	 */
+	RM::ItemType *type = recordHandler->GetItemType();
+
 	for(int i = 0; i < colNum; i ++) {
 	    readBuf[HEAD_OFFSET+i] = type[i];
 		int cnt = 0, l = title[i].length();
-		cout << "test " << title[i] << l << endl;
-		for(int k = 0; k < ITEM_LENGTH / 4; k++) {
-		    int pos = HEAD_OFFSET + colNum + (i*(ITEM_LENGTH/4)) + k;
+		cout << "Update title to head: " << title[i] << l << endl;
+		for(int k = 0; k < RM::TITLE_LENGTH / 4; k++) {
+		    int pos = HEAD_OFFSET + colNum + (i*(RM::TITLE_LENGTH/4)) + k;
 			readBuf[pos] = 0;
 		    for(int shift = 0; shift < 32; shift += 8) {
 		        if(cnt < l) {
@@ -107,13 +151,39 @@ int RM_FileHandle::updateHead() {
                     cnt ++;
 				}
 			}
-			// cout << "pos: " << pos << "/" << readBuf[pos] << endl;
 		}
 	}
-	int offset = HEAD_OFFSET + colNum + (ITEM_LENGTH/4)*colNum;
+	int offset = HEAD_OFFSET + colNum + (RM::TITLE_LENGTH/4)*colNum;
+	// Null section
+	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
+	for(int i = 0, cnt = 0; i < nullSectLength && cnt < colNum; i ++)
+	{
+		uint curNum = 0;
+		for(int shift = 0; shift < 32 && cnt < colNum; shift ++)
+		{
+			curNum += (recordHandler->IsAllowNull(cnt) << shift);
+			cnt ++;
+		}
+		readBuf[i + offset] = curNum;
+	}
+
+	// This is for main key.
+	offset += nullSectLength;
+	readBuf[offset] = mainKey;
+
+	// This is for mutable item length;
+	offset ++;
+	int *itemLength = recordHandler->GetItemLength();
+	for(int i = 0; i < colNum; i ++) {
+		readBuf[i+offset] = itemLength[i];
+	}
+
+	// This is for page mapping
+	offset += colNum;
 	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
 		readBuf[i + offset] = pageUintMap[i];
 	}
+
 	this->mBufpm->markDirty(firstPageBufIndex);
 	return 0;
 }
@@ -134,16 +204,23 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	for (int i = 0; i < recordSize; i++) {
 		pData[i] = readBuf[recordMapSize + i + slot * recordSize];
 	}
-	rec.SetRecord(pData, recordSize, rid);
+	rec.SetRecord(pData, recordSize, colNum);
+	RID nRid = rid;
+	rec.SetRID(nRid);
 	return 0;
 }
 
-vector<int> RM_FileHandle::GetType()
+int RM_FileHandle::SetMainKey(int key)
 {
-	return this->type;
+	if(key < 0 || key > colNum) {
+		return 1;
+	}
+	mainKey = (uint)key;
+	return 0;
 }
 
-int RM_FileHandle::UpdateRec(const RM_Record &rec) {
+
+int RM_FileHandle::UpdateRec(RM_Record &rec) {
 	RID rid;
 	rec.GetRid(rid);
 	int page, slot;
@@ -173,20 +250,62 @@ int RM_FileHandle::UpdateRec(const RM_Record &rec) {
 	}
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
+	// TODO: Update the index
+	this->indexHandle->IndexAction(IM::UPDATE, rec, recordHandler);
 	return 0;
 }
 
 
+int RM_FileHandle::CheckForMainKey(RM_Record &pData)
+{
+	if(mainKey != -1)
+	{
+        RM_node mkTest;
+        recordHandler->GetColumn(mainKey, pData, mkTest);
+        string keyStr = "";
+        std::stringstream ss;
+        if(mkTest.type == RM::INT) {
+            ss << mkTest.num;
+            ss >> keyStr;
+        }
+        else if(mkTest.type == RM::FLOAT) {
+            ss << mkTest.fNum;
+            ss >> keyStr;
+        }
+        else{
+            keyStr = mkTest.str;
+        }
+        char *keyChar = new char[keyStr.length()];
+        for(int i = 0; i < keyStr.length(); i ++) {
+            keyChar[i] = keyStr[i];
+        }
+        if(mainKey < this->colNum && mainKey > 0 && indexHandle->Existed(mainKey, keyChar)){
+            return 1;
+        }
+        else{
+        	return 0;
+        }
+	} else{
+		return 0;
+	}
+}
 
 int RM_FileHandle::InsertRec(RM_Record& pData){
+
 	//check size
-	int dataSize;
-	pData.GetSize(dataSize);
+	// int dataSize = pData.RecordSize();
+	int dataSize = pData.BufSize();
 	if(dataSize != this->recordSize)
 	{
 		printf("data size error: %d/ %d\n", dataSize, this->recordSize);
 		return 1;
 	}
+
+	if(CheckForMainKey(pData)) {
+		printf("Item with same main key already existed\n");
+		return 1;
+	}
+
 	//check space
 	int pageIndex = pageBitMap->findLeftOne();
 	if (pageIndex + 1 >= pageCnt)//current pages can't be used
@@ -195,7 +314,7 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		pageCnt = pageIndex + 2;
 	}
 	int page = pageIndex+1;
-	BufType bufData = pData.GetData();
+	BufType bufData = pData.GetBuf();
 	int bufIndex;
 	readBuf = this->mBufpm->getPage(this->fileId, page, bufIndex);
 	if (bufLastIndex != bufIndex)
@@ -210,6 +329,11 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		cout << "codeError" << endl;
 		return 1;
 	}
+
+	//AWARE
+	RID rid(page, slot);
+	pData.SetRID(rid);
+
 	recordBitMap->setBit(slot, 0);
 	for (int i = 0; i < recordSize; i++) {
 		readBuf[recordMapSize + i + slot * recordSize] = bufData[i];
@@ -218,18 +342,21 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		readBuf[i] = recordUintMap[i];
 	}
 	recordSum++;
-	if (recordBitMap->findLeftOne() >= recordPP)
+	if (recordBitMap->findLeftOne() >= recordPP) {
 		pageBitMap->setBit(page - 1, 0);
+	}
 	this->mBufpm->markDirty(bufIndex);
 	bufLastIndex = bufIndex;
 
 	// TODO: support different key value
-	this->indexHandle->InsertRecord(pData);
+	this->indexHandle->IndexAction(IM::INSERT, pData, recordHandler);
 	return 0;
 }
 
 int RM_FileHandle::DeleteRec(const RID &rid) {
 	int page, slot;
+	RM_Record record;
+	GetRec(rid, record);
 	rid.GetPageNum(page);
 	rid.GetSlotNum(slot);
 	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
@@ -251,7 +378,7 @@ int RM_FileHandle::DeleteRec(const RID &rid) {
 	bufLastIndex = bufIndex;
 
 	// TODO: remove from index
-
+	this->indexHandle->IndexAction(IM::DELETE, record, recordHandler);
 	return 0;
 }
 
@@ -301,15 +428,29 @@ int RM_FileHandle::RecordNum() const
 
 void RM_FileHandle::SetType(vector<int> tp)
 {
-	type = tp;
 	colNum = tp.size();
+	for(int i = 0; i < colNum; i ++) {
+		recordHandler->SetType(i, (RM::ItemType)tp[i]);
+	}
 }
+
+
 
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
-    this->indexHandle = new IM::IndexHandle(title, this->indexPath);
-    this->indexHandle->CreateIndex((char*)title[0].data(), 0);
+}
+
+int RM_FileHandle::InitIndex(bool forceEmpty)
+{
+	if(title.empty() || colNum <= 0) {
+		return 1;
+	}
+	this->indexHandle = new IM::IndexHandle(title, this->indexPath);
+	for(int i = 0; i < title.size(); i ++) {
+		this->indexHandle->CreateIndex((char*)title[i].data(), i, forceEmpty);
+	}
+	return 0;
 }
 
 void RM_FileHandle::PrintTitle()
@@ -321,8 +462,40 @@ void RM_FileHandle::PrintTitle()
 	cout << endl;
 }
 
+int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)
+{
+	int sum = this->RecordNum();
+    int pageCount = this->PageNum();
+    int recordPP = this->recordPP;
+    int page = 1, slot = 0;
+    int cnt = 0;
+
+    result.clear();
+
+    while(cnt < sum)
+    {
+    	if(slot >= recordPP) {
+    		page ++;
+    		slot = 0;
+		}
+        RID rid(page, slot);
+        RM_Record record;
+        if(this->GetRec(rid, record) == 0)
+        {
+            result.push_back(record);
+            slot ++;
+            cnt ++;
+        }
+    }
+
+    return 0;
+}
+
 int RM_FileHandle::CreateDir(string dirPath)
 {
-   	string command = "mkdir -p " + dirPath;
-    system(command.c_str());
+#ifdef __DARWIN_UNIX03
+    mkdir(dirPath.c_str(), S_IRWXU);
+#endif
 }
+
+

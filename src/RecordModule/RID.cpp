@@ -14,6 +14,25 @@ RID::~RID() {
 
 }
 
+bool RID::operator != (const RID &b)
+{
+	if(this->mPageNum != b.mPageNum) {
+		return true;
+	}
+	else if(this->mSlotNum != b.mSlotNum) {
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+
+ostream& operator << (ostream &output, RID& rid)
+{
+	output << "RID: (" << rid.mPageNum << "," << rid.mSlotNum << ")";
+	return output;
+}
+
 int RID::GetPageNum(int &pageNum) const {
 	if (mPageNum == -1 || mSlotNum == -1)
 		return 1;

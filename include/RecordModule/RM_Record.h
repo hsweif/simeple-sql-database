@@ -8,49 +8,57 @@
 #include <iostream>
 #include <cstdio>
 
-#define INT_TYPE 0
-#define STR_TYPE 1
-#define FLOAT_TYPE 2
-#define ERR_TYPE -1
-#define DESCRIPTION 3
-#define ITEM_LENGTH 16
-#define DESCRIPT_LENGTH 256
-
 using namespace std;
+
+namespace RM {
+	enum ItemType {
+		CHAR, INT, FLOAT, ERROR
+	};
+}
+
 struct RM_node
 {
     int length;
-    int type;
+    RM::ItemType type;
+    int isNull;
+
+    int num;
+    string str;
+    float fNum;
+
     BufType ctx; //Context of the node
-    RM_node(){}
-    RM_node(BufType buf, int l, int t = STR_TYPE);
+    RM_node();
+    RM_node(int content);
+	RM_node(float content);
+	RM_node(string content);
     void setCtx(int n);
     void setCtx(float f);
     void setCtx(string s);
-    void Print();
 };
 
 class RM_Record {
 private:
 	RID mRid;
 	int recordSize;
-	int length;
 	BufType mData;
-	int recordLength;
-	vector<int> type;
+	int bufSize;
+	int colNum;
 public:
-	RM_Record  ();                     // Constructor
-	RM_Record(vector<int> type);
-	~RM_Record (){};                     // Destructor
-	int SetRecord	(BufType pData,int size,RID id);
-	void SetType(vector<int> tp);
-	BufType GetData () const;   // Set pData to point to
+	RM_Record();
+	~RM_Record (){};
+	int SetRecord	(BufType pData, int size, int cNum);
+	// void SetType(vector<int> tp);
+	BufType GetData () const; // 返回不包括NULL位图的内容
+	BufType GetBuf () const; // 返回整个mData，包括NULL位图
 	//   the record's contents
 	int GetRid     (RID &rid) const;       // Get the record id
-	int GetSize(int &sz) const;
-	int GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recordSize);
-	int GetNodes(vector<RM_node> &result, BufType serializedBuf);
-	int GetColumn(int col, string *content);
-	void Print();
+	int RecordSize() const { return recordSize;	}
+	int BufSize() const { return bufSize; }
+	// int GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recordSize);
+	// int GetNodes(vector<RM_node> &result, BufType serializedBuf);
+	// int GetColumn(int col, string *content);
+	bool IsNull(int pos);
+	int SetRID(RID &rid) { this->mRid = rid;};
+	// void Print();
 };
 #endif
