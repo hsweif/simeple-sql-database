@@ -54,7 +54,9 @@ int IndexHandle::CreateIndex(char *indexName, int pos)
         indexFile.open(indexFileName, ios::out);
         indexFile.close();
     }
-
+    else{
+        indexFile.close();
+    }
     cout << "index path: " << indexFileName << endl;
     bpt::bplus_tree *bpTree = new bpt::bplus_tree((char*)indexFileName.data());
     index.push_back(node(indexStr, bpTree));
@@ -127,11 +129,10 @@ int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record, RM::
     }
 }
 
-int IndexHandle::SearchRange(vector<RID> &result, char *leftValue, char *rightValue, int comOP, int col)
+int IndexHandle::SearchRange(vector<RID> &result, char *leftValue, char *rightValue, CompOp comOP, int col)
 {
     // TODO: Undone.
-    // FIXME: Temporarily set to 0
-    RID *searched;
+    RID *searched = new RID[MAX_RESULT];
     result.clear();
     bpt::key_t left(leftValue);
     bpt::key_t right(rightValue);
@@ -142,11 +143,14 @@ int IndexHandle::SearchRange(vector<RID> &result, char *leftValue, char *rightVa
         if(i == col && isIndex[i])
         {
             bpt::bplus_tree *indexTree = iter->bpTree;
-            if(comOP == SMALLER) {
+            if(comOP == IM::LS) {
                 resultNum = indexTree->search_range(&left, right, searched, MAX_RESULT);
             }
-            else if(comOP == LARGER) {
+            else if(comOP == IM::GT) {
                 resultNum = indexTree->search_range(&right, left, searched, MAX_RESULT);
+            }
+            else if(comOP == IM::EQ) {
+                resultNum = indexTree->search_range(&right, right, searched, MAX_RESULT);
             }
             break;
         }
@@ -158,7 +162,6 @@ int IndexHandle::SearchRange(vector<RID> &result, char *leftValue, char *rightVa
     for(int i = 0; i < resultNum; i ++) {
         result.push_back(searched[i]);
     }
-
     return 0;
 }
 

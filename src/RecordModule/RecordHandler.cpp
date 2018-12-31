@@ -298,4 +298,15 @@ int RecordHandler::SetItemAttribute(int pos, int length, RM::ItemType itemType, 
 	return 0;
 }
 
+int RecordHandler::SetRecordSize(int size)
+{
+    if(!isInitialized) {
+        recordSize = size;
+        return 0;
+    }
+    else{
+        return 1;
+    }
+}
+
 }

@@ -47,10 +47,12 @@ private:
 	BufType readBuf;
 	string indexPath;
 	vector<string> title;
+	int CheckForMainKey(RM_Record &pData);
 
 public:
 	IM::IndexHandle *indexHandle;
     RM::RecordHandler *recordHandler;
+	int CheckForMainKey();
     RM_FileHandle();
     ~RM_FileHandle();                                  // Destructor
 	int updateHead();
@@ -62,7 +64,6 @@ public:
     int UpdateRec(RM_Record &rec);
     int RecordNum() const;
     int PageNum() const {return pageCnt;}
-    int SetMainKey();
     int GetMainKey() const {return mainKey;}
     void SetTitle(vector<string> t);
     void PrintTitle();
@@ -72,6 +73,7 @@ public:
     void show();
 	int GetSlot(BufType page);
 	static int CreateDir(string dirPath);
+	int GetAllRecord(vector<RM_Record> &result);
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
 

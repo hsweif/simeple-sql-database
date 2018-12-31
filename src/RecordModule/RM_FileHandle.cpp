@@ -36,13 +36,16 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 	pageCnt = firstPage[3];
 	colNum = firstPage[4];
 
-	if(colNum > 0 && recordHandler != NULL && !recordHandler->isInitialized) {
+	if(colNum > 0 && (recordHandler == NULL || (recordHandler != NULL && !recordHandler->isInitialized))) {
 		recordHandler = new RM::RecordHandler(colNum);
 	}
+	recordHandler->SetRecordSize(recordSize);
+
 
 	title.clear();
+	vector<string> tmpTitle;
 	/**
-	 * 接下来colNum个uint定义type，在colNum个ITEM_TYPE长度的title
+	 * 接下来colNum个uint定义type，再colNum个ITEM_TYPE长度的title
 	 */
 	for(int i = 0; i < colNum; i ++)
 	{
@@ -68,9 +71,12 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 			}
 		}
 		string str(c);
-		// cout << str << endl;
-		title.push_back(str);
+		tmpTitle.push_back(str);
 	}
+	if(!recordHandler->isInitialized) {
+		this->SetTitle(tmpTitle);
+	}
+
 	// TODO: Add support for null key
 	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
 	int offset = HEAD_OFFSET + colNum + (RM::TITLE_LENGTH/4)*colNum;
@@ -250,6 +256,39 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 }
 
 
+int RM_FileHandle::CheckForMainKey(RM_Record &pData)
+{
+	if(mainKey != -1)
+	{
+        RM_node mkTest;
+        recordHandler->GetColumn(mainKey, pData, mkTest);
+        string keyStr = "";
+        std::stringstream ss;
+        if(mkTest.type == RM::INT) {
+            ss << mkTest.num;
+            ss >> keyStr;
+        }
+        else if(mkTest.type == RM::FLOAT) {
+            ss << mkTest.fNum;
+            ss >> keyStr;
+        }
+        else{
+            keyStr = mkTest.str;
+        }
+        char *keyChar = new char[keyStr.length()];
+        for(int i = 0; i < keyStr.length(); i ++) {
+            keyChar[i] = keyStr[i];
+        }
+        if(mainKey < this->colNum && mainKey > 0 && indexHandle->Existed(mainKey, keyChar)){
+            return 1;
+        }
+        else{
+        	return 0;
+        }
+	} else{
+		return 0;
+	}
+}
 
 int RM_FileHandle::InsertRec(RM_Record& pData){
 
@@ -261,28 +300,10 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		printf("data size error: %d/ %d\n", dataSize, this->recordSize);
 		return 1;
 	}
-	//TODO: Below is for checking main key.
-	RM_node mkTest;
-	recordHandler->GetColumn(mainKey, pData, mkTest);
-	string keyStr = "";
-	std::stringstream ss;
-	if(mkTest.type == RM::INT) {
-		ss << mkTest.num;
-		ss >> keyStr;
-	}
-	else if(mkTest.type == RM::FLOAT) {
-		ss << mkTest.fNum;
-		ss >> keyStr;
-	}
-	else{
-	    keyStr = mkTest.str;
-	}
-	char *keyChar = new char[keyStr.length()];
-	for(int i = 0; i < keyStr.length(); i ++) {
-		keyChar[i] = keyStr[i];
-	}
-	if(indexHandle->Existed(mainKey, keyChar)){
-	    return 1;
+
+	if(CheckForMainKey(pData)) {
+		printf("Item with same main key already existed\n");
+		return 1;
 	}
 
 	//check space
@@ -293,7 +314,7 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		pageCnt = pageIndex + 2;
 	}
 	int page = pageIndex+1;
-	BufType bufData = pData.GetData();
+	BufType bufData = pData.GetBuf();
 	int bufIndex;
 	readBuf = this->mBufpm->getPage(this->fileId, page, bufIndex);
 	if (bufLastIndex != bufIndex)
@@ -431,6 +452,35 @@ void RM_FileHandle::PrintTitle()
 		cout << title[i] << " | ";
 	}
 	cout << endl;
+}
+
+int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)
+{
+	int sum = this->RecordNum();
+    int pageCount = this->PageNum();
+    int recordPP = this->recordPP;
+    int page = 1, slot = 0;
+    int cnt = 0;
+
+    result.clear();
+
+    while(cnt < sum)
+    {
+    	if(slot >= recordPP) {
+    		page ++;
+    		slot = 0;
+		}
+        RID rid(page, slot);
+        RM_Record record;
+        if(this->GetRec(rid, record) == 0)
+        {
+            result.push_back(record);
+            slot ++;
+            cnt ++;
+        }
+    }
+
+    return 0;
 }
 
 int RM_FileHandle::CreateDir(string dirPath)

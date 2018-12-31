@@ -17,11 +17,13 @@ unsigned char h[61];
 
 using namespace std;
 
-void NewTest()
+void NewTest(bool createNewDB, char *dbName)
 {
-	char *dbName = "NewTest13";
-	// Test for create DB
-	CreateDB(dbName);
+    string mode = createNewDB ? "Create new database" : "Use currently data base";
+    cout << mode << endl;
+	if(createNewDB) {
+        CreateDB(dbName);
+	}
 	DIR *dir = UseDB(dbName);
 	if(dir == NULL) {
 		cout << "Error in opening database." << endl;
@@ -30,42 +32,60 @@ void NewTest()
 	RM_Manager *rmg = new RM_Manager(dbName);
 	int colNum = 2;
 
-
 	RM_FileHandle *handler = new RM_FileHandle();
-	handler->recordHandler = new RM::RecordHandler(colNum);
-	handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
-	handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
-	int sz = handler->recordHandler->GetRecordSize();
-	rmg->createFile(dbName, sz, colNum);
+	if(createNewDB)
+	{
+        handler->recordHandler = new RM::RecordHandler(colNum);
+        handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
+        handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
+        int sz = handler->recordHandler->GetRecordSize();
+        rmg->createFile(dbName, sz, colNum);
+        vector<string> title;
+        title.push_back("name");
+        title.push_back("id");
+        handler->SetTitle(title);
+	}
+
 	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-
-	// 在init后面才不会被覆盖
-	handler->SetMainKey(1);
-
-	// HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
-	vector<string> title;
-	title.push_back("name");
-	title.push_back("id");
-	handler->SetTitle(title);
-
 	cout << test << endl;
 
-	vector<RM_node> items;
-	RM_node person_a("benson");
-	RM_node id_a(24);
-	items.push_back(person_a);
-	items.push_back(id_a);
+	// 在init后面才不会被覆盖
+	// handler->SetMainKey(1);
 
-	RM_Record record;
-	if(handler->recordHandler->MakeRecord(record, items)) {
-		cout << "Error to make record." << endl;
+	// HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
+	if(createNewDB) {
+        vector<RM_node> items;
+        for(int i = 0; i < 20; i ++) {
+            items.clear();
+            RM_node person_a("person_test");
+            RM_node id_a(i/2);
+            items.push_back(person_a);
+            items.push_back(id_a);
+            RM_Record record;
+            if(handler->recordHandler->MakeRecord(record, items)) {
+                cout << "Error to make record." << endl;
+            }
+            handler->recordHandler->PrintRecord(record);
+            handler->InsertRec(record);
+        }
+
 	}
+
+	printf("Searched result for records with id between %d and %d\n", 3, 35);
+	vector<RID> rid;
+	handler->indexHandle->SearchRange(rid, "3", "35", IM::LS, 1);
+	for(int i = 0; i < rid.size(); i ++) {
+		cout << rid[i] << endl;
+	}
+
+	printf("-------------List all records in the file--------------\n");
 	handler->PrintTitle();
-	handler->recordHandler->PrintRecord(record);
-	handler->InsertRec(record);
-	handler->InsertRec(record);
-	handler->InsertRec(record);
-	handler->InsertRec(record);
+	vector<RM_Record> result;
+	handler->GetAllRecord(result);
+	for(int i = 0; i < result.size(); i ++) {
+		handler->recordHandler->PrintRecord(result[i]);
+	}
+	rmg->closeFile(*handler);
 }
 /*
 void test1(){
@@ -120,6 +140,8 @@ int main(){
     printf("It is on Unix now.\n");
 #endif
     MyBitMap::initConst();
-    NewTest();
+	char *dbName = "NewTesting1_3";
+	NewTest(true, dbName);
+    NewTest(false, dbName);
     return 0;
 }

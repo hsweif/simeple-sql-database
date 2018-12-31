@@ -129,6 +129,14 @@ BufType RM_Record::GetData() const
 	return mData + offset;
 }
 
+BufType RM_Record::GetBuf() const
+{
+    if (recordSize == -1 || mData == NULL) {
+        return NULL;
+    }
+    return mData;
+}
+
 int RM_Record::GetRid(RID &id) const
 {
 	if(recordSize == -1 || mData == NULL)
@@ -161,6 +169,7 @@ void RM_Record::Print()
 }
 */
 
+/*
 int RM_Record::GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recordSize)
 {
     int size = 0;
@@ -168,25 +177,23 @@ int RM_Record::GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recor
     for (int i = 0; i < data_l; i++)
     {
         size += data[i].length;
-        /*
-        if (data[i].type == RM::FLOAT || data[i].type == RM::INT)
-        {
-            size += 1;
-            data[i].length = 1;
-        }
-        else if (data[i].type == RM::CHAR)
-        {
-            int sLength = ITEM_LENGTH / 4;
-            size += sLength;
-            data[i].length = sLength;
-        }
-        else if (data[i].type == DESCRIPTION)
-        {
-            int dLength = DESCRIPT_LENGTH / 4;
-            size += dLength;
-            data[i].length = dLength;
-        }
-        */
+        // if (data[i].type == RM::FLOAT || data[i].type == RM::INT)
+        // {
+        //     size += 1;
+        //     data[i].length = 1;
+        // }
+        // else if (data[i].type == RM::CHAR)
+        // {
+        //     int sLength = ITEM_LENGTH / 4;
+        //     size += sLength;
+        //     data[i].length = sLength;
+        // }
+        // else if (data[i].type == DESCRIPTION)
+        // {
+        //     int dLength = DESCRIPT_LENGTH / 4;
+        //     size += dLength;
+        //     data[i].length = dLength;
+
     }
     recordSize = size;
     int l = (data_l % 32) ? data_l/32 + 1 : data_l/32;
@@ -226,6 +233,7 @@ int RM_Record::GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recor
     *rec = buf;
     return 0;
 }
+*/
 
 /*
 int RM_Record::GetNodes(vector<RM_node> &result, BufType serializedBuf)

@@ -19,11 +19,11 @@ class RecordHandler
 {
 private:
     int itemNum;
-    int recordSize; // 一条record总共占多少uint
     RM::ItemType *type;
     int *itemLength; // 如果item是CHAR类型的，有几个Char，INT、FLOAT型为1（个uint）无意义
     bool *allowNull;
     int nullSectLength; // 记录NULL信息的区段占据了多少个uint
+    int recordSize; // 一条record总共占多少uint
 public:
     bool isInitialized; // 为真时表示在FileHandle的init前就已经设定好值了
     RecordHandler(int length);
@@ -36,6 +36,7 @@ public:
     int* GetItemLength() const {return itemLength;}
     int SetItemLength(int pos, int _length);
     int SetNullInfo(bool *nullInfo, int length);
+    int SetRecordSize(int size);
     int IsAllowNull(int pos);
     int SetItemAttribute(int pos, int length, RM::ItemType itemType, bool isNull);
     int GetRecordSize() const {return recordSize;}

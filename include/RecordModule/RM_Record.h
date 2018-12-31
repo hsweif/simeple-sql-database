@@ -48,12 +48,13 @@ public:
 	~RM_Record (){};
 	int SetRecord	(BufType pData, int size, int cNum);
 	// void SetType(vector<int> tp);
-	BufType GetData () const;   // Set pData to point to
+	BufType GetData () const; // 返回不包括NULL位图的内容
+	BufType GetBuf () const; // 返回整个mData，包括NULL位图
 	//   the record's contents
 	int GetRid     (RID &rid) const;       // Get the record id
 	int RecordSize() const { return recordSize;	}
 	int BufSize() const { return bufSize; }
-	int GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recordSize);
+	// int GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recordSize);
 	// int GetNodes(vector<RM_node> &result, BufType serializedBuf);
 	// int GetColumn(int col, string *content);
 	bool IsNull(int pos);

@@ -27,6 +27,12 @@ bool RID::operator != (const RID &b)
 	}
 }
 
+ostream& operator << (ostream &output, RID& rid)
+{
+	output << "RID: (" << rid.mPageNum << "," << rid.mSlotNum << ")";
+	return output;
+}
+
 int RID::GetPageNum(int &pageNum) const {
 	if (mPageNum == -1 || mSlotNum == -1)
 		return 1;
