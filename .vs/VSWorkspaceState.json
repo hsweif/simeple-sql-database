@@ -5,7 +5,10 @@
     "\\include\\filesystem",
     "\\include\\RecordModule",
     "\\include\\utils",
+    "\\sql-parser",
+    "\\sql-parser\\src",
     "\\src"
   ],
+  "SelectedNode": "\\sql-parser\\src\\sql",
   "PreviewInSolutionExplorer": false
 }

@@ -7,6 +7,7 @@
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include "CommandModule/dataBaseManager.h"
+#include "../sql-parser/src/SQLParser.h"
 #include <vector>
 #include <string>
 
@@ -141,6 +142,7 @@ int main(){
     printf("It is on Unix now.\n");
 #endif
     MyBitMap::initConst();
+    hsql::SQLParserResult result;
 	char *dbName = "NewTesting1_3";
 	NewTest(true, dbName);
     NewTest(false, dbName);
