@@ -7,7 +7,7 @@
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include "CommandModule/dataBaseManager.h"
-#include "../sql-parser/src/SQLParser.h"
+#include "SQLParser.h"
 #include <vector>
 #include <string>
 
