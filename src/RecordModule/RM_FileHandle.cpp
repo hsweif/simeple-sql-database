@@ -24,9 +24,9 @@ RM_FileHandle::~RM_FileHandle()
 	}
 }
 
-int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
+int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 {
-	this->indexPath = string(indexName);
+	// this->indexPath = string(indexName);
 	fileId = _fileId;
 	mBufpm = _bufpm;
 	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);

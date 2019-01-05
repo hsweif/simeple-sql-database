@@ -16,3 +16,8 @@ cpp 源程序放置于 src 目录下，头文件.h 放置于 include 目录下�
 
 > 长度单位为uint
 
+## 注意事项
+### 语句的依赖关系
+创建模式时使用的InitIndex，注意其应该要在openFile后才使用，因为在openFile函数里方才对数据库路径赋值。
+
+
