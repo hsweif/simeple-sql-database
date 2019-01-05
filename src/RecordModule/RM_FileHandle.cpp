@@ -496,6 +496,12 @@ int RM_FileHandle::CreateDir(string dirPath)
 #ifdef __DARWIN_UNIX03
     mkdir(dirPath.c_str(), S_IRWXU);
 #endif
+#ifdef WIN32
+	if(_mkdir(dirPath.c_str()) != 0){
+		cout<<"createDir error"<<endl;
+		return -1;
+	}
+#endif
 }
 
 
