@@ -118,10 +118,11 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			handler->recordHandler->SetItemAttribute(i,col[i]->type.length,transType(col[i]->type.data_type),col[i]->nullable);
 		}	
 		handler->SetTitle(title);
-		handler->InitIndex(true);
 		int size = handler->recordHandler->GetRecordSize();
 		rmg->createFile(((hsql::CreateStatement*)stmt)->tableName,size,colNum);
 		rmg->openFile(((hsql::CreateStatement*)stmt)->tableName,*handler);
+		// InitIndex 要在openfile后面
+		handler->InitIndex(true);
 		//handler->PrintTitle();
 		rmg->closeFile(*handler);
 		delete handler;
