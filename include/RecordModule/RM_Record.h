@@ -7,6 +7,7 @@
 #include <string.h>
 #include <iostream>
 #include <cstdio>
+#include <sstream>
 
 using namespace std;
 
@@ -34,6 +35,7 @@ struct RM_node
     void setCtx(int n);
     void setCtx(float f);
     void setCtx(string s);
+    bool keyEqual(string value);
 };
 
 class RM_Record {

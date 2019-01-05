@@ -1,5 +1,6 @@
 #include "../include/RecordModule/RM_Record.h"
 #include <iostream>
+
 using namespace std;
 
 RM_node::RM_node()
@@ -68,6 +69,28 @@ void RM_node::setCtx(string s)
     }
 }
 
+bool RM_node::keyEqual(string value)
+{
+    std::stringstream ss;
+    string mValue;
+    if(type == RM::INT) {
+        ss << num;
+        ss >> mValue;
+    }
+    else if(type == RM::FLOAT) {
+        ss << fNum;
+        ss >> mValue;
+    }
+    else{
+        mValue = str;
+    }
+    if(value == mValue) {
+        return true;
+    }
+    else{
+        return false;
+    }
+}
 /*
 void RM_node::Print()
 {

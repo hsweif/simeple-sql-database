@@ -2,42 +2,82 @@
 
 RM_FileScan::RM_FileScan()
 {
-
+    this->scanResult = new list<RID>();
+    noScanBefore = true;
 }
 
-RM_FileScan::RM_FileScan(vector<int> tp)
+RM_FileScan::~RM_FileScan()
 {
-    this->typeArr = tp;
+    delete this->scanResult;
 }
 
-int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int attrKey, int attrType, int compOp)
+int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, char *value)
 {
-    int sum = fileHandle.RecordNum();
-    int pageCount = fileHandle.PageNum();
-    int page = 1, slot = 0;
-    int cnt = 0;
-    while(cnt < sum)
+    if(scanResult->empty() && noScanBefore)
     {
-        RID rid(page, slot);
-        RM_Record record;
-        if(fileHandle.GetRec(rid, record) == 0)
+        if(comOp == IM::LS || comOp == IM::LEQ)
         {
-            // FIXME
-            // record.SetType(this->typeArr);
-            // record.Print();
-            slot ++;
-            cnt ++;
+            fileHandle.indexHandle->SearchRange(*scanResult, "", value, comOp, col);
+            curResult = scanResult->begin();
         }
+        else if(comOp == IM::GT || comOp == IM::GEQ)
+        {
+            char *maxKey = "~~~~~~~~~~~~~~~";
+            fileHandle.indexHandle->SearchRange(*scanResult, maxKey, value ,comOp, col);
+            curResult = scanResult->begin();
+        }
+        else if(comOp == IM::EQ)
+        {
+            fileHandle.indexHandle->SearchRange(*scanResult, value, value, comOp, col);
+            curResult = scanResult->begin();
+        }
+        if(comOp == IM::LS || comOp == IM::GT)
+        {
+            string vStr(value);
+            if(comOp == IM::LS) {
+                scanResult->reverse();
+                curResult = scanResult->begin();
+            }
+            while(curResult != scanResult->end())
+            {
+                RM_Record record;
+                if(fileHandle.GetRec(*curResult, record)) {
+                    cout << "Error in scanning" << endl;
+                    return 1;
+                }
+                RM_node node;
+                fileHandle.recordHandler->GetColumn(col, record, node);
+                if(!node.keyEqual(vStr)) {
+                    break;
+                }
+                scanResult->erase(curResult);
+                curResult ++;
+            }
+            if(comOp == IM::LS) {
+                scanResult->reverse();
+                curResult = scanResult->begin();
+            }
+        }
+        noScanBefore = false;
     }
-
+    return 0;
 }
 
-int RM_FileScan::GetNextRec(RM_Record &rec)
-{
 
+int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
+{
+    if(curResult != scanResult->end() && !scanResult->empty()) {
+        fileHandle.GetRec(*curResult, rec);
+        curResult ++;
+        return 0;
+    }
+    else{
+        return 1;
+    }
 }
 
 int RM_FileScan::CloseScan()
 {
-
+    scanResult->clear();
+    noScanBefore = true;
 }

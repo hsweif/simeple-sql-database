@@ -439,6 +439,9 @@ void RM_FileHandle::SetType(vector<int> tp)
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
+	for(int i = 0; i < title.size(); i ++) {
+		colNameMap.insert(pair<string, int>(title[i], i));
+	}
 }
 
 int RM_FileHandle::InitIndex(bool forceEmpty)
@@ -491,6 +494,34 @@ int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)
     return 0;
 }
 
+int RM_FileHandle::GetAllRid(list<RID> *result)
+{
+	int sum = this->RecordNum();
+    int pageCount = this->PageNum();
+    int recordPP = this->recordPP;
+    int page = 1, slot = 0;
+    int cnt = 0;
+
+    result->clear();
+
+    while(cnt < sum)
+    {
+    	if(slot >= recordPP) {
+    		page ++;
+    		slot = 0;
+		}
+        RID rid(page, slot);
+        RM_Record record;
+        if(this->GetRec(rid, record) == 0)
+        {
+            result->push_back(rid);
+            slot ++;
+            cnt ++;
+        }
+    }
+
+    return 0;
+}
 int RM_FileHandle::CreateDir(string dirPath)
 {
 #ifdef __DARWIN_UNIX03
