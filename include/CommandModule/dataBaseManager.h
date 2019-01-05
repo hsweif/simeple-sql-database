@@ -12,7 +12,7 @@ using namespace std;
 int CreateDB(char* dbName){
 	string str = dbName;
 	str = "../database/"+str;
-#ifdef _WINDOWS
+#ifdef WIN32
 	if(_mkdir(str.c_str()) != 0){
 		cout<<"createDB "<<dbName<<" error"<<endl;
 		return -1;
@@ -31,7 +31,7 @@ int CreateDB(char* dbName){
 int DropDB(char* dbName){
 	string str = dbName;
 	str = "../database/"+str;
-#ifdef _WINDOWS
+#ifdef WIN32
 	if(_rmdir(str.c_str()) != 0){
 		cout<<"dropDB "<<dbName<<" error"<<endl;
 		return -1;

@@ -1,5 +1,6 @@
 #include "RecordModule/RM_Manager.h"
-
+#include <iostream>
+using namespace std;
 RM_Manager::RM_Manager(char *dbName) {
     //从cmake-build-debug算起
     dataPath = new char[50];
@@ -58,7 +59,7 @@ int RM_Manager::deleteFile(const char* name) {
 void RM_Manager::showFile(const char* name) {
     //TODO:show status
     RM_FileHandle *handler = new RM_FileHandle();
-    openFile(name,*handler);
+    cout<<openFile(name,*handler)<<endl;
     printf("%s\n", name);
     handler->PrintTitle();
     closeFile(*handler);
