@@ -15,6 +15,7 @@
 #include "IndexModule/IndexHandle.h"
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
+#include <fstream>
 using namespace std;
 
 RM_Manager *rmg;
@@ -106,7 +107,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		std::vector<hsql::ColumnDefinition*> col = ((hsql::CreateStatement*)stmt)->columns[0];
 		if(((hsql::CreateStatement*)stmt)->primaryKeys != nullptr){
 			for(char *key:*(((hsql::CreateStatement*)stmt)->primaryKeys)){
-				printf("%s\n", key);
+				printf("primaryKey:%s\n", key);
 			}
 		}		
 		int colNum = col.size();
@@ -151,14 +152,16 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		if(rmg == NULL){
 			printf("current path is not DBPath\n");
 			return -1;
-		}		
+		}	
+
 	}
 	return 0;
 }
 void ParseInput(){
 	string command;
 	printf(">");
-	getline(std::cin,command);
+	ifstream fin("../testcase/test1.txt");
+	getline(fin,command);
 	while(command != "exit"){
 		hsql::SQLParserResult result;
 		hsql::SQLParser::parse(command, &result);		
@@ -183,7 +186,8 @@ void ParseInput(){
 			//return;
 		}
 		printf((currentDB+'>').c_str());
-		getline(std::cin,command);
+		if(!getline(fin,command))
+			break;
 	}
 }
 
