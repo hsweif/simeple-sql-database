@@ -45,38 +45,41 @@ void NewTest(bool createNewDB, char *dbName)
 		title.push_back("id");
 		handler->SetTitle(title);
 		handler->InitIndex(true);
-		rmg->createFile(dbName, sz, colNum);
+        rmg->createFile(dbName, sz, colNum);
 	}
 
 	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+	if(createNewDB) {
+		handler->InitIndex(true);
+	}
 	cout << test << endl;
 
 	// 在init后面才不会被覆盖
 	// handler->SetMainKey(1);
 
 	// HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
-	if (createNewDB) {
-		vector<RM_node> items;
-		for (int i = 0; i < 10; i ++) {
-			items.clear();
-			RM_node person_a("person_test");
-			RM_node id_a(i / 2);
-			items.push_back(person_a);
-			items.push_back(id_a);
-			RM_Record record;
-			if (handler->recordHandler->MakeRecord(record, items)) {
-				cout << "Error to make record." << endl;
-			}
-			handler->recordHandler->PrintRecord(record);
-			handler->InsertRec(record);
-		}
+	if(createNewDB) {
+        vector<RM_node> items;
+        for(int i = 0; i < 50; i ++) {
+            items.clear();
+            RM_node person_a("person_test");
+            RM_node id_a(i);
+            items.push_back(person_a);
+            items.push_back(id_a);
+            RM_Record record;
+            if(handler->recordHandler->MakeRecord(record, items)) {
+                cout << "Error to make record." << endl;
+            }
+            handler->recordHandler->PrintRecord(record);
+            handler->InsertRec(record);
+        }
 
 	}
 
-	printf("Searched result for records with id between %d and %d\n", 2, 8);
+	printf("-------------List all records searched--------------\n");
 	vector<RID> rid;
-	handler->indexHandle->SearchRange(rid, "2", "8", IM::LS, 1);
-	for (int i = 0; i < rid.size(); i ++) {
+	handler->indexHandle->SearchRange(rid, "2", "38", IM::LS, 1);
+	for(int i = 0; i < rid.size(); i ++) {
 		cout << rid[i] << endl;
 	}
 
@@ -170,5 +173,14 @@ int main() {
 	printf("It is on Unix now.\n");
 #endif
 	ParseInput();
+	/*
+    int ret = SQLParserTest();
+    printf("SQLTest result: %d\n", ret);
+    MyBitMap::initConst();
+    hsql::SQLParserResult result;
+	char *dbName = "NewTesting";
+	NewTest(true, dbName);
+    NewTest(false, dbName);
+    */
 	return 0;
 }

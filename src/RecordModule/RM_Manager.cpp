@@ -15,7 +15,6 @@ RM_Manager::RM_Manager(char *dbName) {
 }
 
 int RM_Manager::createFile(const char* name, int recordSize, int cNum) {
-    printf("%s\n", name);
     FileManager *fm = this->fileManager;
     char fileName[50];
     strcpy(fileName, this->dataPath);
@@ -37,8 +36,9 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     bool result = this->fileManager->openFile(fileName, this->fileID);
     strcat(fileName, dirSym);
     string idx(fileName);
+    fileHandle.indexPath = idx;
     RM_FileHandle::CreateDir(idx);
-    fileHandle.init(this->fileID,this->bufPageManager, fileName);
+    fileHandle.init(this->fileID,this->bufPageManager);
     return result;
 }
 

@@ -7,7 +7,7 @@ IndexHandle::IndexHandle()
 {
     indexNum = 0;
     colNum = 0;
-    indexPath = "../database/index/";
+    indexPath = "";
 }
 
 IndexHandle::IndexHandle(vector<string> tt, string idxPath)

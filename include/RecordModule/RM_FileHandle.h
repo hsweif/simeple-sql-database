@@ -45,11 +45,11 @@ private:
     MyBitMap* recordBitMap;//current reading page's map
     BufPageManager *mBufpm;
 	BufType readBuf;
-	string indexPath;
 	vector<string> title;
 	int CheckForMainKey(RM_Record &pData);
 
 public:
+	string indexPath;
 	IM::IndexHandle *indexHandle;
     RM::RecordHandler *recordHandler;
 	int CheckForMainKey();
@@ -58,7 +58,7 @@ public:
 	int updateHead();
 	// RM_FileHandle(BufPageManager* bufpm, int fd, int rcz);
     int GetRec(const RID &rid, RM_Record &rec);
-    int init(int _fileId, BufPageManager* _bufpm, char *indexName);
+    int init(int _fileId, BufPageManager* _bufpm);
     int InsertRec(RM_Record& pData);       // Insert a new record,
     int DeleteRec(const RID &rid);                    // Delete a record
     int UpdateRec(RM_Record &rec);
