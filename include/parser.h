@@ -88,13 +88,22 @@ int ParseDBCommand(string command){
 	return 0;	
 }
 RM::ItemType transType(hsql::DataType type){
-	if(type == hsql::DataType::INT)
+	if(type == hsql::DataType::INT){
+		printf("intType\n");
 		return RM::ItemType::INT;
-	else if(type == hsql::DataType::FLOAT)
+	}
+	else if(type == hsql::DataType::FLOAT){
+		printf("floatType\n");
 		return RM::ItemType::FLOAT;
-	else if(type == hsql::DataType::CHAR)
+	}
+	else if(type == hsql::DataType::CHAR){
+		printf("charType\n");
 		return RM::ItemType::CHAR;
-	else return RM::ItemType::ERROR;
+	}
+	else {
+		printf("errorType\n");
+		return RM::ItemType::ERROR;
+	}
 }
 bool checkOp(hsql::OperatorType op){
 	if(op == hsql::OperatorType::kOpNot
@@ -162,22 +171,24 @@ int executeCommand(const hsql::SQLStatement* stmt){
 
 		//handler->PrintTitle();
 		rmg->closeFile(*handler);
-		delete handler;
+		//delete handler;
 	}
 	else if(stmt->isType(hsql::kStmtInsert)){
 		if(rmg == NULL){
 			printf("current path is not DBPath\n");
 			return -1;
 		}
+		rmg = new RM_Manager((char*)currentDB.c_str());
 		vector<RM_node> items;
 		RM_FileHandle *handler = new RM_FileHandle();
 		rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
-		handler->InitIndex(true);
-				printf("test\n");
+		//handler->InitIndex(false);
+		printf("my test\n");
 		//std::vector<char*> col = ((hsql::InsertStatement*)stmt)->columns[0];
 		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];	
 		for(hsql::InsertValue* val:values){
 			std::vector<hsql::Expr*> colValues = val->values[0];
+			cout<<"insert:"<<endl;
 			for(hsql::Expr* expr:colValues){
 				if(!expr->isLiteral()){
 					printf("wrong type\n");
@@ -188,18 +199,22 @@ int executeCommand(const hsql::SQLStatement* stmt){
 
 				if(expr->isType(hsql::ExprType::kExprLiteralFloat)){
 					RM_node node((float)(expr->fval));
+					cout<<"float:"<<(float)(expr->fval)<<endl;
 					items.push_back(node);
 				}
 				else if(expr->isType(hsql::ExprType::kExprLiteralInt)){
 					RM_node node((int)(expr->ival));
+					cout<<"int:"<<(int)(expr->ival)<<endl;
 					items.push_back(node);
 				}
 				else if(expr->isType(hsql::ExprType::kExprLiteralString)){
 					RM_node node((string)(expr->name));
+					cout<<"string"<<(string)(expr->name)<<endl;
 					items.push_back(node);
 				}
 				else{
-					RM_node node;	
+					RM_node node;
+					cout<<"null"<<endl;	
 					items.push_back(node);			
 				}
 			}
@@ -212,7 +227,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
             items.clear();		
 		}
 		rmg->closeFile(*handler);
-		delete handler;
+		//delete handler;
 	}
 	else if(stmt->isType(hsql::kStmtDelete)){
 		if(rmg == NULL){
