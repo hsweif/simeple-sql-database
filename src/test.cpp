@@ -246,3 +246,7 @@ TEST(SQLParserTest, SelectTest)
 	ASSERT_EQ(0, SQLParserTest("SELECT name, id FROM test;"));
 }
 
+TEST(SQLParseeTest, InsertTest)
+{
+    ASSERT_EQ(0, SQLParserTest("INSERT INTO test VALUES (1, 2, 3),(4, 5, 3);"));
+}
