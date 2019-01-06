@@ -63,6 +63,28 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
     return 0;
 }
 
+int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, bool isNull)
+{
+    if(noScanBefore) {
+        fileHandle.GetAllRid(scanResult);
+    }
+    for(auto iter = scanResult->begin(); iter != scanResult->end(); iter++)
+    {
+        RM_Record record;
+        if(fileHandle.GetRec(*iter, record)) {
+            cout << "Error in scanning for null" << endl;
+            return 1;
+        }
+        if(record.IsNull(col) && !isNull) {
+            scanResult->erase(iter);
+        }
+        else if(!record.IsNull(col) && isNull) {
+            scanResult->erase(iter);
+        }
+    }
+    curResult = scanResult->begin();
+    return 0;
+}
 
 int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
 {
