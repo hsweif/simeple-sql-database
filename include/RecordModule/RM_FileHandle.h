@@ -80,6 +80,7 @@ public:
 	static int CreateDir(string dirPath);
 	int GetAllRecord(vector<RM_Record> &result);
 	int GetAllRid(list<RID> *result);
+	int PrintColumnInfo();
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
 

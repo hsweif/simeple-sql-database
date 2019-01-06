@@ -529,4 +529,32 @@ int RM_FileHandle::CreateDir(string dirPath)
 #endif
 }
 
-
+int RM_FileHandle::PrintColumnInfo()
+{
+	if(recordHandler->itemNum != colNum) {
+		return 1;
+	}
+	RM::ItemType *itemType = recordHandler->GetItemType();
+	int *itemLength = recordHandler->GetItemLength();
+	string colInfo = "| ";
+	for(int i = 0; i < colNum; i ++)
+    {
+        colInfo += title[i];
+        if(itemType[i] == RM::INT) {
+        	colInfo += ", INT";
+		}
+		else if(itemType[i] == RM::FLOAT) {
+			colInfo += ", FLOAT";
+		}
+		else if(itemType[i] == RM::CHAR) {
+		    string l_str;
+		    std::stringstream ss;
+		    ss << itemLength[i];
+		    ss >> l_str;
+		    colInfo = colInfo + ", CHAR(" + l_str + ")";
+		}
+		colInfo += " | ";
+    }
+    cout << colInfo << endl;
+    return 0;
+}

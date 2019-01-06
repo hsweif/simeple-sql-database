@@ -21,7 +21,7 @@ int current = 0;
 int tt = 0;
 unsigned char h[61];
 
-char *dbName = "NewTestDB";
+char *dbName = "UnitTestDB";
 vector<RM_Record> orig;
 
 int SQLParserTest(string query)
@@ -31,11 +31,9 @@ int SQLParserTest(string query)
 	hsql::SQLParser::parse(query, &result);
 
 	// check whether the parsing was successful
-
 	if (result.isValid()) {
 		printf("Parsed successfully!\n");
 		printf("Number of statements: %lu\n", result.size());
-
 		for (auto i = 0u; i < result.size(); ++i) {
 			// Print a statement summary.
 			hsql::printStatementInfo(result.getStatement(i));
@@ -97,9 +95,10 @@ TEST(PipelineTest, Insert) {
     ASSERT_EQ(test, "successfully opened");
     vector<RM_node> items;
     //10 with id and 5 with null value
+    printf("-------------These will be inserted-------------\n");
     for (int i = 0; i < 10; i++) {
         items.clear();
-        RM_node person_a("person_test");
+        RM_node person_a("person");
         RM_node id_a(i);
         items.push_back(person_a);
         items.push_back(id_a);
@@ -107,12 +106,13 @@ TEST(PipelineTest, Insert) {
         if (handler->recordHandler->MakeRecord(record, items)) {
             cout << "Error to make record." << endl;
         }
+        handler->recordHandler->PrintRecord(record);
         handler->InsertRec(record);
         orig.push_back(record);
     }
     for (int i = 0; i < 5; i++) {
         items.clear();
-        RM_node person_a("NULL_person");
+        RM_node person_a("N_person");
         RM_node id_a;
         items.push_back(person_a);
         items.push_back(id_a);
@@ -182,7 +182,42 @@ TEST(PipelineTest, SearchForUniqueNullCondition) {
     ASSERT_EQ(cnt, 10);
     fileScan->CloseScan();
     rmg->closeFile(*handler);
+}
 
+TEST(PipelineTest, NestSearch)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *handler = new RM_FileHandle();
+    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    ASSERT_EQ(test, "successfully opened");
+    RM_FileScan *fileScan = new RM_FileScan;
+    RM_Record nextRec;
+    printf("-------------List all records non-null id--------------\n");
+    fileScan->OpenScan(*handler, 1, false);
+    int cnt = 0;
+    while (!fileScan->GetNextRec(*handler, nextRec)) {
+        handler->recordHandler->PrintRecord(nextRec);
+        cnt++;
+    }
+    ASSERT_EQ(cnt, 10);
+    printf("-------------List all records with non-null id <= 8--------------\n");
+    fileScan->OpenScan(*handler, 1, IM::LEQ, "8");
+    cnt = 0;
+    while (!fileScan->GetNextRec(*handler, nextRec)) {
+        handler->recordHandler->PrintRecord(nextRec);
+        cnt++;
+    }
+    ASSERT_EQ(cnt, 9);
+    printf("-------------List all records with non-null 5 < id <= 8--------------\n");
+    fileScan->OpenScan(*handler, 1, IM::GT, "5");
+    cnt = 0;
+    while (!fileScan->GetNextRec(*handler, nextRec)) {
+        handler->recordHandler->PrintRecord(nextRec);
+        cnt++;
+    }
+    ASSERT_EQ(cnt, 3);
+    fileScan->CloseScan();
+    rmg->closeFile(*handler);
 }
 
 TEST(PipelineTest, PrintAllRecord)
@@ -191,6 +226,8 @@ TEST(PipelineTest, PrintAllRecord)
     RM_FileHandle *handler = new RM_FileHandle();
     string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
+    printf("-------------Column Info--------------\n");
+    handler->PrintColumnInfo();
     printf("-------------List all records --------------\n");
     handler->PrintTitle();
     vector<RM_Record> result;

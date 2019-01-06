@@ -13,7 +13,7 @@ RM_FileScan::~RM_FileScan()
 
 int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, char *value)
 {
-    if(scanResult->empty() && noScanBefore)
+    if(noScanBefore)
     {
         if(comOp == IM::LS || comOp == IM::LEQ)
         {
@@ -47,7 +47,7 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
                 }
                 RM_node node;
                 fileHandle.recordHandler->GetColumn(col, record, node);
-                if(!node.keyEqual(vStr)) {
+                if(!node.CmpCtx(IM::EQ, vStr)) {
                     break;
                 }
                 scanResult->erase(curResult);
@@ -59,6 +59,25 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
             }
         }
         noScanBefore = false;
+    }
+    else
+    {
+        curResult = scanResult->begin();
+        while(curResult != scanResult->end())
+        {
+            RM_Record record;
+            if(fileHandle.GetRec(*curResult, record)) {
+                cout << "Error in scanning" << endl;
+                return 1;
+            }
+            RM_node node;
+            fileHandle.recordHandler->GetColumn(col, record, node);
+            if(!node.CmpCtx(comOp, value)) {
+                scanResult->erase(curResult);
+            }
+            curResult ++;
+        }
+        curResult = scanResult->begin();
     }
     return 0;
 }
