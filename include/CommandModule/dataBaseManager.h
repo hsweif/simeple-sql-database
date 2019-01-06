@@ -19,9 +19,6 @@ int CreateDB(char* dbName){
 	}
 #endif
 #ifdef __DARWIN_UNIX03
-	//TODO: Make directory in UNIX.
-	// string command = "mkdir -p" + str;
-	// system(command.c_str());
 	mkdir(str.c_str(), S_IRWXU);
 #endif
 	cout<<"createDB "<<dbName<<" success!"<<endl;

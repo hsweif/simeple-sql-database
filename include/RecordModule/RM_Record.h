@@ -7,6 +7,8 @@
 #include <string.h>
 #include <iostream>
 #include <cstdio>
+#include <sstream>
+#include <config.h>
 
 using namespace std;
 
@@ -34,6 +36,7 @@ struct RM_node
     void setCtx(int n);
     void setCtx(float f);
     void setCtx(string s);
+    bool CmpCtx(IM::CompOp compOp, string value);
 };
 
 class RM_Record {

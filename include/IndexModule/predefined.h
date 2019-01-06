@@ -23,12 +23,37 @@ struct key_t {
         strcpy(k, str);
     }
 
+
     bool operator != (const key_t &b)
     {
         for(int i = 0; i < 16; i ++) {
             if(this->k[i] != b.k[i]) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    bool operator == (const key_t &b)
+    {
+        return !(*this != b);
+    }
+
+    bool operator < (const key_t &b)
+    {
+        if(*this == b) {
+            return false;
+        }
+        int a_l = strlen(this->k), b_l = strlen(b.k);
+        int x = strlen(this->k) - strlen(b.k);
+        int ret = (x == 0) ? strcmp(this->k, b.k) : x;
+        return ret < 0 ? true : false;
+    }
+
+    bool operator <= (const key_t &b)
+    {
+        if(*this < b || *this == b) {
+            return true;
         }
         return false;
     }

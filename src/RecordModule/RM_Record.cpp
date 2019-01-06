@@ -1,5 +1,7 @@
 #include "../include/RecordModule/RM_Record.h"
 #include <iostream>
+#include <config.h>
+
 using namespace std;
 
 RM_node::RM_node()
@@ -48,7 +50,6 @@ void RM_node::setCtx(string s)
     str = s;
     type = RM::CHAR;
     int strLength = s.length();
-    // length = (strLength % 4) ? strLength/4 + 1 : strLength/4;
     length = s.length();
     ctx = new uint[length];
     memset(ctx, 0, sizeof(ctx));
@@ -68,6 +69,44 @@ void RM_node::setCtx(string s)
     }
 }
 
+bool RM_node::CmpCtx(IM::CompOp compOp, string value)
+{
+    std::stringstream ss;
+    string mValue;
+    if(type == RM::INT) {
+        ss << num;
+        ss >> mValue;
+    }
+    else if(type == RM::FLOAT) {
+        ss << fNum;
+        ss >> mValue;
+    }
+    else{
+        mValue = str;
+    }
+    int res = strcmp(value.c_str(), mValue.c_str());
+    if(compOp == IM::EQ) {
+        return res == 0;
+    }
+    else if(compOp == IM::LS) {
+        return res > 0;
+    }
+    else if(compOp == IM::LEQ) {
+        return res >= 0;
+    }
+    else if(compOp == IM::GT) {
+        return res < 0;
+    }
+    else if(compOp == IM::GEQ) {
+        return res <= 0;
+    }
+    else if(compOp == IM::NEQ) {
+        return res != 0;
+    }
+    else{
+        return false;
+    }
+}
 /*
 void RM_node::Print()
 {

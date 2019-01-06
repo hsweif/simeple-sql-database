@@ -10,7 +10,9 @@
 #include "RecordHandler.h"
 #include <iostream>
 #include <string>
+#include <map>
 #include <vector>
+#include <list>
 #include <cstdlib>
 #include <fstream>
 #include <sys/stat.h>
@@ -47,6 +49,7 @@ private:
 	BufType readBuf;
 	vector<string> title;
 	int CheckForMainKey(RM_Record &pData);
+	map<string, int> colNameMap;
 
 public:
 	string indexPath;
@@ -60,6 +63,7 @@ public:
     int GetRec(const RID &rid, RM_Record &rec);
     int init(int _fileId, BufPageManager* _bufpm);
     int InsertRec(RM_Record& pData);       // Insert a new record,
+    int InsertRec(vector<string> attrNames, vector<RM_node> nodes);
     int DeleteRec(const RID &rid);                    // Delete a record
     int UpdateRec(RM_Record &rec);
     int RecordNum() const;
@@ -75,6 +79,8 @@ public:
 	int GetSlot(BufType page);
 	static int CreateDir(string dirPath);
 	int GetAllRecord(vector<RM_Record> &result);
+	int GetAllRid(list<RID> *result);
+	int PrintColumnInfo();
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
 

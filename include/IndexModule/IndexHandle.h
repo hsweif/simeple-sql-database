@@ -14,6 +14,7 @@
 
 #include "bpt.h"
 #include "predefined.h"
+#include "config.h"
 
 using namespace std;
 
@@ -26,9 +27,6 @@ enum IndexAction{
     UPDATE, DELETE, INSERT
 };
 
-enum CompOp{
-    GT, LS, GEQ, LEQ, EQ, NEQ
-};
 
 struct node
 {
@@ -57,7 +55,7 @@ public:
     int DeleteIndex(char *indexName, int pos);
     int IndexAction(IndexAction actionType, RM_Record &record, RM::RecordHandler *recordHandler);
     int SetIndex(int pos, bool value = true);
-    int SearchRange(vector<RID> &result, char* left, char* right, CompOp comOP, int col);
+    int SearchRange(list<RID> &result, char* left, char* right, CompOp comOP, int col);
     bool Existed(int pos, char *key);
 };
 

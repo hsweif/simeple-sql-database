@@ -439,6 +439,9 @@ void RM_FileHandle::SetType(vector<int> tp)
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
+	for(int i = 0; i < title.size(); i ++) {
+		colNameMap.insert(pair<string, int>(title[i], i));
+	}
 }
 
 int RM_FileHandle::InitIndex(bool forceEmpty)
@@ -491,6 +494,34 @@ int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)
     return 0;
 }
 
+int RM_FileHandle::GetAllRid(list<RID> *result)
+{
+	int sum = this->RecordNum();
+    int pageCount = this->PageNum();
+    int recordPP = this->recordPP;
+    int page = 1, slot = 0;
+    int cnt = 0;
+
+    result->clear();
+
+    while(cnt < sum)
+    {
+    	if(slot >= recordPP) {
+    		page ++;
+    		slot = 0;
+		}
+        RID rid(page, slot);
+        RM_Record record;
+        if(this->GetRec(rid, record) == 0)
+        {
+            result->push_back(rid);
+            slot ++;
+            cnt ++;
+        }
+    }
+
+    return 0;
+}
 int RM_FileHandle::CreateDir(string dirPath)
 {
 #ifdef __DARWIN_UNIX03
@@ -504,4 +535,32 @@ int RM_FileHandle::CreateDir(string dirPath)
 #endif
 }
 
-
+int RM_FileHandle::PrintColumnInfo()
+{
+	if(recordHandler->itemNum != colNum) {
+		return 1;
+	}
+	RM::ItemType *itemType = recordHandler->GetItemType();
+	int *itemLength = recordHandler->GetItemLength();
+	string colInfo = "| ";
+	for(int i = 0; i < colNum; i ++)
+    {
+        colInfo += title[i];
+        if(itemType[i] == RM::INT) {
+        	colInfo += ", INT";
+		}
+		else if(itemType[i] == RM::FLOAT) {
+			colInfo += ", FLOAT";
+		}
+		else if(itemType[i] == RM::CHAR) {
+		    string l_str;
+		    std::stringstream ss;
+		    ss << itemLength[i];
+		    ss >> l_str;
+		    colInfo = colInfo + ", CHAR(" + l_str + ")";
+		}
+		colInfo += " | ";
+    }
+    cout << colInfo << endl;
+    return 0;
+}

@@ -70,18 +70,26 @@ void NewTest(bool createNewDB, char *dbName)
             if(handler->recordHandler->MakeRecord(record, items)) {
                 cout << "Error to make record." << endl;
             }
-            handler->recordHandler->PrintRecord(record);
             handler->InsertRec(record);
         }
 
 	}
 
-	printf("-------------List all records searched--------------\n");
-	vector<RID> rid;
-	handler->indexHandle->SearchRange(rid, "2", "38", IM::LS, 1);
-	for(int i = 0; i < rid.size(); i ++) {
-		cout << rid[i] << endl;
+	RM_FileScan *fileScan = new RM_FileScan;
+	RM_Record nextRec;
+
+	printf("-------------List all records with id < 20--------------\n");
+	fileScan->OpenScan(*handler, 1, IM::LS, "20");
+	while(!fileScan->GetNextRec(*handler, nextRec)) {
+		handler->recordHandler->PrintRecord(nextRec);
 	}
+	fileScan->CloseScan();
+	printf("-------------List all records with id > 30--------------\n");
+	fileScan->OpenScan(*handler, 1, IM::GT, "30");
+	while(!fileScan->GetNextRec(*handler, nextRec)) {
+		handler->recordHandler->PrintRecord(nextRec);
+	}
+	fileScan->CloseScan();
 
 	printf("-------------List all records in the file--------------\n");
 	handler->PrintTitle();

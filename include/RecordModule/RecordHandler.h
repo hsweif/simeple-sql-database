@@ -18,13 +18,13 @@ namespace RM {
 class RecordHandler
 {
 private:
-    int itemNum;
     RM::ItemType *type;
     int *itemLength; // 如果item是CHAR类型的，有几个Char，INT、FLOAT型为1（个uint）无意义
     bool *allowNull;
     int nullSectLength; // 记录NULL信息的区段占据了多少个uint
     int recordSize; // 一条record总共占多少uint
 public:
+    int itemNum;
     bool isInitialized; // 为真时表示在FileHandle的init前就已经设定好值了
     RecordHandler(int length);
     bool isValidChar(uint c);
