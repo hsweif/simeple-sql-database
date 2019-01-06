@@ -21,6 +21,7 @@ public:
     ~RM_FileScan();
     int OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, char *value);
     int OpenScan(RM_FileHandle &fileHandle, int col, bool isNull);
+    int OpenScanAll(RM_FileHandle &fileHandle);
     int GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec); // Get next matching record
     int CloseScan(); // Terminate file scan
 };

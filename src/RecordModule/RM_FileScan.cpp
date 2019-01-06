@@ -105,6 +105,14 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, bool isNull)
     return 0;
 }
 
+int RM_FileScan::OpenScanAll(RM_FileHandle &fileHandle)
+{
+    if(noScanBefore) {
+        fileHandle.GetAllRid(scanResult);
+    }
+    curResult = scanResult.begin();
+}
+
 int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
 {
     if(curResult != scanResult->end() && !scanResult->empty()) {
