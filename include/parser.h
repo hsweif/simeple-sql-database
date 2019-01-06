@@ -182,25 +182,22 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			printf("current path is not DBPath\n");
 			return -1;
 		}
-		// rmg = new RM_Manager((char*)currentDB.c_str());
-		vector<RM_node> items;
+		rmg = new RM_Manager((char*)currentDB.c_str());
 		RM_FileHandle *handler = new RM_FileHandle();
-		rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
+        rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
 		//handler->InitIndex(false);
-		printf("my test\n");
 		//std::vector<char*> col = ((hsql::InsertStatement*)stmt)->columns[0];
-		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];	
+		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];
+        vector<RM_node> items;
 		for(hsql::InsertValue* val:values){
+			items.clear();
 			std::vector<hsql::Expr*> colValues = val->values[0];
-			cout<<"insert:"<<endl;
 			for(hsql::Expr* expr:colValues){
 				if(!expr->isLiteral()){
 					printf("wrong type\n");
 					rmg->closeFile(*handler);
-					delete handler;
 					return -1;
 				}
-
 				if(expr->isType(hsql::ExprType::kExprLiteralFloat)){
 					RM_node node((float)(expr->fval));
 					cout<<"float:"<<(float)(expr->fval)<<endl;
@@ -226,12 +223,10 @@ int executeCommand(const hsql::SQLStatement* stmt){
             if(handler->recordHandler->MakeRecord(record, items)) {
                 cout << "Error to make record." << endl;
             }
-            handler->InsertRec(record);	
-            printf("insert success\n");
-            items.clear();		
+            handler->InsertRec(record);
+            handler->recordHandler->PrintRecord(record);
 		}
 		rmg->closeFile(*handler);
-		//delete handler;
 	}
 	else if(stmt->isType(hsql::kStmtDelete)){
 		if(rmg == NULL){

@@ -144,6 +144,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     // 做NULL和主键性质的确认
 
     for(int i = 0; i < this->itemNum; i ++) {
+        bool n = items[i].isNull;
         if(items[i].isNull && !this->IsAllowNull(i)){
             cout << "[ERROR] Fail to make record because found null value in a non-null column." << endl;
             return 1;
@@ -165,11 +166,13 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int nullSectLength = (itemNum % 32) ? itemNum/32 + 1 : itemNum/32;
     bufSize += nullSectLength;
     BufType buf = new uint[bufSize];
+    memset(buf, 0, sizeof(buf));
 	for(int i = 0, cnt = 0; i < nullSectLength && cnt < itemNum; i ++)
 	{
 		uint curNum = 0;
 		for(int shift = 0; shift < 32 && cnt < itemNum; shift ++)
 		{
+		    int res = (items[cnt].isNull << shift);
 			curNum += (items[cnt].isNull << shift);
 			cnt ++;
 		}
@@ -181,6 +184,8 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
 	{
         if(items[i].type == RM::INT || items[i].type == RM::FLOAT) {
             if(!items[i].isNull) {
+                int n = (int)items[i].ctx[0];
+                int f = (float)items[i].ctx[0];
                 buf[cnt] = items[i].ctx[0];
             }
             else{

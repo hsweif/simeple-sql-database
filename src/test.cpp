@@ -21,7 +21,7 @@ int current = 0;
 int tt = 0;
 unsigned char h[61];
 
-char *dbName = "UnitTestDB_1";
+char *dbName = "abctesting12";
 vector<RM_Record> orig;
 
 int SQLParserTest(string query)
@@ -67,7 +67,7 @@ TEST(PipelineTest, Create) {
     if (createNewDB) {
         handler->recordHandler = new RM::RecordHandler(colNum);
         handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
-        handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
+        handler->recordHandler->SetItemAttribute(1, 1, RM::FLOAT, false);
         int sz = handler->recordHandler->GetRecordSize();
         vector<string> title;
         title.push_back("name");
@@ -98,10 +98,10 @@ TEST(PipelineTest, Insert) {
     vector<RM_node> items;
     //10 with id and 5 with null value
     printf("-------------These will be inserted-------------\n");
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 2; i++) {
         items.clear();
         RM_node person_a("person");
-        RM_node id_a(i);
+        RM_node id_a(0.5f);
         items.push_back(person_a);
         items.push_back(id_a);
         RM_Record record;
@@ -112,23 +112,24 @@ TEST(PipelineTest, Insert) {
         handler->InsertRec(record);
         orig.push_back(record);
     }
-    for (int i = 0; i < 5; i++) {
-        items.clear();
-        RM_node person_a("N_person");
-        RM_node id_a;
-        items.push_back(person_a);
-        items.push_back(id_a);
-        RM_Record record;
-        if (handler->recordHandler->MakeRecord(record, items)) {
-            cout << "Error to make record." << endl;
-        }
-        handler->InsertRec(record);
-        orig.push_back(record);
-    }
+    // for (int i = 0; i < 5; i++) {
+    //     items.clear();
+    //     RM_node person_a("N_person");
+    //     RM_node id_a;
+    //     items.push_back(person_a);
+    //     items.push_back(id_a);
+    //     RM_Record record;
+    //     if (handler->recordHandler->MakeRecord(record, items)) {
+    //         cout << "Error to make record." << endl;
+    //     }
+    //     handler->InsertRec(record);
+    //     orig.push_back(record);
+    // }
     rmg->closeFile(*handler);
 
 }
 
+/*
 TEST(PipelineTest, SearchForUniqueRangeCondition) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
@@ -221,6 +222,7 @@ TEST(PipelineTest, NestSearch)
     fileScan->CloseScan();
     rmg->closeFile(*handler);
 }
+*/
 
 TEST(PipelineTest, PrintAllRecord)
 {

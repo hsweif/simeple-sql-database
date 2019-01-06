@@ -42,7 +42,7 @@ void RM_node::setCtx(float f)
     length = 1;
     fNum = f;
     ctx = new uint;
-    ctx[0] = (uint) f;
+    ctx[0] = f;
 }
 
 void RM_node::setCtx(string s)
@@ -361,5 +361,7 @@ int RM_Record::GetColumn(int col, string *content)
 bool RM_Record::IsNull(int pos)
 {
     int offset = pos % 32;
-    return (bool)(((1 << offset) & mData[pos/32]) >> offset);
+    int ret = mData[pos/32];
+    bool res = (bool)(((1 << offset) & mData[pos/32]) >> offset);
+    return res;
 }

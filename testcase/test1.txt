@@ -1,5 +1,5 @@
-create database abc
-use database abc
-create table test231(x int,y char(10))
-insert into test231 values (101,'asdsad'),(202,'12345')
-select * from test231
+create database abctest
+use database abctest
+create table test1234(name char(8),id int)
+insert into test1234 values ('person', 0), ('alexfan', 123), ('jacky', 334), ('mikefc', 223)
+select * from test1234

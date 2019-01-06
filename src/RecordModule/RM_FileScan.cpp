@@ -115,9 +115,13 @@ int RM_FileScan::OpenScanAll(RM_FileHandle &fileHandle)
 
 int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
 {
+    RM_Record nRec;
     if(curResult != scanResult->end() && !scanResult->empty()) {
-        fileHandle.GetRec(*curResult, rec);
+        if(fileHandle.GetRec(*curResult, nRec)) {
+            return 1;
+        }
         curResult ++;
+        rec = nRec;
         return 0;
     }
     else{
