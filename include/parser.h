@@ -278,13 +278,21 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			printf("current path is not DBPath\n");
 			return -1;
 		}	
+		printf("this is SelectCase\n");
 		//get tables
-		std::vector<hsql::TableRef*> list = ((hsql::SelectStatement*)stmt)->fromTable->list[0];		
-		for(hsql::TableRef* table:list){
-			printf("table:%s\n", table->name);
+		std::vector<string> tables;
+		if(((hsql::SelectStatement*)stmt)->fromTable->list != NULL){
+			std::vector<hsql::TableRef*> list = ((hsql::SelectStatement*)stmt)->fromTable->list[0];		
+			for(hsql::TableRef* table:list){
+				printf("table:%s\n", table->name);
+				tables.push_back((string)(table->name));
+			}
 		}
+		else
+			tables.push_back(((hsql::SelectStatement*)stmt)->fromTable->name);
 		//get cols
 		std::vector<hsql::Expr*> selectList = ((hsql::SelectStatement*)stmt)->selectList[0];	
+		bool selectAll = false;
 		for(hsql::Expr* expr:selectList){
 			if(expr->table != NULL){
 				if(expr->type == hsql::ExprType::kExprStar){
@@ -293,21 +301,41 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				else printf("col_name:%s.%s\n", expr->table,expr->name);
 			}
 			else {
-				if(expr->type == hsql::ExprType::kExprStar)
+				if(expr->type == hsql::ExprType::kExprStar){
+					selectAll = true;
 					printf("col_name:*\n");
+				}
 				else
 					printf("col_name:%s\n", expr->name);
 			}
 		}
 		//get whereClause
+		bool whereAll = false;
 		hsql::Expr *expr = ((hsql::SelectStatement*)stmt)->whereClause;
-		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
-		int ret = getExpr(expr,whereExprs);
-		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
-		int whereExprsize = whereExprs->size();
-		for(int i = 0;i < whereExprsize;i++){
-			cout<<(*whereExprs)[i]->opType<<endl;
+		if(expr == NULL)
+			whereAll = true;
+		else{
+			std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
+			int ret = getExpr(expr,whereExprs);
+			printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+			int whereExprsize = whereExprs->size();
+			for(int i = 0;i < whereExprsize;i++){
+				cout<<(*whereExprs)[i]->opType<<endl;
+			}
 		}
+		if(whereAll && selectAll){
+			printf("selectAll!!\n");
+			RM_FileScan* fileScan = new RM_FileScan;
+			RM_FileHandle *handler = new RM_FileHandle();
+			rmg->openFile(tables[0].c_str(),*handler);
+			fileScan->OpenScanAll(*handler);
+			RM_Record mRec;
+			while(fileScan->GetNextRec(*handler,mRec) != 1){
+				handler->recordHandler->PrintRecord(mRec);
+			}
+			fileScan->CloseScan();			
+		}
+
 	}
 	return 0;
 }

@@ -110,7 +110,7 @@ int RM_FileScan::OpenScanAll(RM_FileHandle &fileHandle)
     if(noScanBefore) {
         fileHandle.GetAllRid(scanResult);
     }
-    curResult = scanResult.begin();
+    curResult = scanResult->begin();
 }
 
 int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
