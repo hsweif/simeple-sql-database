@@ -213,7 +213,7 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	int page, slot;
 	rid.GetPageNum(page);
 	rid.GetSlotNum(slot);
-	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
+	if (page <= 0 || page > pageCnt || slot < 0 || slot >= recordPP) {
 		cout << "fail to get rec" << endl;
 		return 1;
 	}

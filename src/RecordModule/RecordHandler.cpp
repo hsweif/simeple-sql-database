@@ -195,8 +195,9 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
         }
         else if(items[i].type == RM::CHAR) {
             int tmp_l = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
+            int item_l = (items[i].length % 4) ? items[i].length/4 + 1 : items[i].length/4;
             for(int k = 0; k < tmp_l; k ++) {
-                if(!items[i].isNull) {
+                if(!items[i].isNull && k < item_l) {
                     buf[cnt] = items[i].ctx[k];
                 }
                 else{
@@ -204,6 +205,19 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
                 }
                 cnt ++;
             }
+            // int sPos = 0, sLength = str.length();
+            // uint mask = 255;
+            // for(int k = 0; k < tmp_l; k ++) {
+            //     buf[cnt] = 0;
+            //     if(!items[i].isNull) {
+            //         for(int shift = 0; shift < 32; shift += 8)
+            //         {
+            //             uint ctx = (uint)((str[sPos] & mask) << shift);
+            //             buf[cnt] += ctx;
+            //         }
+            //     }
+            //     cnt ++;
+            // }
         }
         else {
             cout << "Invalid type" << endl;
