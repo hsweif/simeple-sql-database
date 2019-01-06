@@ -94,11 +94,15 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 
 	// Below is for main key:
 	offset += nullSectLength;
-	mainKey = (uint)firstPage[offset];
+	mainKeyCnt = (uint)firstPage[offset];
+	mainKey.clear();
+	for(int i = 0;i<mainKeyCnt;i++){		
+		mainKey.push_back((uint)firstPage[offset]);
+		offset++;
+	}
 
 
 	// Below is for mutable item length;
-	offset ++;
 	for(int i = 0; i < colNum; i ++) {
 	    int l = (int)firstPage[i + offset];
 	    if(l != -1) {
@@ -169,7 +173,11 @@ int RM_FileHandle::updateHead() {
 
 	// This is for main key.
 	offset += nullSectLength;
-	readBuf[offset] = mainKey;
+	for(int i = 0;i<mainKey.size();i++){
+		readBuf[offset] = mainKey[i];	
+		offset++;
+	}
+	
 
 	// This is for mutable item length;
 	offset ++;
@@ -210,12 +218,15 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	return 0;
 }
 
-int RM_FileHandle::SetMainKey(int key)
+int RM_FileHandle::SetMainKey(std::vector<int> mainKeys)
 {
-	if(key < 0 || key > colNum) {
-		return 1;
+	mainKey.clear();
+	for(int key:mainKeys){
+		if(key < 0 || key > colNum) {
+			return 1;
+		}
+		mainKey.push_back((uint)key);
 	}
-	mainKey = (uint)key;
 	return 0;
 }
 
@@ -258,30 +269,36 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 
 int RM_FileHandle::CheckForMainKey(RM_Record &pData)
 {
-	if(mainKey != -1)
+	if(mainKey.size() != 0)
 	{
-        RM_node mkTest;
-        recordHandler->GetColumn(mainKey, pData, mkTest);
-        string keyStr = "";
-        std::stringstream ss;
-        if(mkTest.type == RM::INT) {
-            ss << mkTest.num;
-            ss >> keyStr;
-        }
-        else if(mkTest.type == RM::FLOAT) {
-            ss << mkTest.fNum;
-            ss >> keyStr;
-        }
-        else{
-            keyStr = mkTest.str;
-        }
-        char *keyChar = new char[keyStr.length()];
-        for(int i = 0; i < keyStr.length(); i ++) {
-            keyChar[i] = keyStr[i];
-        }
-        if(mainKey < this->colNum && mainKey > 0 && indexHandle->Existed(mainKey, keyChar)){
-            return 1;
-        }
+		bool exist = true;
+		for(uint key:mainKey){
+	        RM_node mkTest;
+	        recordHandler->GetColumn(key, pData, mkTest);
+	        string keyStr = "";
+	        std::stringstream ss;
+	        if(mkTest.type == RM::INT) {
+	            ss << mkTest.num;
+	            ss >> keyStr;
+	        }
+	        else if(mkTest.type == RM::FLOAT) {
+	            ss << mkTest.fNum;
+	            ss >> keyStr;
+	        }
+	        else{
+	            keyStr = mkTest.str;
+	        }		
+	        char *keyChar = new char[keyStr.length()];
+	        for(int i = 0; i < keyStr.length(); i ++) {
+	            keyChar[i] = keyStr[i];
+	        }	
+	        if(key < this->colNum && key > 0 && !indexHandle->Existed(key, keyChar)){
+	            exist = false;
+	            break;
+	        }
+		}
+		if(exist)
+			return 1;
         else{
         	return 0;
         }
@@ -426,6 +443,14 @@ int RM_FileHandle::RecordNum() const
 	return recordSum;
 }
 
+bool isMainKey(uint key){
+	for(uint mkey:mainKey){
+		if(key == mkey){
+			return true;
+		}
+	}
+	return false;
+}
 void RM_FileHandle::SetType(vector<int> tp)
 {
 	colNum = tp.size();

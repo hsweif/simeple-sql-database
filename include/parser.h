@@ -145,16 +145,18 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		rmg->openFile(((hsql::CreateStatement*)stmt)->tableName,*handler);
 		// InitIndex 要在openfile后面
 		handler->InitIndex(true);
+		std::vector<int> mainKeys;
 		if(((hsql::CreateStatement*)stmt)->primaryKeys != nullptr){
 			for(char *key:*(((hsql::CreateStatement*)stmt)->primaryKeys)){
 				printf("primaryKey:%s\n", key);
 				for(int i=0;i<colNum;i++)
 					if(title[i].compare(key)){
-						handler->SetMainKey(i);
+						mainKeys.push_back(i);
+						//handler->SetMainKey(i);
 						break;						
 					}
-
 			}
+			handler->SetMainKey(mainKeys);
 		}
 		//handler->PrintTitle();
 		rmg->closeFile(*handler);
@@ -224,9 +226,17 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		std::vector<hsql::Expr*> selectList = ((hsql::SelectStatement*)stmt)->selectList[0];	
 		for(hsql::Expr* expr:selectList){
 			if(expr->table != NULL){
-				printf("col_name:%s.%s\n", expr->table,expr->name);
+				if(expr->type == hsql::ExprType::kExprStar){
+					printf("col_name:%s.*\n", expr->table);
+				}
+				else printf("col_name:%s.%s\n", expr->table,expr->name);
 			}
-			else printf("col_name:%s\n", expr->name);
+			else {
+				if(expr->type == hsql::ExprType::kExprStar)
+					printf("col_name:*\n");
+				else
+					printf("col_name:%s\n", expr->name);
+			}
 		}
 		//get whereClause
 		hsql::Expr *expr = ((hsql::SelectStatement*)stmt)->whereClause;

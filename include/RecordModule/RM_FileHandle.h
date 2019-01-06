@@ -36,7 +36,8 @@ private:
     int recordPP;
     int recordSum;
     int pageCnt;
-    uint mainKey;
+    std::vector<uint> mainKey;
+    int mainKeyCnt;
     int recordMapSize;
 	int firstPageBufIndex;
 	int bufLastIndex = -1;
@@ -68,13 +69,13 @@ public:
     int UpdateRec(RM_Record &rec);
     int RecordNum() const;
     int PageNum() const {return pageCnt;}
-    int GetMainKey() const {return mainKey;}
+    bool isMainKey(uint key);
     void SetTitle(vector<string> t);
     int InitIndex(bool forceEmpty = false);
     void PrintTitle();
     void SetFilePath();
     void SetType(vector<int> tp);
-	int SetMainKey(int key);
+	int SetMainKey(std::vector<int> mainKeys);
     void show();
 	int GetSlot(BufType page);
 	static int CreateDir(string dirPath);
