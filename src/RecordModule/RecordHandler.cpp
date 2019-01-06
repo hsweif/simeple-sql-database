@@ -279,10 +279,7 @@ int RecordHandler::SetItemAttribute(int pos, int length, RM::ItemType itemType, 
     cout << "Set Item Attr" << endl;
     // AWARE
     isInitialized = true;
-	if(pos >= itemNum)	{
-		return 1;
-	}
-	if((itemType == RM::INT || itemType == RM::FLOAT) && length != 1) {
+	if(pos >= itemNum || itemType == RM::ERROR)	{
 		return 1;
 	}
 	if(itemType == RM::CHAR) {
@@ -292,7 +289,13 @@ int RecordHandler::SetItemAttribute(int pos, int length, RM::ItemType itemType, 
     else{
         recordSize ++;
     }
-	itemLength[pos] = length;
+
+    if(itemType == RM::INT || itemType == RM::FLOAT) {
+        itemLength[pos] = 1;
+    }
+    else{
+        itemLength[pos] = length;
+    }
 	allowNull[pos] = isNull;
 	type[pos] = itemType;
 	return 0;

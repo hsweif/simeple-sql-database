@@ -144,10 +144,14 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		int colNum = col.size();
 		RM_FileHandle *handler = new RM_FileHandle();
 		handler->recordHandler = new RM::RecordHandler(colNum);
+		RM::ItemType temp;
+		int ret, l;
 		for(int i = 0;i < colNum;i++){
 			title.push_back((string)(col[i]->name));
-			handler->recordHandler->SetItemAttribute(i,col[i]->type.length,transType(col[i]->type.data_type),col[i]->nullable);
-		}	
+			ret = handler->recordHandler->SetItemAttribute(i,col[i]->type.length,transType(col[i]->type.data_type),col[i]->nullable);
+			l = col[i]->type.length;
+			temp = transType(col[i]->type.data_type);
+		}
 		handler->SetTitle(title);	
 		int size = handler->recordHandler->GetRecordSize();
 		rmg->createFile(((hsql::CreateStatement*)stmt)->tableName,size,colNum);
@@ -178,7 +182,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			printf("current path is not DBPath\n");
 			return -1;
 		}
-		rmg = new RM_Manager((char*)currentDB.c_str());
+		// rmg = new RM_Manager((char*)currentDB.c_str());
 		vector<RM_node> items;
 		RM_FileHandle *handler = new RM_FileHandle();
 		rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
