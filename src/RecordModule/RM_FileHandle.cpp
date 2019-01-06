@@ -443,7 +443,7 @@ int RM_FileHandle::RecordNum() const
 	return recordSum;
 }
 
-bool isMainKey(uint key){
+bool RM_FileHandle::isMainKey(uint key){
 	for(uint mkey:mainKey){
 		if(key == mkey){
 			return true;

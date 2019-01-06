@@ -142,9 +142,6 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		handler->SetTitle(title);	
 		int size = handler->recordHandler->GetRecordSize();
 		rmg->createFile(((hsql::CreateStatement*)stmt)->tableName,size,colNum);
-		rmg->openFile(((hsql::CreateStatement*)stmt)->tableName,*handler);
-		// InitIndex 要在openfile后面
-		handler->InitIndex(true);
 		std::vector<int> mainKeys;
 		if(((hsql::CreateStatement*)stmt)->primaryKeys != nullptr){
 			for(char *key:*(((hsql::CreateStatement*)stmt)->primaryKeys)){
@@ -158,6 +155,11 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			}
 			handler->SetMainKey(mainKeys);
 		}
+		rmg->openFile(((hsql::CreateStatement*)stmt)->tableName,*handler);
+		// InitIndex 要在openfile后面
+		handler->InitIndex(true);
+
+
 		//handler->PrintTitle();
 		rmg->closeFile(*handler);
 		delete handler;
@@ -168,9 +170,49 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			return -1;
 		}
 		vector<RM_node> items;
-		std::vector<char*> col = ((hsql::InsertStatement*)stmt)->columns[0];
-		std::vector<hsql::Expr*> val = ((hsql::InsertStatement*)stmt)->values[0];	
+		RM_FileHandle *handler = new RM_FileHandle();
+		rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
+		handler->InitIndex(true);
+				printf("test\n");
+		//std::vector<char*> col = ((hsql::InsertStatement*)stmt)->columns[0];
+		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];	
+		for(hsql::InsertValue* val:values){
+			std::vector<hsql::Expr*> colValues = val->values[0];
+			for(hsql::Expr* expr:colValues){
+				if(!expr->isLiteral()){
+					printf("wrong type\n");
+					rmg->closeFile(*handler);
+					delete handler;
+					return -1;
+				}
 
+				if(expr->isType(hsql::ExprType::kExprLiteralFloat)){
+					RM_node node((float)(expr->fval));
+					items.push_back(node);
+				}
+				else if(expr->isType(hsql::ExprType::kExprLiteralInt)){
+					RM_node node((int)(expr->ival));
+					items.push_back(node);
+				}
+				else if(expr->isType(hsql::ExprType::kExprLiteralString)){
+					RM_node node((string)(expr->name));
+					items.push_back(node);
+				}
+				else{
+					RM_node node;	
+					items.push_back(node);			
+				}
+			}
+            RM_Record record;
+            if(handler->recordHandler->MakeRecord(record, items)) {
+                cout << "Error to make record." << endl;
+            }
+            handler->InsertRec(record);	
+            printf("insert success\n");
+            items.clear();		
+		}
+		rmg->closeFile(*handler);
+		delete handler;
 	}
 	else if(stmt->isType(hsql::kStmtDelete)){
 		if(rmg == NULL){

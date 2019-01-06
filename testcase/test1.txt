@@ -1,6 +1,7 @@
 create database abc
 use database abc
-create table test(x int,y char(10),PRIMARY KEY(x,y))
+create table test(x int,y char(10))
+insert into test values (1,'121212'),(2,'12asdadsd')
 delete from b where ((a<2) AND (b<>3) AND (c<=4))
 update a set x=x+2,y=x+3 where (b<3) AND (x>2)
 select * from a,b where (a<2) AND (b<3) 
