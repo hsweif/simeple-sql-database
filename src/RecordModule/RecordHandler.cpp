@@ -154,6 +154,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     for(int i = 0; i < this->itemNum; i ++) {
         int tmp = 0;
         if(type[i] == RM::CHAR) {
+            int l = itemLength[i];
             tmp = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
         }
         else{

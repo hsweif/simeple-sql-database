@@ -168,8 +168,8 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			return -1;
 		}
 		vector<RM_node> items;
-		std::vector<char*> col = ((hsql::InsertStatement*)stmt)->columns[0];
-		std::vector<hsql::Expr*> val = ((hsql::InsertStatement*)stmt)->values[0];	
+		// std::vector<char*> col = ((hsql::InsertStatement*)stmt)->columns[0];
+		// std::vector<hsql::Expr*> val = ((hsql::InsertStatement*)stmt)->values[0];
 
 	}
 	else if(stmt->isType(hsql::kStmtDelete)){
