@@ -96,6 +96,33 @@ RM::ItemType transType(hsql::DataType type){
 		return RM::ItemType::CHAR;
 	else return RM::ItemType::ERROR;
 }
+bool checkOp(hsql::OperatorType op){
+	if(op == hsql::OperatorType::kOpNot
+	||op == hsql::OperatorType::kOpIsNull
+	||op == hsql::OperatorType::kOpEquals
+	||op == hsql::OperatorType::kOpNotEquals
+	||op == hsql::OperatorType::kOpLess
+	||op == hsql::OperatorType::kOpGreater
+	||op == hsql::OperatorType::kOpLessEq
+	||op == hsql::OperatorType::kOpGreaterEq)
+		return true;
+	return false;
+}
+//(a<b)AND(b<2)AND(c<3) => push_back(a<b);...
+int getExpr(hsql::Expr *expr,std::vector<hsql::Expr*>* whereExprs){
+	if(expr->opType == hsql::OperatorType::kOpAnd){
+		cout<<"left"<<expr->expr->opType<<"right"<<expr->expr2->opType<<endl;
+		return getExpr(expr->expr,whereExprs)+getExpr(expr->expr2,whereExprs);
+	}
+	else if(checkOp(expr->opType)){//legal op
+		cout<<"unit"<<expr->opType<<endl;
+		whereExprs->push_back(expr);
+		return 0;
+	}
+	return 1;//wrong op
+}
+int getExprAnswer(){//4+2,"asd"+"asdsa",x+2+4
+}
 int executeCommand(const hsql::SQLStatement* stmt){
 	if(stmt->isType(hsql::kStmtCreate)){//create table
 		printf("create\n");
@@ -104,12 +131,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			return -1;
 		}
 		vector<string> title;
-		std::vector<hsql::ColumnDefinition*> col = ((hsql::CreateStatement*)stmt)->columns[0];
-		if(((hsql::CreateStatement*)stmt)->primaryKeys != nullptr){
-			for(char *key:*(((hsql::CreateStatement*)stmt)->primaryKeys)){
-				printf("primaryKey:%s\n", key);
-			}
-		}		
+		std::vector<hsql::ColumnDefinition*> col = ((hsql::CreateStatement*)stmt)->columns[0];	
 		int colNum = col.size();
 		RM_FileHandle *handler = new RM_FileHandle();
 		handler->recordHandler = new RM::RecordHandler(colNum);
@@ -117,12 +139,23 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			title.push_back((string)(col[i]->name));
 			handler->recordHandler->SetItemAttribute(i,col[i]->type.length,transType(col[i]->type.data_type),col[i]->nullable);
 		}	
-		handler->SetTitle(title);
+		handler->SetTitle(title);	
 		int size = handler->recordHandler->GetRecordSize();
 		rmg->createFile(((hsql::CreateStatement*)stmt)->tableName,size,colNum);
 		rmg->openFile(((hsql::CreateStatement*)stmt)->tableName,*handler);
 		// InitIndex 要在openfile后面
 		handler->InitIndex(true);
+		if(((hsql::CreateStatement*)stmt)->primaryKeys != nullptr){
+			for(char *key:*(((hsql::CreateStatement*)stmt)->primaryKeys)){
+				printf("primaryKey:%s\n", key);
+				for(int i=0;i<colNum;i++)
+					if(title[i].compare(key)){
+						handler->SetMainKey(i);
+						break;						
+					}
+
+			}
+		}
 		//handler->PrintTitle();
 		rmg->closeFile(*handler);
 		delete handler;
@@ -145,16 +178,65 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		hsql::Expr *expr = ((hsql::DeleteStatement*)stmt)->expr;
 		if(expr->type != hsql::kExprOperator){
 			printf("wrong type\n");
-		}		
-		cout<<expr->expr->type<<endl;
-		cout<<expr->expr2->type<<endl;
+		}
+		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
+		int ret = getExpr(expr,whereExprs);
+		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+		int whereExprsize = whereExprs->size();
+		for(int i = 0;i < whereExprsize;i++){
+			cout<<(*whereExprs)[i]->opType<<endl;
+		}
+		delete whereExprs;
 	}
 	else if(stmt->isType(hsql::kStmtUpdate)){
 		if(rmg == NULL){
 			printf("current path is not DBPath\n");
 			return -1;
 		}	
-
+		string tableName = (string)(((hsql::UpdateStatement*)stmt)->table->name);
+		cout<<"tableName:"<<tableName<<endl;
+		std::vector<hsql::UpdateClause*> updates = ((hsql::UpdateStatement*)stmt)->updates[0];
+		//get whereclause
+		hsql::Expr *expr = ((hsql::UpdateStatement*)stmt)->where;
+		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
+		int ret = getExpr(expr,whereExprs);
+		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+		int whereExprsize = whereExprs->size();
+		for(int i = 0;i < whereExprsize;i++){
+			cout<<(*whereExprs)[i]->opType<<endl;
+		}	
+		//get setExpr
+		for(hsql::UpdateClause* update:updates){
+			printf("update:%s\n",update->column);
+		}
+	}
+	else if(stmt->isType(hsql::kStmtSelect)){
+		if(rmg == NULL){
+			printf("current path is not DBPath\n");
+			return -1;
+		}	
+		//get tables
+		std::vector<hsql::TableRef*> list = ((hsql::SelectStatement*)stmt)->fromTable->list[0];		
+		for(hsql::TableRef* table:list){
+			printf("table:%s\n", table->name);
+		}
+		//get cols
+		std::vector<hsql::Expr*> selectList = ((hsql::SelectStatement*)stmt)->selectList[0];	
+		for(hsql::Expr* expr:selectList){
+			if(expr->table != NULL){
+				printf("col_name:%s.%s\n", expr->table,expr->name);
+			}
+			else printf("col_name:%s\n", expr->name);
+		}
+		//get whereClause
+		hsql::Expr *expr = ((hsql::SelectStatement*)stmt)->whereClause;
+		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
+		int ret = getExpr(expr,whereExprs);
+		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+		int whereExprsize = whereExprs->size();
+		for(int i = 0;i < whereExprsize;i++){
+			cout<<(*whereExprs)[i]->opType<<endl;
+		}
 	}
 	return 0;
 }
