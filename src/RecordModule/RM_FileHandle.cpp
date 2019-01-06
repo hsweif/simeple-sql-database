@@ -2,14 +2,15 @@
 #include <iostream>
 using namespace std;
 BufType reset;
-RM_FileHandle::RM_FileHandle() {
+RM_FileHandle::RM_FileHandle(bool _init) {
 	if (reset == NULL) {
 		reset = new uint[PAGE_INT_NUM];
 	}
 	for (int i = 0; i < PAGE_INT_NUM; i++) {
 		reset[i] = 0xFFFFFFFF;
 	}
-	this->isInitialized = false;
+	this->isInitialized = _init;
+	this->recordHandler = nullptr;
 }
 
 RM_FileHandle::~RM_FileHandle()
@@ -94,11 +95,20 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 
 	// Below is for main key:
 	offset += nullSectLength;
-	mainKeyCnt = (uint)firstPage[offset];
-	mainKey.clear();
-	for(int i = 0;i<mainKeyCnt;i++){		
-		mainKey.push_back((uint)firstPage[offset]);
-		offset++;
+	if(isInitialized) {
+		mainKeyCnt = (uint)firstPage[offset];
+	}
+	offset ++;
+	if(isInitialized)
+	{
+        mainKey.clear();
+        for(int i = 0; i < mainKeyCnt; i++){
+            mainKey.push_back((uint)firstPage[offset]);
+            offset++;
+        }
+	}
+	else{
+	    offset += mainKeyCnt;
 	}
 
 
@@ -173,6 +183,8 @@ int RM_FileHandle::updateHead() {
 
 	// This is for main key.
 	offset += nullSectLength;
+	readBuf[offset] = mainKeyCnt;
+	offset ++;
 	for(int i = 0;i<mainKey.size();i++){
 		readBuf[offset] = mainKey[i];	
 		offset++;
@@ -180,7 +192,6 @@ int RM_FileHandle::updateHead() {
 	
 
 	// This is for mutable item length;
-	offset ++;
 	int *itemLength = recordHandler->GetItemLength();
 	for(int i = 0; i < colNum; i ++) {
 		readBuf[i+offset] = itemLength[i];
@@ -221,12 +232,13 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 int RM_FileHandle::SetMainKey(std::vector<int> mainKeys)
 {
 	mainKey.clear();
-	for(int key:mainKeys){
+	for(int key: mainKeys){
 		if(key < 0 || key > colNum) {
 			return 1;
 		}
 		mainKey.push_back((uint)key);
 	}
+	mainKeyCnt = mainKey.size();
 	return 0;
 }
 
@@ -444,7 +456,7 @@ int RM_FileHandle::RecordNum() const
 }
 
 bool RM_FileHandle::isMainKey(uint key){
-	for(uint mkey:mainKey){
+	for(uint mkey: mainKey){
 		if(key == mkey){
 			return true;
 		}
@@ -571,6 +583,17 @@ int RM_FileHandle::PrintColumnInfo()
 	for(int i = 0; i < colNum; i ++)
     {
         colInfo += title[i];
+        if(isMainKey(i)) {
+        	colInfo += ", PRIMARY KEY";
+		}
+
+        if(recordHandler->IsAllowNull(i)) {
+        	colInfo += ", ALLOW NULL";
+		}
+		else{
+			colInfo += ", NOT ALLOW NULL";
+		}
+
         if(itemType[i] == RM::INT) {
         	colInfo += ", INT";
 		}

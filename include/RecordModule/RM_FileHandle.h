@@ -57,7 +57,7 @@ public:
 	IM::IndexHandle *indexHandle;
     RM::RecordHandler *recordHandler;
 	int CheckForMainKey();
-    RM_FileHandle();
+    RM_FileHandle(bool _init = true);
     ~RM_FileHandle();                                  // Destructor
 	int updateHead();
 	// RM_FileHandle(BufPageManager* bufpm, int fd, int rcz);

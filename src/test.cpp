@@ -21,7 +21,7 @@ int current = 0;
 int tt = 0;
 unsigned char h[61];
 
-char *dbName = "UnitTestDB";
+char *dbName = "UnitTestDB_1";
 vector<RM_Record> orig;
 
 int SQLParserTest(string query)
@@ -74,8 +74,11 @@ TEST(PipelineTest, Create) {
         title.push_back("id");
         handler->SetTitle(title);
         rmg->createFile(dbName, sz, colNum);
+        // 在init前面才不会被覆盖
+        vector<int> mainKey;
+        mainKey.push_back(1);
+        // handler->SetMainKey(mainKey);
     }
-
     string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
 
@@ -83,8 +86,7 @@ TEST(PipelineTest, Create) {
     if (createNewDB) {
         handler->InitIndex(true);
     }
-    // 在init后面才不会被覆盖
-    // handler->SetMainKey(1);
+
     rmg->closeFile(*handler);
 }
 
