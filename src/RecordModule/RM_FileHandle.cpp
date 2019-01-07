@@ -611,3 +611,13 @@ int RM_FileHandle::PrintColumnInfo()
     cout << colInfo << endl;
     return 0;
 }
+
+int RM_FileHandle::PrintAttribute(const string &attrName, RM_Record &rec)
+{
+    auto iter = colNameMap.find(attrName);
+    if(iter == colNameMap.end()) {
+    	return 1;
+	}
+	int col = colNameMap[attrName];
+   	return recordHandler->PrintColumn(rec, col);
+}

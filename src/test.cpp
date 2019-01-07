@@ -49,6 +49,17 @@ int SQLParserTest(string query)
 	}
 }
 
+TEST(IOTest, stdioRedirect)
+{
+    string str = "My test";
+    std::cout << str;
+    testing::internal::CaptureStdout();
+    std::cout << str;
+    std::string output = testing::internal::GetCapturedStdout();
+    ASSERT_EQ(str, output);
+    std::cout <<  str << " " << output << endl;
+}
+
 TEST(PipelineTest, Delete)
 {
     ASSERT_EQ(DropDB(dbName), 0);
@@ -294,6 +305,13 @@ TEST(PipelineTest, PrintAllRecord)
     vector<RM_Record> result;
     handler->GetAllRecord(result);
     for(int i = 0; i < result.size(); i ++) {
+        printf("---------------------------\n");
+        ASSERT_EQ(0, handler->PrintAttribute("id", result[i]));
+        cout << "|";
+        ASSERT_EQ(0, handler->PrintAttribute("test_float", result[i]));
+        cout << "|";
+        ASSERT_EQ(0, handler->PrintAttribute("name", result[i]));
+        cout << endl;
         handler->recordHandler->PrintRecord(result[i]);
     }
     ASSERT_EQ(result.size(), 15);

@@ -32,6 +32,7 @@ public:
     bool isValidChar(uint c);
     ~RecordHandler();
     int PrintRecord(RM_Record &record);
+    int PrintColumn(RM_Record &record, int col);
     int GetColumn(int pos, RM_Record &record, RM_node &result);
     int SetType(int pos, RM::ItemType tp);
     RM::ItemType* GetItemType() const {return type;}

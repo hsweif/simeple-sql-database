@@ -68,6 +68,7 @@ public:
     int DeleteRec(const RID &rid);                    // Delete a record
     int UpdateRec(RM_Record &rec);
     int RecordNum() const;
+    int PrintAttribute(const string &attrName, RM_Record &rec);
     int PageNum() const {return pageCnt;}
     bool isMainKey(uint key);
     void SetTitle(vector<string> t);
