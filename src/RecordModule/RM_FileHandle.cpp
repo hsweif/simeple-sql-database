@@ -11,6 +11,7 @@ RM_FileHandle::RM_FileHandle(bool _init) {
 	}
 	this->isInitialized = _init;
 	this->recordHandler = nullptr;
+	this->foreignKeyNum = 0;
 }
 
 RM_FileHandle::~RM_FileHandle()
@@ -111,6 +112,51 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	    offset += mainKeyCnt;
 	}
 
+	// Below is for foreign key
+	if(isInitialized) {
+		foreignKeyNum = (uint)firstPage[offset];
+	}
+	offset ++;
+	if(isInitialized){
+		foreignKey.clear();
+		for(int i = 0; i < foreignKeyNum; i ++)
+		{
+			int colIndex = (int)firstPage[offset];
+			offset ++;
+			int fIndex = (int)firstPage[offset];
+			offset ++;
+			string fChart = "";
+			int l = RM::TITLE_LENGTH % 4 ? RM::TITLE_LENGTH/4 + 1 : RM::TITLE_LENGTH/4;
+			bool flag = false;
+			for(int i = 0; i < l; i ++)
+			{
+			    if(flag) {
+			    	break;
+				}
+				uint ctx = firstPage[offset+i];
+				int mask = 255;
+				for(int shift = 0; shift < 32; shift += 8)
+				{
+					char c = (char)(((mask << shift) & ctx) >> shift);
+					if(c == '\0') {
+						flag = true;
+						break;
+					}
+					else{
+						fChart += c;
+					}
+				}
+			}
+			offset += l;
+			pair<string, int> fInfo(fChart, fIndex);
+			pair<int, pair<string, int>> item(colIndex, fInfo);
+			foreignKey.push_back(item);
+		}
+	}
+	else{
+		int l = RM::TITLE_LENGTH % 4 ? RM::TITLE_LENGTH/4 + 1 : RM::TITLE_LENGTH/4;
+		offset += foreignKeyNum * (2 + l);
+	}
 
 	// Below is for mutable item length;
 	for(int i = 0; i < colNum; i ++) {
@@ -189,7 +235,46 @@ int RM_FileHandle::updateHead() {
 		readBuf[offset] = mainKey[i];	
 		offset++;
 	}
-	
+
+	// This is for foreign key
+	readBuf[offset] = foreignKeyNum;
+	offset ++;
+    for(int i = 0; i < foreignKeyNum; i ++)
+    {
+        pair<int, pair<string, int>> item = foreignKey[i];
+        readBuf[offset] = item.first;
+        offset ++;
+		readBuf[offset] = item.second.second;
+		int s_length = item.second.first.length();
+        offset ++;
+        int l = RM::TITLE_LENGTH % 4 ? RM::TITLE_LENGTH/4 + 1 : RM::TITLE_LENGTH/4;
+        bool flag = false;
+        int cnt = 0;
+        for(int i = 0; i < l; i ++)
+        {
+            readBuf[i + offset] = 0;
+            if(!flag)
+			{
+                int mask = 255;
+                for(int shift = 0; shift < 32; shift += 8)
+                {
+                    char c;
+                    if(cnt == s_length) {
+                        flag = true;
+                        c = '\0';
+                        readBuf[i+offset] += (uint)((c & mask) << shift);
+                        break;
+                    }
+                    else{
+						c = item.second.first[cnt];
+						readBuf[i+offset] += (uint)((c & mask) << shift);
+                        cnt ++;
+                    }
+                }
+			}
+        }
+        offset += l;
+    }
 
 	// This is for mutable item length;
 	int *itemLength = recordHandler->GetItemLength();
@@ -633,6 +718,7 @@ int RM_FileHandle::GetAttrIndex(const string &attrName, int &index)
 
 int RM_FileHandle::AddForeignKey(RM_Manager *rmg, string chartName, string attrName, int col)
 {
+	foreignKeyNum ++;
 	char *cName = new char[chartName.length()];
 	RM_FileHandle *handler = new RM_FileHandle();
 	for(int i = 0; i < chartName.length(); i ++) {

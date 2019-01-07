@@ -22,7 +22,9 @@ int current = 0;
 int tt = 0;
 unsigned char h[61];
 
-char *dbName = "abctesting12";
+char *dbName = "NewTesting111";
+char *chartName1 = "chart1";
+char *chartName2 = "chart2";
 vector<RM_Record> orig;
 
 int SQLParserTest(string query)
@@ -91,13 +93,13 @@ TEST(PipelineTest, Create) {
         title.push_back("test_float");
         title.push_back("name");
         handler->SetTitle(title);
-        rmg->createFile(dbName, sz, colNum);
+        rmg->createFile(chartName1, sz, colNum);
         // 在init前面才不会被覆盖
         vector<int> mainKey;
         mainKey.push_back(0);
         handler->SetMainKey(mainKey);
     }
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
 
     // HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
@@ -113,7 +115,7 @@ TEST(PipelineTest, Create) {
 TEST(PipelineTest, Insert) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
     vector<RM_node> items;
     //10 with id and 5 with null value
@@ -167,7 +169,7 @@ TEST(PipelineTest, InvalidInsert)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
     RM_node person_a("IllegalGuy");
     RM_node id_a(0);
@@ -190,7 +192,7 @@ TEST(PipelineTest, InvalidInsert)
 TEST(PipelineTest, SearchForUniqueRangeCondition) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
@@ -218,7 +220,7 @@ TEST(PipelineTest, SearchForUniqueRangeCondition) {
 TEST(PipelineTest, SearchForUniqueNullCondition) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
@@ -248,7 +250,7 @@ TEST(PipelineTest, NestSearch)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
@@ -297,7 +299,7 @@ TEST(PipelineTest, PrintAllRecord)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
     printf("-------------Column Info--------------\n");
     handler->PrintColumnInfo();
@@ -324,7 +326,7 @@ TEST(PipelineTest, DeleteRecord)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    ASSERT_EQ(rmg->openFile(dbName, *handler), true);
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RID rid(1, 0);
     handler->DeleteRec(rid);
     vector<RM_Record> result;
@@ -333,9 +335,8 @@ TEST(PipelineTest, DeleteRecord)
     rmg->closeFile(*handler);
 }
 
-TEST(PipelineTest, ChartConnectAndForeignKey)
+TEST(PipelineTest, ChartConnect)
 {
-    char *table1 = "Chart1";
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *mainHandler = new RM_FileHandle();
     RM_FileHandle *viceHandler = new RM_FileHandle(false);
@@ -347,10 +348,10 @@ TEST(PipelineTest, ChartConnectAndForeignKey)
     vector<string> title;
     title.push_back("id");
     title.push_back("name");
-    rmg->createFile(table1, sz, colNum);
+    rmg->createFile(chartName2, sz, colNum);
     viceHandler->SetTitle(title);
-    ASSERT_EQ(rmg->openFile(dbName, *mainHandler), true);
-    ASSERT_EQ(rmg->openFile(table1, *viceHandler), true);
+    ASSERT_EQ(rmg->openFile(chartName1, *mainHandler), true);
+    ASSERT_EQ(rmg->openFile(chartName2, *viceHandler), true);
     viceHandler->InitIndex(true);
     vector<RM_node> items;
     //10 with id and 5 with null value
@@ -394,7 +395,7 @@ TEST(PipelineTest, ChartConnectAndForeignKey)
     }
     ASSERT_EQ(cnt, 10);
 
-    string chartName(dbName);
+    string chartName(chartName1);
     ASSERT_EQ(viceHandler->AddForeignKey(rmg, chartName, "id", 0), 0);
     pair<string, int> fkeyInfo;
     ASSERT_EQ(viceHandler->GetForeignKeyInfo(0, fkeyInfo), 1);
@@ -402,6 +403,24 @@ TEST(PipelineTest, ChartConnectAndForeignKey)
     ASSERT_EQ(fkeyInfo.second, 0);
     ASSERT_EQ(viceHandler->GetForeignKeyInfo(1, fkeyInfo), 0);
 
+    rmg->closeFile(*mainHandler);
+    rmg->closeFile(*viceHandler);
+}
+
+
+TEST(PipelineTest, ForeignKey)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *mainHandler = new RM_FileHandle();
+    RM_FileHandle *viceHandler = new RM_FileHandle();
+    pair<string, int> fkeyInfo;
+    ASSERT_EQ(rmg->openFile(chartName1, *mainHandler), true);
+    ASSERT_EQ(rmg->openFile(chartName2, *viceHandler), true);
+    ASSERT_EQ(viceHandler->GetForeignKeyInfo(0, fkeyInfo), 1);
+    string chartName(chartName1);
+    ASSERT_EQ(fkeyInfo.first, chartName);
+    ASSERT_EQ(fkeyInfo.second, 0);
+    ASSERT_EQ(viceHandler->GetForeignKeyInfo(1, fkeyInfo), 0);
     rmg->closeFile(*mainHandler);
     rmg->closeFile(*viceHandler);
 }

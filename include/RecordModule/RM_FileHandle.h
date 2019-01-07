@@ -46,6 +46,7 @@ private:
 	int colNum;
 	uint *pageUintMap;
 	uint *recordUintMap;
+	int foreignKeyNum;
     MyBitMap* pageBitMap;
     MyBitMap* recordBitMap;//current reading page's map
     BufPageManager *mBufpm;
