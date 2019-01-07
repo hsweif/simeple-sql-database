@@ -67,17 +67,17 @@ TEST(PipelineTest, Create) {
     if (createNewDB) {
         handler->recordHandler = new RM::RecordHandler(colNum);
         handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
-        handler->recordHandler->SetItemAttribute(1, 1, RM::FLOAT, false);
+        handler->recordHandler->SetItemAttribute(1, 1, RM::FLOAT, true);
         int sz = handler->recordHandler->GetRecordSize();
         vector<string> title;
         title.push_back("name");
-        title.push_back("id");
+        title.push_back("test_float");
         handler->SetTitle(title);
         rmg->createFile(dbName, sz, colNum);
         // 在init前面才不会被覆盖
         vector<int> mainKey;
-        mainKey.push_back(1);
-        // handler->SetMainKey(mainKey);
+        mainKey.push_back(0);
+        handler->SetMainKey(mainKey);
     }
     string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
     ASSERT_EQ(test, "successfully opened");
@@ -98,9 +98,13 @@ TEST(PipelineTest, Insert) {
     vector<RM_node> items;
     //10 with id and 5 with null value
     printf("-------------These will be inserted-------------\n");
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 10; i++) {
         items.clear();
-        RM_node person_a("person");
+        string iStr;
+        std::stringstream ss;
+        ss << i;
+        ss >> iStr;
+        RM_node person_a("person" + iStr);
         RM_node id_a(0.5f);
         items.push_back(person_a);
         items.push_back(id_a);
@@ -239,7 +243,7 @@ TEST(PipelineTest, PrintAllRecord)
     for(int i = 0; i < result.size(); i ++) {
         handler->recordHandler->PrintRecord(result[i]);
     }
-    ASSERT_EQ(result.size(), 15);
+    ASSERT_EQ(result.size(), 10);
     ASSERT_EQ(result.size(), orig.size());
     rmg->closeFile(*handler);
 }

@@ -49,7 +49,8 @@ int RecordHandler::PrintRecord(RM_Record &record)
         }
         else if(type[i] == RM::FLOAT) {
             if(!record.IsNull(i)) {
-                printf("%f", (float)item);
+                float f = RM::castUintToFloat(item);
+                printf("%f", f);
             }
             else{
                 printf("NULL");
@@ -113,7 +114,7 @@ int RecordHandler::SetType(int pos, RM::ItemType tp) {
     if(pos >= itemNum || pos < 0 || isInitialized) {
         return 1;
     }
-    cout << "Set Type: " << tp << endl;
+    // cout << "Set Type: " << tp << endl;
     this->type[pos] = tp;
     return 0;
 }
@@ -182,11 +183,19 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int cnt = nullSectLength;
 	for(int i = 0; i < itemNum && cnt < bufSize; i ++)
 	{
-        if(items[i].type == RM::INT || items[i].type == RM::FLOAT) {
+        if(items[i].type == RM::INT){
             if(!items[i].isNull) {
-                int n = (int)items[i].ctx[0];
-                int f = (float)items[i].ctx[0];
                 buf[cnt] = items[i].ctx[0];
+            }
+            else{
+                buf[cnt] = 0;
+            }
+            cnt ++;
+        }
+        else if(items[i].type == RM::FLOAT) {
+            if(!items[i].isNull) {
+                buf[cnt] = RM::castFloatToUint(items[i].fNum);
+                float f = RM::castUintToFloat(buf[cnt]);
             }
             else{
                 buf[cnt] = 0;
@@ -205,26 +214,12 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
                 }
                 cnt ++;
             }
-            // int sPos = 0, sLength = str.length();
-            // uint mask = 255;
-            // for(int k = 0; k < tmp_l; k ++) {
-            //     buf[cnt] = 0;
-            //     if(!items[i].isNull) {
-            //         for(int shift = 0; shift < 32; shift += 8)
-            //         {
-            //             uint ctx = (uint)((str[sPos] & mask) << shift);
-            //             buf[cnt] += ctx;
-            //         }
-            //     }
-            //     cnt ++;
-            // }
         }
         else {
             cout << "Invalid type" << endl;
         }
     }
     // Because cnt+1 = bufSize
-    // record.SetRecord(buf, bufSize-nullSectLength+1, itemNum);
     record.SetRecord(buf, bufSize, itemNum);
     return 0;
 }

@@ -155,7 +155,7 @@ int RM_FileHandle::updateHead() {
 	for(int i = 0; i < colNum; i ++) {
 	    readBuf[HEAD_OFFSET+i] = type[i];
 		int cnt = 0, l = title[i].length();
-		cout << "Update title to head: " << title[i] << l << endl;
+		// cout << "Update title to head: " << title[i] << l << endl;
 		for(int k = 0; k < RM::TITLE_LENGTH / 4; k++) {
 		    int pos = HEAD_OFFSET + colNum + (i*(RM::TITLE_LENGTH/4)) + k;
 			readBuf[pos] = 0;
@@ -238,7 +238,7 @@ int RM_FileHandle::SetMainKey(std::vector<int> mainKeys)
 		}
 		mainKey.push_back((uint)key);
 	}
-	mainKeyCnt = mainKey.size();
+	mainKeyCnt = (int)mainKey.size();
 	return 0;
 }
 
@@ -322,7 +322,6 @@ int RM_FileHandle::CheckForMainKey(RM_Record &pData)
 int RM_FileHandle::InsertRec(RM_Record& pData){
 
 	//check size
-	// int dataSize = pData.RecordSize();
 	int dataSize = pData.BufSize();
 	if(dataSize != this->recordSize)
 	{

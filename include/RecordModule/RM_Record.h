@@ -16,7 +16,12 @@ namespace RM {
 	enum ItemType {
 		CHAR, INT, FLOAT, ERROR
 	};
+	int float2Uint(float a, uint *ptr);
+	uint castFloatToUint(float f);
+	float castUintToFloat(unsigned int i);
 }
+
+
 
 struct RM_node
 {

@@ -283,8 +283,9 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				tables.push_back((string)(table->name));
 			}
 		}
-		else
+		else {
 			tables.push_back(((hsql::SelectStatement*)stmt)->fromTable->name);
+        }
 		//get cols
 		std::vector<hsql::Expr*> selectList = ((hsql::SelectStatement*)stmt)->selectList[0];	
 		bool selectAll = false;
@@ -307,8 +308,9 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		//get whereClause
 		bool whereAll = false;
 		hsql::Expr *expr = ((hsql::SelectStatement*)stmt)->whereClause;
-		if(expr == NULL)
+		if(expr == NULL) {
 			whereAll = true;
+		}
 		else{
 			std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
 			int ret = getExpr(expr,whereExprs);
