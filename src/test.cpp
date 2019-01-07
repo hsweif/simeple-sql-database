@@ -72,7 +72,7 @@ TEST(PipelineTest, Create) {
         handler->recordHandler = new RM::RecordHandler(colNum);
         handler->recordHandler->SetItemAttribute(0, 1, RM::INT, false);
         handler->recordHandler->SetItemAttribute(1, 1, RM::FLOAT, true);
-        handler->recordHandler->SetItemAttribute(2, 8, RM::CHAR, false);
+        handler->recordHandler->SetItemAttribute(2, 12, RM::CHAR, false);
         int sz = handler->recordHandler->GetRecordSize();
         vector<string> title;
         title.push_back("id");
@@ -95,6 +95,8 @@ TEST(PipelineTest, Create) {
 
     rmg->closeFile(*handler);
 }
+
+
 
 TEST(PipelineTest, Insert) {
     RM_Manager *rmg = new RM_Manager(dbName);
@@ -125,24 +127,54 @@ TEST(PipelineTest, Insert) {
         handler->InsertRec(record);
         orig.push_back(record);
     }
-    // for (int i = 0; i < 5; i++) {
-    //     items.clear();
-    //     RM_node person_a("N_person");
-    //     RM_node id_a;
-    //     items.push_back(person_a);
-    //     items.push_back(id_a);
-    //     RM_Record record;
-    //     if (handler->recordHandler->MakeRecord(record, items)) {
-    //         cout << "Error to make record." << endl;
-    //     }
-    //     handler->InsertRec(record);
-    //     orig.push_back(record);
-    // }
+    for (int i = 10; i < 15; i++) {
+        items.clear();
+        string iStr;
+        std::stringstream ss;
+        ss << i;
+        ss >> iStr;
+        RM_node person_a("N_person" + iStr);
+        RM_node id_a(i);
+        RM_node null_f;
+        items.push_back(id_a);
+        items.push_back(null_f);
+        items.push_back(person_a);
+        RM_Record record;
+        if (handler->recordHandler->MakeRecord(record, items)) {
+            cout << "Error to make record." << endl;
+        }
+        handler->InsertRec(record);
+        handler->recordHandler->PrintRecord(record);
+        orig.push_back(record);
+    }
     rmg->closeFile(*handler);
 
 }
 
-/*
+TEST(PipelineTest, InvalidInsert)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *handler = new RM_FileHandle();
+    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+    ASSERT_EQ(test, "successfully opened");
+    RM_node person_a("IllegalGuy");
+    RM_node id_a(0);
+    RM_node f;
+    vector<RM_node> items;
+    items.push_back(id_a);
+    items.push_back(f);
+    items.push_back(person_a);
+    RM_Record record;
+    // 重复键值在插入时应该会失败
+    ASSERT_EQ(handler->recordHandler->MakeRecord(record, items), 0);
+    ASSERT_NE(handler->InsertRec(record), 0);
+    // Miao!!!!!!
+    RM_node emptyID;
+    items[0] = emptyID;
+    // 主键为空的记录应该在创建记录时失败
+    ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
+}
+
 TEST(PipelineTest, SearchForUniqueRangeCondition) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
@@ -151,7 +183,7 @@ TEST(PipelineTest, SearchForUniqueRangeCondition) {
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
     printf("-------------List all records with id < 5--------------\n");
-    fileScan->OpenScan(*handler, 1, IM::LS, "5");
+    fileScan->OpenScan(*handler, 0, IM::LS, "5");
     int cnt = 0;
     while (!fileScan->GetNextRec(*handler, nextRec)) {
         handler->recordHandler->PrintRecord(nextRec);
@@ -160,13 +192,13 @@ TEST(PipelineTest, SearchForUniqueRangeCondition) {
     ASSERT_EQ(cnt, 5);
     fileScan->CloseScan();
     cnt = 0;
-    printf("-------------List all records with id > 5--------------\n");
-    fileScan->OpenScan(*handler, 1, IM::GT, "5");
+    printf("-------------List all records with id >= 5--------------\n");
+    fileScan->OpenScan(*handler, 0, IM::GEQ, "5");
     while (!fileScan->GetNextRec(*handler, nextRec)) {
         handler->recordHandler->PrintRecord(nextRec);
         cnt++;
     }
-    ASSERT_EQ(cnt, 4);
+    ASSERT_EQ(cnt, 10);
     fileScan->CloseScan();
     rmg->closeFile(*handler);
 }
@@ -178,7 +210,7 @@ TEST(PipelineTest, SearchForUniqueNullCondition) {
     ASSERT_EQ(test, "successfully opened");
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
-    printf("-------------List all records with null id--------------\n");
+    printf("-------------List all records with null float--------------\n");
     fileScan->OpenScan(*handler, 1, true);
     int cnt = 0;
     while (!fileScan->GetNextRec(*handler, nextRec)) {
@@ -208,7 +240,7 @@ TEST(PipelineTest, NestSearch)
     ASSERT_EQ(test, "successfully opened");
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
-    printf("-------------List all records non-null id--------------\n");
+    printf("-------------List all records non-null float--------------\n");
     fileScan->OpenScan(*handler, 1, false);
     int cnt = 0;
     while (!fileScan->GetNextRec(*handler, nextRec)) {
@@ -216,16 +248,16 @@ TEST(PipelineTest, NestSearch)
         cnt++;
     }
     ASSERT_EQ(cnt, 10);
-    printf("-------------List all records with non-null id <= 8--------------\n");
-    fileScan->OpenScan(*handler, 1, IM::LEQ, "8");
+    printf("-------------List all records with non-null float and id <= 8--------------\n");
+    fileScan->OpenScan(*handler, 0, IM::LEQ, "8");
     cnt = 0;
     while (!fileScan->GetNextRec(*handler, nextRec)) {
         handler->recordHandler->PrintRecord(nextRec);
         cnt++;
     }
     ASSERT_EQ(cnt, 9);
-    printf("-------------List all records with non-null 5 < id <= 8--------------\n");
-    fileScan->OpenScan(*handler, 1, IM::GT, "5");
+    printf("-------------List all records with non-null float and 5 < id <= 8--------------\n");
+    fileScan->OpenScan(*handler, 0, IM::GT, "5");
     cnt = 0;
     while (!fileScan->GetNextRec(*handler, nextRec)) {
         handler->recordHandler->PrintRecord(nextRec);
@@ -233,9 +265,21 @@ TEST(PipelineTest, NestSearch)
     }
     ASSERT_EQ(cnt, 3);
     fileScan->CloseScan();
+
+    printf("-------------List all records with null float and 13 > id > 4--------------\n");
+    fileScan->OpenScan(*handler, 1, true);
+    fileScan->OpenScan(*handler, 0, IM::GT, "5");
+    fileScan->OpenScan(*handler, 0, IM::LS, "13");
+    cnt = 0;
+    while (!fileScan->GetNextRec(*handler, nextRec)) {
+        handler->recordHandler->PrintRecord(nextRec);
+        cnt++;
+    }
+    ASSERT_EQ(cnt, 3); // 10, 11, 12
+    fileScan->CloseScan();
+
     rmg->closeFile(*handler);
 }
-*/
 
 TEST(PipelineTest, PrintAllRecord)
 {
@@ -252,7 +296,7 @@ TEST(PipelineTest, PrintAllRecord)
     for(int i = 0; i < result.size(); i ++) {
         handler->recordHandler->PrintRecord(result[i]);
     }
-    ASSERT_EQ(result.size(), 10);
+    ASSERT_EQ(result.size(), 15);
     ASSERT_EQ(result.size(), orig.size());
     rmg->closeFile(*handler);
 }

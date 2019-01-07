@@ -150,6 +150,10 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
             cout << "[ERROR] Fail to make record because found null value in a non-null column." << endl;
             return 1;
         }
+        if(items[i].isNull) {
+            // HINT: 因为如果使用new RM_node() 初始化的null点，是没有type的，语义上还是让他和应有的type一致。
+            items[i].type = this->type[i];
+        }
     }
 
     int bufSize = 0;
@@ -195,7 +199,6 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
         else if(items[i].type == RM::FLOAT) {
             if(!items[i].isNull) {
                 buf[cnt] = RM::castFloatToUint(items[i].fNum);
-                float f = RM::castUintToFloat(buf[cnt]);
             }
             else{
                 buf[cnt] = 0;
