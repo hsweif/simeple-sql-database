@@ -189,6 +189,15 @@ TEST(PipelineTest, InvalidInsert)
     items[0] = emptyID;
     // 主键为空的记录应该在创建记录时失败
     ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
+
+    // 长度过长的记录应该创建失败
+    items.clear();
+    RM_node person("ThisNameIsAbsolutelyTooLong"), id(27);
+    items.push_back(id);
+    items.push_back(f);
+    items.push_back(person);
+    ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
+
     delete handler;
     delete rmg;
 }

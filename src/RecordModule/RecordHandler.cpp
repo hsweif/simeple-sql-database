@@ -159,6 +159,20 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
         }
     }
 
+    for(int i = 0; i < this->itemNum; i ++) {
+        if(items[i].type != type[i]) {
+            cout << "Record's attribute type is invalid." << endl;
+            return 1;
+        }
+        if(items[i].type == RM::ItemType::CHAR && !items[i].isNull)
+        {
+            if(items[i].length > itemLength[i]) {
+                cout << "Record's char attribute is too long." << endl;
+                return 1;
+            }
+        }
+    }
+
     int bufSize = 0;
     for(int i = 0; i < this->itemNum; i ++) {
         int tmp = 0;
