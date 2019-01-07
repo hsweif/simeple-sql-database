@@ -8,7 +8,7 @@
 namespace IM{
 
 enum CompOp{
-    GT, LS, GEQ, LEQ, EQ, NEQ
+    GT, LS, GEQ, LEQ, EQ, NEQ, ERROR
 };
 
 }

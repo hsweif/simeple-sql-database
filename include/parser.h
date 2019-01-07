@@ -106,7 +106,25 @@ RM::ItemType transType(hsql::DataType type){
 	}
 }
 IM::CompOp transOp(hsql::OperatorType op){
-	
+	if(op == hsql::OperatorType::kOpEquals){
+		return IM::CompOp::EQ;
+	}
+	else if(op == hsql::OperatorType::kOpNotEquals){
+		return IM::CompOp::NEQ;
+	}
+	else if(op == hsql::OperatorType::kOpLess){
+		return IM::CompOp::LS;
+	}
+	else if(op == hsql::OperatorType::kOpGreater){
+		return IM::CompOp::GT;
+	}
+	else if(op == hsql::OperatorType::kOpGreaterEq){
+		return IM::CompOp::GEQ;
+	}
+	else if(op == hsql::OperatorType::kOpLessEq){
+		return IM::CompOp::LEQ;
+	}
+	return IM::CompOp::ERROR;
 }
 bool checkOp(hsql::OperatorType op){
 	if(op == hsql::OperatorType::kOpNot
@@ -127,7 +145,8 @@ int getExpr(hsql::Expr *expr,std::vector<hsql::Expr*>* whereExprs){
 		return getExpr(expr->expr,whereExprs)+getExpr(expr->expr2,whereExprs);
 	}
 	else if(checkOp(expr->opType)){//legal op
-		cout<<"unit"<<expr->opType<<endl;
+		printf("%s",expr->expr->name);
+		cout<<"unit"<<expr->opType<<" "<<expr->expr2->strName<<endl;
 		whereExprs->push_back(expr);
 		return 0;
 	}
@@ -355,6 +374,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					printf("attr not exist\n");
 					return -1;
 				}
+				printf("%s is col:%d\n", expr->expr->name,colPos);
 				if(expr->opType == hsql::OperatorType::kOpNot){
 					fileScan->OpenScan(*handler,colPos,false);
 				}
@@ -362,8 +382,13 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					fileScan->OpenScan(*handler,colPos,true);
 				}
 				else{
-					fileScan->OpenScan(*handler,colPos,,expr->expr2->name);
+					printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
+					fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
 				}
+			}
+			RM_Record nextRec;
+			while(!fileScan->GetNextRec(*handler, nextRec)){
+				handler->recordHandler->PrintRecord(nextRec);
 			}			
 		}
 		delete whereExprs;
