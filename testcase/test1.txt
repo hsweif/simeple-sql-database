@@ -1,0 +1,6 @@
+create database abc
+use database abc
+create table testSelect(x int,y char(20),z float)
+insert into testSelect values (101,'asdsad',10.5),(202,'12345',9.5),(303,'12312',0.5),(300,'asd',0.5)
+delete from testSelect where (x>200) AND (z<1) AND (x<301)
+select * from testSelect
