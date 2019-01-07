@@ -3,3 +3,4 @@ use database abc
 create table test231(x char(10),y int)
 insert into test231 values ('person',2),('person',3),('person',4),('person',5),('person',6),('person',7)
 select * from test231
+
