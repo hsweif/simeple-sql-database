@@ -614,10 +614,19 @@ int RM_FileHandle::PrintColumnInfo()
 
 int RM_FileHandle::PrintAttribute(const string &attrName, RM_Record &rec)
 {
-    auto iter = colNameMap.find(attrName);
+	int index;
+    if(GetAttrIndex(attrName, index)){
+    	return 1;
+    }
+    return recordHandler->PrintColumn(rec, index);
+}
+
+int RM_FileHandle::GetAttrIndex(const string &attrName, int &index)
+{
+	auto iter = colNameMap.find(attrName);
     if(iter == colNameMap.end()) {
     	return 1;
 	}
-	int col = colNameMap[attrName];
-   	return recordHandler->PrintColumn(rec, col);
+	index = colNameMap[attrName];
+	return 0;	
 }

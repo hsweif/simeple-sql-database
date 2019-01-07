@@ -70,6 +70,7 @@ public:
     int RecordNum() const;
     int PrintAttribute(const string &attrName, RM_Record &rec);
     int PageNum() const {return pageCnt;}
+    int GetAttrIndex(const string &attrName, int &index);
     bool isMainKey(uint key);
     void SetTitle(vector<string> t);
     int InitIndex(bool forceEmpty = false);

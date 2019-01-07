@@ -105,6 +105,9 @@ RM::ItemType transType(hsql::DataType type){
 		return RM::ItemType::ERROR;
 	}
 }
+IM::CompOp transOp(hsql::OperatorType op){
+	
+}
 bool checkOp(hsql::OperatorType op){
 	if(op == hsql::OperatorType::kOpNot
 	||op == hsql::OperatorType::kOpIsNull
@@ -359,7 +362,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					fileScan->OpenScan(*handler,colPos,true);
 				}
 				else{
-
+					fileScan->OpenScan(*handler,colPos,,expr->expr2->name);
 				}
 			}			
 		}
