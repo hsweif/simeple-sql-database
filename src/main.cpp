@@ -180,11 +180,11 @@ int main() {
 #ifdef __DARWIN_UNIX03
 	printf("It is on Unix now.\n");
 #endif
+	MyBitMap::initConst();
 	ParseInput();
 	/*
     int ret = SQLParserTest();
     printf("SQLTest result: %d\n", ret);
-    MyBitMap::initConst();
     hsql::SQLParserResult result;
 	char *dbName = "NewTesting";
 	NewTest(true, dbName);
