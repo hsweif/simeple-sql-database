@@ -12,18 +12,19 @@ RM_FileHandle::RM_FileHandle(bool _init) {
 	this->isInitialized = _init;
 	this->recordHandler = nullptr;
 	this->foreignKeyNum = 0;
+	this->relatedRManager = nullptr;
 }
 
 RM_FileHandle::~RM_FileHandle()
 {
 	// AWARE
-	if(isInitialized) {
-        delete pageUintMap;
-        delete recordUintMap;
-        delete recordBitMap;
-        delete mBufpm;
-        delete recordHandler;
-	}
+	// if(isInitialized) {
+	//     if(pageUintMap) { delete pageUintMap; }
+	//     if(recordUintMap) { delete recordUintMap; }
+    //     if(recordBitMap) { delete recordBitMap; }
+    //     if(mBufpm) { delete mBufpm; }
+    //     if(recordHandler) { delete recordHandler; }
+	// }
 }
 
 int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
@@ -327,7 +328,6 @@ int RM_FileHandle::SetMainKey(std::vector<int> mainKeys)
 	return 0;
 }
 
-
 int RM_FileHandle::UpdateRec(RM_Record &rec) {
 	RID rid;
 	rec.GetRid(rid);
@@ -363,6 +363,70 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 	return 0;
 }
 
+int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
+{
+	if(foreignKeyNum == 0) {
+		return 0;
+	}
+	if(this->relatedRManager == nullptr) {
+		return 1;
+	}
+	for(auto iter = foreignKey.begin(); iter != foreignKey.end(); iter ++)
+	{
+	    int colIndex = iter->first;
+	    bool isNull;
+	    RM_FileHandle *handler = new RM_FileHandle();
+
+	    char *chartName;
+	    string chartStr = iter->second.first;
+        int l = chartStr.length();
+        chartName = new char[l];
+        for(int i = 0; i < l; i ++) {
+            chartName[i] = chartStr[i];
+        }
+
+	    if(!relatedRManager->openFile(chartName, *handler)) {
+			return 1;
+		}
+
+		string cStr;
+	    recordHandler->GetColumnStr(rec, colIndex, cStr, isNull);
+		char *colKey;
+
+        l = cStr.length();
+        colKey = new char[l];
+        for(int i = 0; i < l; i ++) {
+            colKey[i] = cStr[i];
+        }
+
+	    if(isNull) {
+	    	return 1;
+		}
+		int pos = iter->second.second;
+		bool res = handler->indexHandle->Existed(pos, colKey);
+        if(action == IM::IndexAction::INSERT){
+            if(!res) {
+                printf("Reference key doesn't exist. It is unable to insert.\n");
+            	return 1;
+			}
+        }
+        else if(action == IM::IndexAction::DELETE) {
+			if(res) {
+                printf("Reference key still exist. It is unable to delete.\n");
+				return 1;
+			}
+        }
+        else if(action == IM::IndexAction::UPDATE) {
+        	if(!res) {
+                printf("Reference key doesn't exist. It is unable to update.\n");
+        		return 1;
+			}
+        }
+        delete[] chartName;
+        delete[] colKey;
+	}
+	return 0;
+}
 
 int RM_FileHandle::CheckForMainKey(RM_Record &pData)
 {
@@ -418,6 +482,10 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		printf("Item with same main key already existed\n");
 		return 1;
 	}
+
+	if(CheckForForeignKey(pData, IM::IndexAction::INSERT)) {
+        return 1;
+    }
 
 	//check space
 	int pageIndex = pageBitMap->findLeftOne();
@@ -475,6 +543,9 @@ int RM_FileHandle::DeleteRec(const RID &rid) {
 	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
 		return 1;
 	}
+	if(CheckForForeignKey(record, IM::IndexAction::DELETE)) {
+	    return 1;
+    }
 	int bufIndex;
 	readBuf = this->mBufpm->getPage(this->fileId, page, bufIndex);
 	if (bufLastIndex != bufIndex)
@@ -732,11 +803,15 @@ int RM_FileHandle::AddForeignKey(RM_Manager *rmg, string chartName, string attrN
 	if(handler->GetAttrIndex(attrName, index)){
 		return 1;
 	}
+	if(!handler->isMainKey(index)) {
+		return 1;
+	}
 	pair<string, int> relatedCol(chartName, index);
     pair<int, pair<string, int> > newKey(col, relatedCol);
 	foreignKey.push_back(newKey);
 	rmg->closeFile(*handler);
 	delete handler;
+	delete[] cName;
    	return 0;
 }
 
@@ -755,4 +830,5 @@ int RM_FileHandle::GetForeignKeyInfo(int pos, pair<string, int> &info)
 	}
 	return 0;
 }
+
 

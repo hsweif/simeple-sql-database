@@ -22,9 +22,9 @@ int current = 0;
 int tt = 0;
 unsigned char h[61];
 
-char *dbName = "NewTesting111";
-char *chartName1 = "chart1";
-char *chartName2 = "chart2";
+char dbName[20] = "NewTesting111";
+char chartName1[10] = "chart1";
+char chartName2[10] = "chart2";
 vector<RM_Record> orig;
 
 int SQLParserTest(string query)
@@ -108,6 +108,8 @@ TEST(PipelineTest, Create) {
     }
 
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
 }
 
 
@@ -187,6 +189,8 @@ TEST(PipelineTest, InvalidInsert)
     items[0] = emptyID;
     // 主键为空的记录应该在创建记录时失败
     ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
+    delete handler;
+    delete rmg;
 }
 
 TEST(PipelineTest, SearchForUniqueRangeCondition) {
@@ -215,6 +219,9 @@ TEST(PipelineTest, SearchForUniqueRangeCondition) {
     ASSERT_EQ(cnt, 10);
     fileScan->CloseScan();
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+    delete fileScan;
 }
 
 TEST(PipelineTest, SearchForUniqueNullCondition) {
@@ -244,6 +251,9 @@ TEST(PipelineTest, SearchForUniqueNullCondition) {
     ASSERT_EQ(cnt, 10);
     fileScan->CloseScan();
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+    delete fileScan;
 }
 
 TEST(PipelineTest, NestSearch)
@@ -293,6 +303,9 @@ TEST(PipelineTest, NestSearch)
     fileScan->CloseScan();
 
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+    delete fileScan;
 }
 
 TEST(PipelineTest, PrintAllRecord)
@@ -320,6 +333,8 @@ TEST(PipelineTest, PrintAllRecord)
     ASSERT_EQ(result.size(), 15);
     ASSERT_EQ(result.size(), orig.size());
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
 }
 
 TEST(PipelineTest, DeleteRecord)
@@ -403,6 +418,20 @@ TEST(PipelineTest, ChartConnect)
     ASSERT_EQ(fkeyInfo.second, 0);
     ASSERT_EQ(viceHandler->GetForeignKeyInfo(1, fkeyInfo), 0);
 
+    RM_node id1(1000), id2(0);
+    RM_node node1("test"), node2("test1");
+    items.clear();
+    items.push_back(id1);
+    items.push_back(node1);
+    RM_Record record;
+    ASSERT_EQ(viceHandler->recordHandler->MakeRecord(record, items), 0);
+    ASSERT_EQ(viceHandler->InsertRec(record), 1);
+    items.clear();
+    items.push_back(id2);
+    items.push_back(node2);
+    ASSERT_EQ(viceHandler->recordHandler->MakeRecord(record, items), 0);
+    RID rid(1,0);
+    ASSERT_EQ(viceHandler->DeleteRec(rid), 1);
     rmg->closeFile(*mainHandler);
     rmg->closeFile(*viceHandler);
 }

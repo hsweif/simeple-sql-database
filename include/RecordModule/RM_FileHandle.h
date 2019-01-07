@@ -53,11 +53,13 @@ private:
 	BufType readBuf;
 	vector<string> title;
 	int CheckForMainKey(RM_Record &pData);
+	int CheckForForeignKey(RM_Record &rec, IM::IndexAction action);
 	map<string, int> colNameMap;
 	vector< pair<int, pair<string, int>> > foreignKey;
 
 public:
 	string indexPath;
+	RM_Manager *relatedRManager;
 	IM::IndexHandle *indexHandle;
     RM::RecordHandler *recordHandler;
 	int CheckForMainKey();

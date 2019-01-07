@@ -35,10 +35,12 @@ int IndexHandle::SetIndex(int pos, bool value)
 int IndexHandle::CreateIndex(char *indexName, int pos, bool forceEmpty)
 {
     string indexStr(indexName);
+    if(indexStr == "") {
+        return 1;
+    }
     int cnt = 0;
     list<node>::iterator iter = index.begin();
     while(iter != index.end()) {
-        cout << iter->item << endl;
         if(indexStr == iter->item) {
             return 1;
         }
@@ -50,7 +52,7 @@ int IndexHandle::CreateIndex(char *indexName, int pos, bool forceEmpty)
     indexFile.open(indexFileName, ios::in);
 
     if(!indexFile) {
-        cout << "Index file doesn't exist" << endl;
+        cout << "Create Index: " << indexStr << endl;
         indexFile.open(indexFileName, ios::out);
         indexFile.close();
     }
@@ -167,7 +169,6 @@ int IndexHandle::SearchRange(list<RID> &result, char *leftValue, char *rightValu
 bool IndexHandle::Existed(int pos, char *key)
 {
     if(!isIndex[pos]) {
-        cout << "[Error] The position you asked is not an index at all" << endl;
         return true;
     }
     auto iter = index.begin();
@@ -180,8 +181,7 @@ bool IndexHandle::Existed(int pos, char *key)
             RID *tmp = new RID;
             vector<RID> result;
             int ret = bpTree->search(keyValue, tmp);
-            if(ret == 0) {
-                cout << "[ERROR] There already existed an item with same main key." << endl;
+            if(ret != -1) {
                 return true;
             } else{
                 return false;
