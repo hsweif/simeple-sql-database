@@ -268,9 +268,40 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		int ret = getExpr(expr,whereExprs);
 		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
 		int whereExprsize = whereExprs->size();
-		for(int i = 0;i < whereExprsize;i++){
-			cout<<(*whereExprs)[i]->opType<<endl;
+		RM_FileScan* fileScan = new RM_FileScan;
+		RM_FileHandle *handler = new RM_FileHandle();
+		rmg->openFile(((hsql::DeleteStatement*)stmt)->tableName,*handler);
+		for(hsql::Expr *expr:*whereExprs){
+			int colPos;
+			int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+			if(ret){
+				printf("attr not exist\n");
+				return -1;
+			}
+			printf("%s is col:%d\n", expr->expr->name,colPos);
+			if(expr->opType == hsql::OperatorType::kOpNot){
+				fileScan->OpenScan(*handler,colPos,false);
+			}
+			else if(expr->opType == hsql::OperatorType::kOpIsNull){
+				fileScan->OpenScan(*handler,colPos,true);
+			}
+			else{
+				printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
+				fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
+			}
 		}
+		RM_Record nextRec;
+		while(!fileScan->GetNextRec(*handler, nextRec)){
+			printf("delete:\n");
+			RID delRid;
+			if(nextRec.GetRid(delRid)){
+				printf("get rid error when del\n");
+			}
+			//handler->recordHandler->PrintRecord(nextRec);
+			handler->DeleteRec(delRid);
+		}
+		fileScan->CloseScan();
+		rmg->closeFile(*handler);
 		delete whereExprs;
 	}
 	else if(stmt->isType(hsql::kStmtUpdate)){
@@ -389,7 +420,9 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			RM_Record nextRec;
 			while(!fileScan->GetNextRec(*handler, nextRec)){
 				handler->recordHandler->PrintRecord(nextRec);
-			}			
+			}
+			fileScan->CloseScan();	
+			rmg->closeFile(*handler);		
 		}
 		delete whereExprs;
 	}
