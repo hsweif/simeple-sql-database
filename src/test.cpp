@@ -294,6 +294,13 @@ TEST(PipelineTest, PrintAllRecord)
     vector<RM_Record> result;
     handler->GetAllRecord(result);
     for(int i = 0; i < result.size(); i ++) {
+        cout << "Divide by column: ";
+        handler->recordHandler->PrintColumn(result[i], 0);
+        cout << " ";
+        handler->recordHandler->PrintColumn(result[i], 1);
+        cout << " ";
+        handler->recordHandler->PrintColumn(result[i], 2);
+        cout << endl;
         handler->recordHandler->PrintRecord(result[i]);
     }
     ASSERT_EQ(result.size(), 15);

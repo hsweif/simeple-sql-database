@@ -252,7 +252,7 @@ int RecordHandler::GetColumn(int pos, RM_Record &record, RM_node &result)
     }
     else if(type[pos] == RM::FLOAT)
     {
-        float f = (float)ctx[offset];
+        float f = RM::castUintToFloat(ctx[offset]);
         result.setCtx(f);
     }
     else if(type[pos] == RM::CHAR)
@@ -262,7 +262,8 @@ int RecordHandler::GetColumn(int pos, RM_Record &record, RM_node &result)
         int shift = 0, mask = 255, cnt = 0;
         for(int k = 0; k < l; k ++)
         {
-            uint tmp = (uint)((ctx[cnt] & (mask << shift)) >> shift);
+            uint tmp = (uint)((ctx[cnt+offset] & (mask << shift)) >> shift);
+            uint tt = ctx[cnt+offset];
             if(!isValidChar(tmp)) {
                 break;
             }
@@ -277,7 +278,7 @@ int RecordHandler::GetColumn(int pos, RM_Record &record, RM_node &result)
             str += c;
         }
         result.setCtx(str);
-        result.length = l;
+        result.length = (int)str.length();
     }
     return 0;
 }
@@ -329,6 +330,38 @@ int RecordHandler::SetRecordSize(int size)
     }
 }
 
-
+/**
+ * 打印指定的列的内容，用在select a.name 之类的时候
+ * @param record 记录
+ * @param col 想打印出记录的那一列的内容
+ * @return 0成功
+ */
+int RecordHandler::PrintColumn(RM_Record &record, int col)
+{
+    if(col > itemNum || col < 0) {
+        return 1;
+    }
+    RM_node node;
+    this->GetColumn(col, record, node);
+    if(node.isNull) {
+        printf("NULL");
+    }
+    else
+    {
+        if(node.type == RM::INT) {
+            printf("%d", node.num);
+        }
+        else if(node.type == RM::FLOAT) {
+            printf("%f", node.fNum);
+        }
+        else if(node.type == RM::CHAR){
+            cout << node.str;
+        }
+        else{
+            return 1;
+        }
+    }
+    return 0;
+}
 
 }
