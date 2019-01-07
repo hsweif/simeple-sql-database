@@ -38,6 +38,7 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     string idx(fileName);
     fileHandle.indexPath = idx;
     RM_FileHandle::CreateDir(idx);
+    fileHandle.relatedRManager = this;
     fileHandle.init(this->fileID,this->bufPageManager);
     return result;
 }
