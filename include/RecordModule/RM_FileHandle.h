@@ -8,6 +8,7 @@
 #include "../utils/MyBitMap.h"
 #include "../IndexModule/IndexHandle.h"
 #include "RecordHandler.h"
+#include "RM_Manager.h"
 #include <iostream>
 #include <string>
 #include <map>
@@ -27,6 +28,7 @@ namespace RM
 {
 	const int TITLE_LENGTH = 16;
 }
+class RM_Manager;
 
 class RM_FileHandle {
 private:
@@ -51,6 +53,7 @@ private:
 	vector<string> title;
 	int CheckForMainKey(RM_Record &pData);
 	map<string, int> colNameMap;
+	vector< pair<int, pair<string, int>> > foreignKey;
 
 public:
 	string indexPath;
@@ -73,6 +76,8 @@ public:
     int GetAttrIndex(const string &attrName, int &index);
     bool isMainKey(uint key);
     void SetTitle(vector<string> t);
+    int AddForeignKey(RM_Manager *rmg, string chartName, string attrName, int col);
+    int GetForeignKeyInfo(int pos, pair<string, int> &info);
     int InitIndex(bool forceEmpty = false);
     void PrintTitle();
     void SetFilePath();

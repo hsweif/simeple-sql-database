@@ -630,3 +630,43 @@ int RM_FileHandle::GetAttrIndex(const string &attrName, int &index)
 	index = colNameMap[attrName];
 	return 0;	
 }
+
+int RM_FileHandle::AddForeignKey(RM_Manager *rmg, string chartName, string attrName, int col)
+{
+	char *cName = new char[chartName.length()];
+	RM_FileHandle *handler = new RM_FileHandle();
+	for(int i = 0; i < chartName.length(); i ++) {
+		cName[i] = chartName[i];
+	}
+
+	if(!rmg->openFile(cName, *handler)) {
+		return 1;
+	}
+	int index;
+	if(handler->GetAttrIndex(attrName, index)){
+		return 1;
+	}
+	pair<string, int> relatedCol(chartName, index);
+    pair<int, pair<string, int> > newKey(col, relatedCol);
+	foreignKey.push_back(newKey);
+	rmg->closeFile(*handler);
+	delete handler;
+   	return 0;
+}
+
+int RM_FileHandle::GetForeignKeyInfo(int pos, pair<string, int> &info)
+{
+	if(pos < 0 || pos >= colNum)	{
+		return -1;
+	}
+	for(auto iter = foreignKey.begin(); iter != foreignKey.end(); iter ++)
+	{
+		if(iter->first == pos)
+		{
+			info = iter->second;
+			return 1;
+		}
+	}
+	return 0;
+}
+

@@ -333,7 +333,7 @@ TEST(PipelineTest, DeleteRecord)
     rmg->closeFile(*handler);
 }
 
-TEST(PipelineTest, ChartConnect)
+TEST(PipelineTest, ChartConnectAndForeignKey)
 {
     char *table1 = "Chart1";
     RM_Manager *rmg = new RM_Manager(dbName);
@@ -393,6 +393,17 @@ TEST(PipelineTest, ChartConnect)
         cnt ++;
     }
     ASSERT_EQ(cnt, 10);
+
+    string chartName(dbName);
+    ASSERT_EQ(viceHandler->AddForeignKey(rmg, chartName, "id", 0), 0);
+    pair<string, int> fkeyInfo;
+    ASSERT_EQ(viceHandler->GetForeignKeyInfo(0, fkeyInfo), 1);
+    ASSERT_EQ(fkeyInfo.first, chartName);
+    ASSERT_EQ(fkeyInfo.second, 0);
+    ASSERT_EQ(viceHandler->GetForeignKeyInfo(1, fkeyInfo), 0);
+
+    rmg->closeFile(*mainHandler);
+    rmg->closeFile(*viceHandler);
 }
 
 TEST(SQLParserTest, SelectTest)
