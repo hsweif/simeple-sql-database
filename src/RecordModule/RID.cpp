@@ -58,6 +58,7 @@ int RID::Deserialize(BufType buf){
 	mPageNum = (int)buf[0];
 	mSlotNum = (int)buf[1];
 	return 0;
-}void RID::show(){
+}
+void RID::show(){
 	cout<<mPageNum<<"|"<<mSlotNum<<endl;
 }

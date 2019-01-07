@@ -56,7 +56,7 @@ public:
 	RM_Record();
 	~RM_Record (){};
 	int SetRecord	(BufType pData, int size, int cNum);
-	int SetRecord   (BufType pData);
+	void SetRecord   (int offset,uint data);
 	// void SetType(vector<int> tp);
 	BufType GetData () const; // 返回不包括NULL位图的内容
 	BufType GetBuf () const; // 返回整个mData，包括NULL位图

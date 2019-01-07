@@ -20,6 +20,23 @@ using namespace std;
 
 RM_Manager *rmg;
 string currentDB;
+/*update record 
+lPos:int pos,
+r1Pos/r2Pos:int pos,-1 intliteral,-2 
+binaryOp:none if unary
+*/
+struct UpdateExprPos
+{
+	int lPos;
+	int r1Pos;
+	int r2Pos;
+	hsql::Expr* r;
+	hsql::OperatorType binaryOp;
+	UpdateExprPos(int lPos,int r1Pos,int r2Pos,hsql::OperatorType binaryOp,hsql::Expr* r):
+	lPos(lPos),r1Pos(r1Pos),r2Pos(r2Pos),binaryOp(binaryOp),r(r){
+		printf("%d %d %d\n", lPos,r1Pos,r2Pos);
+	};
+};
 void toUpper(string &s){
 	transform(s.begin(), s.end(), s.begin(), ::toupper);
 }
@@ -318,13 +335,169 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		int ret = getExpr(expr,whereExprs);
 		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
 		int whereExprsize = whereExprs->size();
-		for(int i = 0;i < whereExprsize;i++){
-			cout<<(*whereExprs)[i]->opType<<endl;
-		}	
-		//get setExpr
+		RM_FileScan* fileScan = new RM_FileScan;
+		RM_FileHandle *handler = new RM_FileHandle();	
+		rmg->openFile(((hsql::UpdateStatement*)stmt)->table->name,*handler);
+/*		std::vector<int> updatePos;
+		int upPos;
 		for(hsql::UpdateClause* update:updates){
 			printf("update:%s\n",update->column);
+			int ret = handler->GetAttrIndex(update->column,upPos);
+			if(ret){
+				printf("attr not exist\n");
+				return -1;
+			}
+			updatePos.push_back(upPos);			
+		}*/	
+		//openScan
+		for(hsql::Expr *expr:*whereExprs){
+			int colPos;
+			int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+			if(ret){
+				printf("attr not exist\n");
+				return -1;
+			}
+			printf("%s is col:%d\n", expr->expr->name,colPos);
+			if(expr->opType == hsql::OperatorType::kOpNot){
+				fileScan->OpenScan(*handler,colPos,false);
+			}
+			else if(expr->opType == hsql::OperatorType::kOpIsNull){
+				fileScan->OpenScan(*handler,colPos,true);
+			}
+			else{
+				printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
+				fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
+			}
 		}
+		//get updateExprs
+		std::vector<UpdateExprPos> updatePoss;
+		int upPos;
+		for(hsql::UpdateClause* update:updates){
+			int lPos,r1Pos,r2Pos;
+			hsql::OperatorType binaryOp;
+			printf("update:%s\n",update->column);
+			int ret = handler->GetAttrIndex(update->column,lPos);
+			if(ret){
+				printf("attr not exist\n");
+				fileScan->CloseScan();
+				rmg->closeFile(*handler);
+				delete whereExprs;
+				return -1;
+			}
+			if(update->value->isLiteral()){
+				r1Pos = -1;
+				r2Pos = -1;
+				binaryOp = hsql::OperatorType::kOpNone;
+			}
+			else if(update->value->isType(hsql::ExprType::kExprColumnRef)){
+				int ret = handler->GetAttrIndex(update->value->name,r1Pos);
+				if(ret){
+					printf("attr not exist\n");
+					fileScan->CloseScan();
+					rmg->closeFile(*handler);
+					delete whereExprs;
+					return -1;
+				}
+				binaryOp = hsql::OperatorType::kOpNone;
+				r2Pos = -1;				
+			}
+			else if(update->value->isType(hsql::ExprType::kExprOperator)){
+				if(update->value->expr == NULL || update->value->expr2 == NULL){
+					printf("error update set expr\n");
+					fileScan->CloseScan();
+					rmg->closeFile(*handler);
+					delete whereExprs;
+					return -1;
+				}
+				if(update->value->expr->isLiteral()){
+					r1Pos = -1;
+				}
+				else{
+					int ret = handler->GetAttrIndex(update->value->expr->name,r1Pos);
+					if(ret){
+						printf("attr not exist\n");
+						fileScan->CloseScan();
+						rmg->closeFile(*handler);
+						delete whereExprs;
+						return -1;
+					}					
+				}
+				if(update->value->expr2->isLiteral()){
+					r2Pos = -1;
+				}
+				else{
+					int ret = handler->GetAttrIndex(update->value->expr2->name,r2Pos);
+					if(ret){
+						printf("attr not exist\n");
+						fileScan->CloseScan();
+						rmg->closeFile(*handler);
+						delete whereExprs;
+						return -1;
+					}					
+				}
+				binaryOp = update->value->opType;
+			}
+			UpdateExprPos exprPos(lPos,r1Pos,r2Pos,binaryOp,update->value);
+			updatePoss.push_back(exprPos);
+		}
+		//do update
+		RM_Record nextRec;
+		std::vector<RM_Record> records;
+		int updateSize = updatePoss.size();
+		while(!fileScan->GetNextRec(*handler, nextRec)){
+			printf("update:\n");
+			for(UpdateExprPos upExpr:updatePoss){
+				if(upExpr.binaryOp == hsql::OperatorType::kOpNone){
+					if(upExpr.r->isType(hsql::ExprType::kExprColumnRef)){//x=z
+						RM_node node;
+						handler->recordHandler->GetColumn(upExpr.r1Pos,nextRec,node);
+						handler->recordHandler->SetColumn(upExpr.lPos,nextRec,node);
+					}
+					else{//x=4
+						if(upExpr.r->isType(hsql::ExprType::kExprLiteralString)){
+							string name = upExpr.r->name;
+							RM_node node(name);
+							handler->recordHandler->SetColumn(upExpr.lPos,nextRec,node);
+						}
+						else if(upExpr.r->isType(hsql::ExprType::kExprLiteralInt)){
+							RM_node node((int)(upExpr.r->ival));
+							handler->recordHandler->SetColumn(upExpr.lPos,nextRec,node);
+						}
+						else if(upExpr.r->isType(hsql::ExprType::kExprLiteralFloat)){
+							RM_node node((float)(upExpr.r->fval));
+							handler->recordHandler->SetColumn(upExpr.lPos,nextRec,node);
+						}	
+						else if(upExpr.r->isType(hsql::ExprType::kExprLiteralNull)){
+							RM_node node;
+							handler->recordHandler->SetColumn(upExpr.lPos,nextRec,node);
+						}
+						else{
+							printf("update setExpr wrong\n");
+							fileScan->CloseScan();
+							rmg->closeFile(*handler);
+							delete whereExprs;		
+							return -1;					
+						}
+					}
+				}
+				else{
+
+				}
+			}
+			records.push_back(nextRec);	
+			//handler->recordHandler->PrintRecord(nextRec);
+			//handler->DeleteRec(delRid);
+		}
+		for(RM_Record rec:records){
+			RID id;
+			rec.GetRid(id);
+			id.show();
+			handler->UpdateRec(rec);			
+		}
+		fileScan->CloseScan();
+		rmg->closeFile(*handler);
+		delete whereExprs;
+		//get setExpr
 	}
 	else if(stmt->isType(hsql::kStmtSelect)){
 		if(rmg == NULL){

@@ -1,7 +1,6 @@
 create database abc
 use database abc
-create table testSelect(x int,y char(20),z float,primary key(x),foreign key (x) REFERENCES a (b),foreign key (x) REFERENCES asd (das))
 create table test1(x int,y char(20),z float)
-insert into testSelect values (101,'asdsad',10.5),(202,'12345',9.5),(303,'12312',0.5),(300,'asd',0.5)
-delete from testSelect where (x>200) AND (z<1) AND (x<301)
-select * from testSelect
+insert into test1 values (101,'asdsad',10.5),(202,'12345',9.5),(303,'12312',0.5),(300,'asd',0.5)
+update test1 set x=4 where x<=300
+select * from test1
