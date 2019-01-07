@@ -182,7 +182,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			printf("current path is not DBPath\n");
 			return -1;
 		}
-		rmg = new RM_Manager((char*)currentDB.c_str());
+		//rmg = new RM_Manager((char*)currentDB.c_str());
 		RM_FileHandle *handler = new RM_FileHandle();
         rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
 		//handler->InitIndex(false);
@@ -191,27 +191,30 @@ int executeCommand(const hsql::SQLStatement* stmt){
         vector<RM_node> items;
 		for(hsql::InsertValue* val:values){
 			items.clear();
-			std::vector<hsql::Expr*> colValues = val->values[0];
-			for(hsql::Expr* expr:colValues){
+			//std::vector<hsql::Expr*> colValues = val->values[0];
+			cout<<"insert:"<<endl;
+            //items.clear();	
+			for(hsql::Expr* expr:val->values[0]){
 				if(!expr->isLiteral()){
 					printf("wrong type\n");
 					rmg->closeFile(*handler);
 					return -1;
 				}
 				if(expr->isType(hsql::ExprType::kExprLiteralFloat)){
-					RM_node node((float)(expr->fval));
+					RM_node fnode((float)(expr->fval));
 					cout<<"float:"<<(float)(expr->fval)<<endl;
-					items.push_back(node);
+					items.push_back(fnode);
 				}
 				else if(expr->isType(hsql::ExprType::kExprLiteralInt)){
-					RM_node node((int)(expr->ival));
+					RM_node inode((int)(expr->ival));
 					cout<<"int:"<<(int)(expr->ival)<<endl;
-					items.push_back(node);
+					items.push_back(inode);
 				}
 				else if(expr->isType(hsql::ExprType::kExprLiteralString)){
-					RM_node node((string)(expr->name));
-					cout<<"string"<<(string)(expr->name)<<endl;
-					items.push_back(node);
+					string name = expr->name;
+					RM_node snode(name);
+					cout<<"string:"<<(string)(expr->name)<<endl;
+					items.push_back(snode);
 				}
 				else{
 					RM_node node;
@@ -220,11 +223,13 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				}
 			}
             RM_Record record;
+            printf("colNum:%d\n",items.size());
             if(handler->recordHandler->MakeRecord(record, items)) {
                 cout << "Error to make record." << endl;
             }
-            handler->InsertRec(record);
             handler->recordHandler->PrintRecord(record);
+            handler->InsertRec(record);	
+            printf("insert success\n");	
 		}
 		rmg->closeFile(*handler);
 	}
@@ -283,9 +288,8 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				tables.push_back((string)(table->name));
 			}
 		}
-		else {
+		else
 			tables.push_back(((hsql::SelectStatement*)stmt)->fromTable->name);
-        }
 		//get cols
 		std::vector<hsql::Expr*> selectList = ((hsql::SelectStatement*)stmt)->selectList[0];	
 		bool selectAll = false;
@@ -308,11 +312,10 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		//get whereClause
 		bool whereAll = false;
 		hsql::Expr *expr = ((hsql::SelectStatement*)stmt)->whereClause;
-		if(expr == NULL) {
+		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
+		if(expr == NULL)
 			whereAll = true;
-		}
 		else{
-			std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
 			int ret = getExpr(expr,whereExprs);
 			printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
 			int whereExprsize = whereExprs->size();
@@ -320,19 +323,47 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				cout<<(*whereExprs)[i]->opType<<endl;
 			}
 		}
-		if(whereAll && selectAll){
-			printf("selectAll!!\n");
+		if(whereAll){
+			if(selectAll){
+				printf("selectAll!!\n");
+				RM_FileScan* fileScan = new RM_FileScan;
+				RM_FileHandle *handler = new RM_FileHandle();
+				rmg->openFile(tables[0].c_str(),*handler);
+				fileScan->OpenScanAll(*handler);
+				RM_Record mRec;
+				while(fileScan->GetNextRec(*handler,mRec) != 1){
+					handler->recordHandler->PrintRecord(mRec);
+				}
+				fileScan->CloseScan();
+			}
+			else{//not select all
+
+			}
+		}
+		else{
+			int whereSize = whereExprs->size();
 			RM_FileScan* fileScan = new RM_FileScan;
 			RM_FileHandle *handler = new RM_FileHandle();
 			rmg->openFile(tables[0].c_str(),*handler);
-			fileScan->OpenScanAll(*handler);
-			RM_Record mRec;
-			while(fileScan->GetNextRec(*handler,mRec) != 1){
-				handler->recordHandler->PrintRecord(mRec);
-			}
-			fileScan->CloseScan();			
-		}
+			for(hsql::Expr *expr:*whereExprs){
+				int colPos;
+				int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+				if(ret){
+					printf("attr not exist\n");
+					return -1;
+				}
+				if(expr->opType == hsql::OperatorType::kOpNot){
+					fileScan->OpenScan(*handler,colPos,false);
+				}
+				else if(expr->opType == hsql::OperatorType::kOpIsNull){
+					fileScan->OpenScan(*handler,colPos,true);
+				}
+				else{
 
+				}
+			}			
+		}
+		delete whereExprs;
 	}
 	return 0;
 }
