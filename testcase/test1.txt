@@ -1,5 +1,5 @@
 create database abc
 use database abc
-create table test231(id int, name char(10), grade float)
-insert into test231 values (1, 'mike',2.3),(2,'jack',3.4),(3,'kate',3.3),(4, 'alex', 3.4), (-5,'demon', 4.0)
-select * from test231
+create table testSelect(x int,y char(10),z float)
+insert into testSelect values (101,'asdsad',10.5),(202,'12345',9.5),(303,'12312',0.5)
+select * from testSelect

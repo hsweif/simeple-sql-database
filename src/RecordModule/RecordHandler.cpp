@@ -34,9 +34,10 @@ RecordHandler::~RecordHandler()
 
 int RecordHandler::PrintRecord(RM_Record &record)
 {
-    BufType content = record.GetData();
-    int offset = 0;
+    // BufType content = record.GetData();
+    // int offset = 0;
     for(int i = 0; i < itemNum; i ++) {
+        /*
         uint item = content[offset];
         if(type[i] == RM::INT) {
             if(!record.IsNull(i)) {
@@ -81,6 +82,8 @@ int RecordHandler::PrintRecord(RM_Record &record)
             }
             offset += l;
         }
+        */
+        PrintColumn(record, i);
         if(i != itemNum - 1) {
             printf("|");
         }

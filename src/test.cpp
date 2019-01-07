@@ -7,6 +7,7 @@
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include "CommandModule/dataBaseManager.h"
+#include "RecordModule/MultiScan.h"
 #include "SQLParser.h"
 #include "util/sqlhelper.h"
 #include <vector>
@@ -318,6 +319,50 @@ TEST(PipelineTest, PrintAllRecord)
     ASSERT_EQ(result.size(), orig.size());
     rmg->closeFile(*handler);
 }
+
+/*
+TEST(PipelineTest, ChartConnect)
+{
+    char *table1 = "Chart1";
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *mainHandler = new RM_FileHandle();
+    RM_FileHandle *viceHandler = new RM_FileHandle(false);
+    int colNum = 3;
+    viceHandler->recordHandler = new RM::RecordHandler(colNum);
+    viceHandler->recordHandler->SetItemAttribute(0, 1, RM::INT, false);
+    viceHandler->recordHandler->SetItemAttribute(1, 12, RM::CHAR, false);
+    int sz = viceHandler->recordHandler->GetRecordSize();
+    vector<string> title;
+    title.push_back("id");
+    title.push_back("name");
+    viceHandler->SetTitle(title);
+    rmg->createFile(table1, sz, colNum);
+    ASSERT_EQ(rmg->openFile(dbName, *mainHandler), true);
+    ASSERT_EQ(rmg->openFile(table1, *viceHandler), true);
+    vector<RM_node> items;
+    //10 with id and 5 with null value
+    for (int i = 0; i < 10; i++) {
+        items.clear();
+        string iStr;
+        std::stringstream ss;
+        ss << i;
+        ss >> iStr;
+        RM_node person_a("person" + iStr);
+        RM_node id_a(i);
+        items.push_back(id_a);
+        items.push_back(person_a);
+        RM_Record record;
+        if (viceHandler->recordHandler->MakeRecord(record, items)) {
+            cout << "Error to make record." << endl;
+        }
+        viceHandler->InsertRec(record);
+    }
+    list<RM::ScanQuery> queryList;
+    // RM::ScanQuery sQuery(0, IM::EQ, 0);
+    // queryList.push_back(sQuery);
+    // RM::DualScan *dualScan = new RM::DualScan(mainHandler, viceHandler);
+}
+*/
 
 TEST(SQLParserTest, SelectTest)
 {

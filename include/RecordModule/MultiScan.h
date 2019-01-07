@@ -11,6 +11,20 @@
 using namespace std;
 namespace RM{
 
+enum QueryType{
+    BASIC
+};
+
+class ScanQuery
+{
+public:
+    QueryType queryType;
+    int mainCol;
+    IM::CompOp compOp;
+    int viceCol;
+    ScanQuery(int mCol, IM::CompOp cp, int vCol);
+};
+
 class DualScan {
 private:
     RM_FileScan *mainScan;
@@ -21,8 +35,9 @@ private:
 public:
     DualScan(RM_FileScan *mScan, RM_FileScan *vScan);
     ~DualScan();
-    int OpenScan(IM::CompOp compOp, int mCol, int vCol);
+    int OpenScan(list<ScanQuery> queryList);
     int CloseScan();
+    int GetNextPair(pair<RID, list<RID>> &item);
 };
 
 };
