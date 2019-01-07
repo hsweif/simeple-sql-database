@@ -2,14 +2,15 @@
 #include <iostream>
 using namespace std;
 BufType reset;
-RM_FileHandle::RM_FileHandle() {
+RM_FileHandle::RM_FileHandle(bool _init) {
 	if (reset == NULL) {
 		reset = new uint[PAGE_INT_NUM];
 	}
 	for (int i = 0; i < PAGE_INT_NUM; i++) {
 		reset[i] = 0xFFFFFFFF;
 	}
-	this->isInitialized = false;
+	this->isInitialized = _init;
+	this->recordHandler = nullptr;
 }
 
 RM_FileHandle::~RM_FileHandle()
@@ -24,9 +25,9 @@ RM_FileHandle::~RM_FileHandle()
 	}
 }
 
-int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
+int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 {
-	this->indexPath = string(indexName);
+	// this->indexPath = string(indexName);
 	fileId = _fileId;
 	mBufpm = _bufpm;
 	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
@@ -94,11 +95,24 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, char *indexName)
 
 	// Below is for main key:
 	offset += nullSectLength;
-	mainKey = (uint)firstPage[offset];
+	if(isInitialized) {
+		mainKeyCnt = (uint)firstPage[offset];
+	}
+	offset ++;
+	if(isInitialized)
+	{
+        mainKey.clear();
+        for(int i = 0; i < mainKeyCnt; i++){
+            mainKey.push_back((uint)firstPage[offset]);
+            offset++;
+        }
+	}
+	else{
+	    offset += mainKeyCnt;
+	}
 
 
 	// Below is for mutable item length;
-	offset ++;
 	for(int i = 0; i < colNum; i ++) {
 	    int l = (int)firstPage[i + offset];
 	    if(l != -1) {
@@ -141,7 +155,7 @@ int RM_FileHandle::updateHead() {
 	for(int i = 0; i < colNum; i ++) {
 	    readBuf[HEAD_OFFSET+i] = type[i];
 		int cnt = 0, l = title[i].length();
-		cout << "Update title to head: " << title[i] << l << endl;
+		// cout << "Update title to head: " << title[i] << l << endl;
 		for(int k = 0; k < RM::TITLE_LENGTH / 4; k++) {
 		    int pos = HEAD_OFFSET + colNum + (i*(RM::TITLE_LENGTH/4)) + k;
 			readBuf[pos] = 0;
@@ -169,10 +183,15 @@ int RM_FileHandle::updateHead() {
 
 	// This is for main key.
 	offset += nullSectLength;
-	readBuf[offset] = mainKey;
+	readBuf[offset] = mainKeyCnt;
+	offset ++;
+	for(int i = 0;i<mainKey.size();i++){
+		readBuf[offset] = mainKey[i];	
+		offset++;
+	}
+	
 
 	// This is for mutable item length;
-	offset ++;
 	int *itemLength = recordHandler->GetItemLength();
 	for(int i = 0; i < colNum; i ++) {
 		readBuf[i+offset] = itemLength[i];
@@ -194,7 +213,7 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	int page, slot;
 	rid.GetPageNum(page);
 	rid.GetSlotNum(slot);
-	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
+	if (page <= 0 || page > pageCnt || slot < 0 || slot >= recordPP) {
 		cout << "fail to get rec" << endl;
 		return 1;
 	}
@@ -210,12 +229,16 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	return 0;
 }
 
-int RM_FileHandle::SetMainKey(int key)
+int RM_FileHandle::SetMainKey(std::vector<int> mainKeys)
 {
-	if(key < 0 || key > colNum) {
-		return 1;
+	mainKey.clear();
+	for(int key: mainKeys){
+		if(key < 0 || key > colNum) {
+			return 1;
+		}
+		mainKey.push_back((uint)key);
 	}
-	mainKey = (uint)key;
+	mainKeyCnt = (int)mainKey.size();
 	return 0;
 }
 
@@ -258,30 +281,36 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 
 int RM_FileHandle::CheckForMainKey(RM_Record &pData)
 {
-	if(mainKey != -1)
+	if(mainKey.size() != 0)
 	{
-        RM_node mkTest;
-        recordHandler->GetColumn(mainKey, pData, mkTest);
-        string keyStr = "";
-        std::stringstream ss;
-        if(mkTest.type == RM::INT) {
-            ss << mkTest.num;
-            ss >> keyStr;
-        }
-        else if(mkTest.type == RM::FLOAT) {
-            ss << mkTest.fNum;
-            ss >> keyStr;
-        }
-        else{
-            keyStr = mkTest.str;
-        }
-        char *keyChar = new char[keyStr.length()];
-        for(int i = 0; i < keyStr.length(); i ++) {
-            keyChar[i] = keyStr[i];
-        }
-        if(mainKey < this->colNum && mainKey > 0 && indexHandle->Existed(mainKey, keyChar)){
-            return 1;
-        }
+		bool exist = true;
+		for(uint key:mainKey){
+	        RM_node mkTest;
+	        recordHandler->GetColumn(key, pData, mkTest);
+	        string keyStr = "";
+	        std::stringstream ss;
+	        if(mkTest.type == RM::INT) {
+	            ss << mkTest.num;
+	            ss >> keyStr;
+	        }
+	        else if(mkTest.type == RM::FLOAT) {
+	            ss << mkTest.fNum;
+	            ss >> keyStr;
+	        }
+	        else{
+	            keyStr = mkTest.str;
+	        }		
+	        char *keyChar = new char[keyStr.length()];
+	        for(int i = 0; i < keyStr.length(); i ++) {
+	            keyChar[i] = keyStr[i];
+	        }	
+	        if(key < this->colNum && key >= 0 && !indexHandle->Existed(key, keyChar)){
+	            exist = false;
+	            break;
+	        }
+		}
+		if(exist)
+			return 1;
         else{
         	return 0;
         }
@@ -293,7 +322,6 @@ int RM_FileHandle::CheckForMainKey(RM_Record &pData)
 int RM_FileHandle::InsertRec(RM_Record& pData){
 
 	//check size
-	// int dataSize = pData.RecordSize();
 	int dataSize = pData.BufSize();
 	if(dataSize != this->recordSize)
 	{
@@ -426,6 +454,14 @@ int RM_FileHandle::RecordNum() const
 	return recordSum;
 }
 
+bool RM_FileHandle::isMainKey(uint key){
+	for(uint mkey: mainKey){
+		if(key == mkey){
+			return true;
+		}
+	}
+	return false;
+}
 void RM_FileHandle::SetType(vector<int> tp)
 {
 	colNum = tp.size();
@@ -439,6 +475,9 @@ void RM_FileHandle::SetType(vector<int> tp)
 void RM_FileHandle::SetTitle(vector<string> t) {
     title = t;
 	colNum = t.size();
+	for(int i = 0; i < title.size(); i ++) {
+		colNameMap.insert(pair<string, int>(title[i], i));
+	}
 }
 
 int RM_FileHandle::InitIndex(bool forceEmpty)
@@ -491,11 +530,84 @@ int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)
     return 0;
 }
 
+int RM_FileHandle::GetAllRid(list<RID> *result)
+{
+	int sum = this->RecordNum();
+    int pageCount = this->PageNum();
+    int recordPP = this->recordPP;
+    int page = 1, slot = 0;
+    int cnt = 0;
+
+    result->clear();
+
+    while(cnt < sum)
+    {
+    	if(slot >= recordPP) {
+    		page ++;
+    		slot = 0;
+		}
+        RID rid(page, slot);
+        RM_Record record;
+        if(this->GetRec(rid, record) == 0)
+        {
+            result->push_back(rid);
+            slot ++;
+            cnt ++;
+        }
+    }
+
+    return 0;
+}
 int RM_FileHandle::CreateDir(string dirPath)
 {
 #ifdef __DARWIN_UNIX03
     mkdir(dirPath.c_str(), S_IRWXU);
 #endif
+#ifdef WIN32
+	if(_mkdir(dirPath.c_str()) != 0){
+		cout<<"createDir error"<<endl;
+		return -1;
+	}
+#endif
 }
 
+int RM_FileHandle::PrintColumnInfo()
+{
+	if(recordHandler->itemNum != colNum) {
+		return 1;
+	}
+	RM::ItemType *itemType = recordHandler->GetItemType();
+	int *itemLength = recordHandler->GetItemLength();
+	string colInfo = "| ";
+	for(int i = 0; i < colNum; i ++)
+    {
+        colInfo += title[i];
+        if(isMainKey(i)) {
+        	colInfo += ", PRIMARY KEY";
+		}
 
+        if(recordHandler->IsAllowNull(i)) {
+        	colInfo += ", ALLOW NULL";
+		}
+		else{
+			colInfo += ", NOT ALLOW NULL";
+		}
+
+        if(itemType[i] == RM::INT) {
+        	colInfo += ", INT";
+		}
+		else if(itemType[i] == RM::FLOAT) {
+			colInfo += ", FLOAT";
+		}
+		else if(itemType[i] == RM::CHAR) {
+		    string l_str;
+		    std::stringstream ss;
+		    ss << itemLength[i];
+		    ss >> l_str;
+		    colInfo = colInfo + ", CHAR(" + l_str + ")";
+		}
+		colInfo += " | ";
+    }
+    cout << colInfo << endl;
+    return 0;
+}

@@ -1,5 +1,6 @@
 #include "RecordModule/RM_Manager.h"
-
+#include <iostream>
+using namespace std;
 RM_Manager::RM_Manager(char *dbName) {
     //从cmake-build-debug算起
     dataPath = new char[50];
@@ -13,8 +14,7 @@ RM_Manager::RM_Manager(char *dbName) {
     this->fileID = -1;
 }
 
-int RM_Manager::createFile(const char* name, int recordSize, int cNum, RM_FileHandle &fileHandle) {
-    printf("%s\n", name);
+int RM_Manager::createFile(const char* name, int recordSize, int cNum) {
     FileManager *fm = this->fileManager;
     char fileName[50];
     strcpy(fileName, this->dataPath);
@@ -25,7 +25,6 @@ int RM_Manager::createFile(const char* name, int recordSize, int cNum, RM_FileHa
     fm->openFile(fileName, fileID);
     string tmpStr(fileName);
     tmpStr += "_index/";
-    fileHandle.indexPath = tmpStr;
     PageHead *test = new PageHead(recordSize, (int)(double(PAGE_INT_NUM - 1) / ((double)recordSize + 1 / 32)), 0, cNum);
     fm->writePage(fileID, 0, test->encode2Buf(), 0);
     fm->closeFile(fileID);
@@ -39,8 +38,9 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     bool result = this->fileManager->openFile(fileName, this->fileID);
     strcat(fileName, dirSym);
     string idx(fileName);
+    fileHandle.indexPath = idx;
     RM_FileHandle::CreateDir(idx);
-    fileHandle.init(this->fileID,this->bufPageManager, fileName);
+    fileHandle.init(this->fileID,this->bufPageManager);
     return result;
 }
 
@@ -61,7 +61,7 @@ int RM_Manager::deleteFile(const char* name) {
 void RM_Manager::showFile(const char* name) {
     //TODO:show status
     RM_FileHandle *handler = new RM_FileHandle();
-    openFile(name,*handler);
+    cout<<openFile(name,*handler)<<endl;
     printf("%s\n", name);
     handler->PrintTitle();
     closeFile(*handler);

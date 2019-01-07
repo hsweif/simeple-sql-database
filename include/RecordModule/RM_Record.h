@@ -7,6 +7,8 @@
 #include <string.h>
 #include <iostream>
 #include <cstdio>
+#include <sstream>
+#include <config.h>
 
 using namespace std;
 
@@ -14,7 +16,12 @@ namespace RM {
 	enum ItemType {
 		CHAR, INT, FLOAT, ERROR
 	};
+	int float2Uint(float a, uint *ptr);
+	uint castFloatToUint(float f);
+	float castUintToFloat(unsigned int i);
 }
+
+
 
 struct RM_node
 {
@@ -34,6 +41,7 @@ struct RM_node
     void setCtx(int n);
     void setCtx(float f);
     void setCtx(string s);
+    bool CmpCtx(IM::CompOp compOp, string value);
 };
 
 class RM_Record {

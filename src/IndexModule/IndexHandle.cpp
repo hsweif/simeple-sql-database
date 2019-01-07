@@ -7,7 +7,7 @@ IndexHandle::IndexHandle()
 {
     indexNum = 0;
     colNum = 0;
-    indexPath = "../database/index/";
+    indexPath = "";
 }
 
 IndexHandle::IndexHandle(vector<string> tt, string idxPath)
@@ -128,7 +128,7 @@ int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record, RM::
     }
 }
 
-int IndexHandle::SearchRange(vector<RID> &result, char *leftValue, char *rightValue, CompOp comOP, int col)
+int IndexHandle::SearchRange(list<RID> &result, char *leftValue, char *rightValue, CompOp comOP, int col)
 {
     // TODO: Undone.
     RID *searched = new RID[MAX_RESULT];
@@ -142,10 +142,10 @@ int IndexHandle::SearchRange(vector<RID> &result, char *leftValue, char *rightVa
         if(i == col && isIndex[i])
         {
             bpt::bplus_tree *indexTree = iter->bpTree;
-            if(comOP == IM::LS) {
+            if(comOP == IM::LS || comOP == IM::LEQ) {
                 resultNum = indexTree->search_range(&left, right, searched, MAX_RESULT);
             }
-            else if(comOP == IM::GT) {
+            else if(comOP == IM::GT || comOP == IM::GEQ) {
                 resultNum = indexTree->search_range(&right, left, searched, MAX_RESULT);
             }
             else if(comOP == IM::EQ) {

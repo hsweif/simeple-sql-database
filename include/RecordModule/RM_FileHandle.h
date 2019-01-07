@@ -10,7 +10,9 @@
 #include "RecordHandler.h"
 #include <iostream>
 #include <string>
+#include <map>
 #include <vector>
+#include <list>
 #include <cstdlib>
 #include <fstream>
 #include <sys/stat.h>
@@ -34,7 +36,8 @@ private:
     int recordPP;
     int recordSum;
     int pageCnt;
-    uint mainKey;
+    std::vector<uint> mainKey;
+    int mainKeyCnt;
     int recordMapSize;
 	int firstPageBufIndex;
 	int bufLastIndex = -1;
@@ -47,34 +50,38 @@ private:
 	BufType readBuf;
 	vector<string> title;
 	int CheckForMainKey(RM_Record &pData);
+	map<string, int> colNameMap;
 
 public:
 	string indexPath;
 	IM::IndexHandle *indexHandle;
     RM::RecordHandler *recordHandler;
 	int CheckForMainKey();
-    RM_FileHandle();
+    RM_FileHandle(bool _init = true);
     ~RM_FileHandle();                                  // Destructor
 	int updateHead();
 	// RM_FileHandle(BufPageManager* bufpm, int fd, int rcz);
     int GetRec(const RID &rid, RM_Record &rec);
-    int init(int _fileId, BufPageManager* _bufpm, char *indexName);
+    int init(int _fileId, BufPageManager* _bufpm);
     int InsertRec(RM_Record& pData);       // Insert a new record,
+    int InsertRec(vector<string> attrNames, vector<RM_node> nodes);
     int DeleteRec(const RID &rid);                    // Delete a record
     int UpdateRec(RM_Record &rec);
     int RecordNum() const;
     int PageNum() const {return pageCnt;}
-    int GetMainKey() const {return mainKey;}
+    bool isMainKey(uint key);
     void SetTitle(vector<string> t);
     int InitIndex(bool forceEmpty = false);
     void PrintTitle();
     void SetFilePath();
     void SetType(vector<int> tp);
-	int SetMainKey(int key);
+	int SetMainKey(std::vector<int> mainKeys);
     void show();
 	int GetSlot(BufType page);
 	static int CreateDir(string dirPath);
 	int GetAllRecord(vector<RM_Record> &result);
+	int GetAllRid(list<RID> *result);
+	int PrintColumnInfo();
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
 

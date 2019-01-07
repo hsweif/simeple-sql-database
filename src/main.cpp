@@ -7,8 +7,7 @@
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include "CommandModule/dataBaseManager.h"
-#include "SQLParser.h"
-#include "util/sqlhelper.h"
+#include "parser.h"
 #include <vector>
 #include <string>
 
@@ -21,13 +20,13 @@ using namespace std;
 
 void NewTest(bool createNewDB, char *dbName)
 {
-    string mode = createNewDB ? "Create new database" : "Use currently data base";
-    cout << mode << endl;
-	if(createNewDB) {
-        CreateDB(dbName);
+	string mode = createNewDB ? "Create new database" : "Use currently data base";
+	cout << mode << endl;
+	if (createNewDB) {
+		CreateDB(dbName);
 	}
 	DIR *dir = UseDB(dbName);
-	if(dir == NULL) {
+	if (dir == NULL) {
 		cout << "Error in opening database." << endl;
 		return;
 	}
@@ -35,12 +34,12 @@ void NewTest(bool createNewDB, char *dbName)
 	int colNum = 2;
 
 	RM_FileHandle *handler = new RM_FileHandle();
-	if(createNewDB)
+	if (createNewDB)
 	{
-        handler->recordHandler = new RM::RecordHandler(colNum);
-        handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
-        handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
-        int sz = handler->recordHandler->GetRecordSize();
+		handler->recordHandler = new RM::RecordHandler(colNum);
+		handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
+		handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
+		int sz = handler->recordHandler->GetRecordSize();
 		vector<string> title;
 		title.push_back("name");
 		title.push_back("id");
@@ -50,6 +49,9 @@ void NewTest(bool createNewDB, char *dbName)
 	}
 
 	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
+	if(createNewDB) {
+		handler->InitIndex(true);
+	}
 	cout << test << endl;
 
 	// 在init后面才不会被覆盖
@@ -58,34 +60,42 @@ void NewTest(bool createNewDB, char *dbName)
 	// HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
 	if(createNewDB) {
         vector<RM_node> items;
-        for(int i = 0; i < 10; i ++) {
+        for(int i = 0; i < 50; i ++) {
             items.clear();
             RM_node person_a("person_test");
-            RM_node id_a(i/2);
+            RM_node id_a(i);
             items.push_back(person_a);
             items.push_back(id_a);
             RM_Record record;
             if(handler->recordHandler->MakeRecord(record, items)) {
                 cout << "Error to make record." << endl;
             }
-            handler->recordHandler->PrintRecord(record);
             handler->InsertRec(record);
         }
 
 	}
 
-	printf("Searched result for records with id between %d and %d\n", 2, 8);
-	vector<RID> rid;
-	handler->indexHandle->SearchRange(rid, "2", "8", IM::LS, 1);
-	for(int i = 0; i < rid.size(); i ++) {
-		cout << rid[i] << endl;
+	RM_FileScan *fileScan = new RM_FileScan;
+	RM_Record nextRec;
+
+	printf("-------------List all records with id < 20--------------\n");
+	fileScan->OpenScan(*handler, 1, IM::LS, "20");
+	while(!fileScan->GetNextRec(*handler, nextRec)) {
+		handler->recordHandler->PrintRecord(nextRec);
 	}
+	fileScan->CloseScan();
+	printf("-------------List all records with id > 30--------------\n");
+	fileScan->OpenScan(*handler, 1, IM::GT, "30");
+	while(!fileScan->GetNextRec(*handler, nextRec)) {
+		handler->recordHandler->PrintRecord(nextRec);
+	}
+	fileScan->CloseScan();
 
 	printf("-------------List all records in the file--------------\n");
 	handler->PrintTitle();
 	vector<RM_Record> result;
 	handler->GetAllRecord(result);
-	for(int i = 0; i < result.size(); i ++) {
+	for (int i = 0; i < result.size(); i ++) {
 		handler->recordHandler->PrintRecord(result[i]);
 	}
 	rmg->closeFile(*handler);
@@ -126,10 +136,10 @@ void test1(){
 */
 
 void testBitmap() {
-	
+
 	MyBitMap *b = new MyBitMap(2 << 5, 2);
 	b->show();
-	cout << "left"<<b->findLeftOne() << endl;
+	cout << "left" << b->findLeftOne() << endl;
 	b->setBit(33, 1);
 	cout << "left" << b->findLeftOne() << endl;
 	//b->setBit(3, 1);
@@ -139,7 +149,7 @@ void testBitmap() {
 
 int SQLParserTest()
 {
-	string query = "SELECT * FROM test;";
+	string query = "SELECT * FROM test WHERE a+b<=3;";
 	// parse a given query
 	hsql::SQLParserResult result;
 	hsql::SQLParser::parse(query, &result);
@@ -158,24 +168,27 @@ int SQLParserTest()
 	} else {
 		fprintf(stderr, "Given string is not a valid SQL query.\n");
 		fprintf(stderr, "%s (L%d:%d)\n",
-				result.errorMsg(),
-				result.errorLine(),
-				result.errorColumn());
+		        result.errorMsg(),
+		        result.errorLine(),
+		        result.errorColumn());
 		return -1;
 	}
 }
 
 
-int main(){
+int main() {
 #ifdef __DARWIN_UNIX03
-    printf("It is on Unix now.\n");
+	printf("It is on Unix now.\n");
 #endif
+	MyBitMap::initConst();
+	ParseInput();
+	/*
     int ret = SQLParserTest();
     printf("SQLTest result: %d\n", ret);
-    MyBitMap::initConst();
     hsql::SQLParserResult result;
-	char *dbName = "NewTesting1_3";
+	char *dbName = "NewTesting";
 	NewTest(true, dbName);
     NewTest(false, dbName);
-    return 0;
+    */
+	return 0;
 }

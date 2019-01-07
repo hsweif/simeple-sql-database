@@ -4,8 +4,10 @@ main
 *.exe
 .vscode*
 .idea/
+*.vcxproj*
 cmake-build-debug/
 build/
+*CMakeFiles/*
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles

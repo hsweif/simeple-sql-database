@@ -49,7 +49,8 @@ int RecordHandler::PrintRecord(RM_Record &record)
         }
         else if(type[i] == RM::FLOAT) {
             if(!record.IsNull(i)) {
-                printf("%f", (float)item);
+                float f = RM::castUintToFloat(item);
+                printf("%f", f);
             }
             else{
                 printf("NULL");
@@ -113,7 +114,7 @@ int RecordHandler::SetType(int pos, RM::ItemType tp) {
     if(pos >= itemNum || pos < 0 || isInitialized) {
         return 1;
     }
-    cout << "Set Type: " << tp << endl;
+    // cout << "Set Type: " << tp << endl;
     this->type[pos] = tp;
     return 0;
 }
@@ -144,9 +145,14 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     // 做NULL和主键性质的确认
 
     for(int i = 0; i < this->itemNum; i ++) {
+        bool n = items[i].isNull;
         if(items[i].isNull && !this->IsAllowNull(i)){
             cout << "[ERROR] Fail to make record because found null value in a non-null column." << endl;
             return 1;
+        }
+        if(items[i].isNull) {
+            // HINT: 因为如果使用new RM_node() 初始化的null点，是没有type的，语义上还是让他和应有的type一致。
+            items[i].type = this->type[i];
         }
     }
 
@@ -154,6 +160,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     for(int i = 0; i < this->itemNum; i ++) {
         int tmp = 0;
         if(type[i] == RM::CHAR) {
+            int l = itemLength[i];
             tmp = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
         }
         else{
@@ -164,11 +171,13 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int nullSectLength = (itemNum % 32) ? itemNum/32 + 1 : itemNum/32;
     bufSize += nullSectLength;
     BufType buf = new uint[bufSize];
+    memset(buf, 0, sizeof(buf));
 	for(int i = 0, cnt = 0; i < nullSectLength && cnt < itemNum; i ++)
 	{
 		uint curNum = 0;
 		for(int shift = 0; shift < 32 && cnt < itemNum; shift ++)
 		{
+		    int res = (items[cnt].isNull << shift);
 			curNum += (items[cnt].isNull << shift);
 			cnt ++;
 		}
@@ -178,7 +187,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int cnt = nullSectLength;
 	for(int i = 0; i < itemNum && cnt < bufSize; i ++)
 	{
-        if(items[i].type == RM::INT || items[i].type == RM::FLOAT) {
+        if(items[i].type == RM::INT){
             if(!items[i].isNull) {
                 buf[cnt] = items[i].ctx[0];
             }
@@ -187,10 +196,20 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
             }
             cnt ++;
         }
+        else if(items[i].type == RM::FLOAT) {
+            if(!items[i].isNull) {
+                buf[cnt] = RM::castFloatToUint(items[i].fNum);
+            }
+            else{
+                buf[cnt] = 0;
+            }
+            cnt ++;
+        }
         else if(items[i].type == RM::CHAR) {
             int tmp_l = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
+            int item_l = (items[i].length % 4) ? items[i].length/4 + 1 : items[i].length/4;
             for(int k = 0; k < tmp_l; k ++) {
-                if(!items[i].isNull) {
+                if(!items[i].isNull && k < item_l) {
                     buf[cnt] = items[i].ctx[k];
                 }
                 else{
@@ -204,7 +223,6 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
         }
     }
     // Because cnt+1 = bufSize
-    // record.SetRecord(buf, bufSize-nullSectLength+1, itemNum);
     record.SetRecord(buf, bufSize, itemNum);
     return 0;
 }
@@ -278,10 +296,7 @@ int RecordHandler::SetItemAttribute(int pos, int length, RM::ItemType itemType, 
     cout << "Set Item Attr" << endl;
     // AWARE
     isInitialized = true;
-	if(pos >= itemNum)	{
-		return 1;
-	}
-	if((itemType == RM::INT || itemType == RM::FLOAT) && length != 1) {
+	if(pos >= itemNum || itemType == RM::ERROR)	{
 		return 1;
 	}
 	if(itemType == RM::CHAR) {
@@ -291,7 +306,13 @@ int RecordHandler::SetItemAttribute(int pos, int length, RM::ItemType itemType, 
     else{
         recordSize ++;
     }
-	itemLength[pos] = length;
+
+    if(itemType == RM::INT || itemType == RM::FLOAT) {
+        itemLength[pos] = 1;
+    }
+    else{
+        itemLength[pos] = length;
+    }
 	allowNull[pos] = isNull;
 	type[pos] = itemType;
 	return 0;
@@ -307,5 +328,7 @@ int RecordHandler::SetRecordSize(int size)
         return 1;
     }
 }
+
+
 
 }

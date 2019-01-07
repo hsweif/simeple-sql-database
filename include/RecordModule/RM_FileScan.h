@@ -4,22 +4,25 @@
 #include "RM_FileHandle.h"
 #include "RM_Record.h"
 #include "RID.h"
+#include "config.h"
 
 #include <iostream>
 #include <vector>
+#include <list>
 
 using namespace std;
 class RM_FileScan {
 private:
-    int key;
-    int type;
-    RID curRecord;
-    vector<int> typeArr;
+    list<RID>::iterator curResult;
+    list<RID> *scanResult;
+    bool noScanBefore;
 public:
     RM_FileScan();
-    RM_FileScan(vector<int> tp);
-    int OpenScan(RM_FileHandle &fileHandle, int attrKey, int attrType, int compOp);
-    int GetNextRec(RM_Record &rec); // Get next matching record
+    ~RM_FileScan();
+    int OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, char *value);
+    int OpenScan(RM_FileHandle &fileHandle, int col, bool isNull);
+    int OpenScanAll(RM_FileHandle &fileHandle);
+    int GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec); // Get next matching record
     int CloseScan(); // Terminate file scan
 };
 #endif // RM_FILESCAN

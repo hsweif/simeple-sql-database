@@ -28,6 +28,7 @@ private:
 	int _openFile(const char* name, int fileID) {
 		int f = open(name, O_RDWR);
 		if (f == -1) {
+			printf("open fail\n");
 			return -1;
 		}
 		fd[fileID] = f;
