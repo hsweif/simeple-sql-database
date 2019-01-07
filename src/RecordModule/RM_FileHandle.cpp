@@ -304,7 +304,7 @@ int RM_FileHandle::CheckForMainKey(RM_Record &pData)
 	        for(int i = 0; i < keyStr.length(); i ++) {
 	            keyChar[i] = keyStr[i];
 	        }	
-	        if(key < this->colNum && key > 0 && !indexHandle->Existed(key, keyChar)){
+	        if(key < this->colNum && key >= 0 && !indexHandle->Existed(key, keyChar)){
 	            exist = false;
 	            break;
 	        }

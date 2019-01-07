@@ -49,6 +49,10 @@ int SQLParserTest(string query)
 	}
 }
 
+TEST(PipelineTest, Delete)
+{
+    ASSERT_EQ(DropDB(dbName), 0);
+}
 
 TEST(PipelineTest, Create) {
     bool createNewDB = true;
@@ -62,16 +66,18 @@ TEST(PipelineTest, Create) {
         return;
     }
     RM_Manager *rmg = new RM_Manager(dbName);
-    int colNum = 2;
-    RM_FileHandle *handler = new RM_FileHandle();
+    int colNum = 3;
+    RM_FileHandle *handler = new RM_FileHandle(false);
     if (createNewDB) {
         handler->recordHandler = new RM::RecordHandler(colNum);
-        handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
+        handler->recordHandler->SetItemAttribute(0, 1, RM::INT, false);
         handler->recordHandler->SetItemAttribute(1, 1, RM::FLOAT, true);
+        handler->recordHandler->SetItemAttribute(2, 8, RM::CHAR, false);
         int sz = handler->recordHandler->GetRecordSize();
         vector<string> title;
-        title.push_back("name");
+        title.push_back("id");
         title.push_back("test_float");
+        title.push_back("name");
         handler->SetTitle(title);
         rmg->createFile(dbName, sz, colNum);
         // 在init前面才不会被覆盖
@@ -104,10 +110,13 @@ TEST(PipelineTest, Insert) {
         std::stringstream ss;
         ss << i;
         ss >> iStr;
+        float f = (float)i + 0.5f;
         RM_node person_a("person" + iStr);
-        RM_node id_a(0.5f);
-        items.push_back(person_a);
+        RM_node id_a(i);
+        RM_node test_f(f);
         items.push_back(id_a);
+        items.push_back(test_f);
+        items.push_back(person_a);
         RM_Record record;
         if (handler->recordHandler->MakeRecord(record, items)) {
             cout << "Error to make record." << endl;
