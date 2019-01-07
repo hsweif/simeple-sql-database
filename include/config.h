@@ -11,6 +11,7 @@ enum CompOp{
     GT, LS, GEQ, LEQ, EQ, NEQ, ERROR
 };
 
-}
 
+
+}
 #endif //CONFIG_H

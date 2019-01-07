@@ -34,9 +34,10 @@ RecordHandler::~RecordHandler()
 
 int RecordHandler::PrintRecord(RM_Record &record)
 {
-    BufType content = record.GetData();
-    int offset = 0;
+    // BufType content = record.GetData();
+    // int offset = 0;
     for(int i = 0; i < itemNum; i ++) {
+        /*
         uint item = content[offset];
         if(type[i] == RM::INT) {
             if(!record.IsNull(i)) {
@@ -81,6 +82,8 @@ int RecordHandler::PrintRecord(RM_Record &record)
             }
             offset += l;
         }
+        */
+        PrintColumn(record, i);
         if(i != itemNum - 1) {
             printf("|");
         }
@@ -341,21 +344,45 @@ int RecordHandler::PrintColumn(RM_Record &record, int col)
     if(col > itemNum || col < 0) {
         return 1;
     }
+    bool isNull;
+    string colStr;
+    if(this->GetColumnStr(record, col, colStr, isNull)) {
+        return 1;
+    }
+    if(isNull) {
+        cout << "NULL";
+    }
+    else {
+        cout << colStr;
+    }
+    return 0;
+}
+
+int RecordHandler::GetColumnStr(RM_Record &record, int col, string &colStr, bool &isNull)
+{
+    if(col > itemNum || col < 0) {
+        return 1;
+    }
     RM_node node;
     this->GetColumn(col, record, node);
     if(node.isNull) {
-        printf("NULL");
+        colStr = "";
+        isNull = true;
     }
     else
     {
+        isNull = false;
+        stringstream ss;
         if(node.type == RM::INT) {
-            printf("%d", node.num);
+            ss << node.num;
+            ss >> colStr;
         }
         else if(node.type == RM::FLOAT) {
-            printf("%f", node.fNum);
+            ss << node.fNum;
+            ss >> colStr;
         }
         else if(node.type == RM::CHAR){
-            cout << node.str;
+            colStr = node.str;
         }
         else{
             return 1;
