@@ -35,6 +35,7 @@ public:
     int PrintColumn(RM_Record &record, int col);
     int GetColumnStr(RM_Record &record, int col, string &colStr, bool &isNull);
     int GetColumn(int pos, RM_Record &record, RM_node &result);
+    int SetColumn(int pos, RM_Record &record, RM_node &input);
     int SetType(int pos, RM::ItemType tp);
     RM::ItemType* GetItemType() const {return type;}
     int* GetItemLength() const {return itemLength;}

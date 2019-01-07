@@ -286,7 +286,60 @@ int RecordHandler::GetColumn(int pos, RM_Record &record, RM_node &result)
     return 0;
 }
 
-
+int RecordHandler::SetColumn(int pos, RM_Record &record, RM_node &input){
+    if(pos < 0 || pos >= itemNum) {
+        return 1;
+    }
+    if(input.isNull){
+        record.SetNull(pos);
+    } 
+    int l = itemLength[pos];
+    int offset = 0;
+    for(int i = 0; i < pos; i ++) {
+        int tmp = 0;
+        if(type[i] == RM::INT || type[i] == RM::FLOAT) {
+            tmp = 1;
+        } else{
+            tmp = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
+        }
+        offset += tmp;
+    } 
+    if(type[pos] == RM::INT)
+    {
+        record.SetRecord(offset,(input.getCtx())[0]);
+    }
+    else if(type[pos] == RM::FLOAT)
+    {
+        record.SetRecord(offset,(input.getCtx())[0]);
+    }
+    else if(type[pos] == RM::CHAR)
+    {
+        BufType ctx = input.getCtx();
+        // TODO already get input's ctx
+/*        string str = "";
+        int shift = 0, mask = 255, cnt = 0;
+        for(int k = 0; k < l; k ++)
+        {
+            uint tmp = (uint)((ctx[cnt+offset] & (mask << shift)) >> shift);
+            uint tt = ctx[cnt+offset];
+            if(!isValidChar(tmp)) {
+                break;
+            }
+            char c = (char)tmp;
+            if(shift == 24) {
+                shift = 0;
+                cnt ++;
+            }
+            else {
+                shift += 8;
+            }
+            str += c;
+        }
+        result.setCtx(str);
+        result.length = (int)str.length();*/
+    }
+    return 0;    
+}
 /**
  * 用来设定每一列的信息,初始化时应该唯一地使用这个方法
  * @param pos 第几列，从0开始

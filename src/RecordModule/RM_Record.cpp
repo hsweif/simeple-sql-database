@@ -100,6 +100,9 @@ void RM_node::setCtx(string s)
     }
 }
 
+BufType RM_node::getCtx(){
+    return ctx;
+}
 bool RM_node::CmpCtx(IM::CompOp compOp, string value)
 {
     std::stringstream ss;
@@ -182,7 +185,9 @@ int RM_Record::SetRecord(BufType pData, int size, int cNum){
     }
 	return 0;
 }
-
+void RM_Record::SetRecord(int offset,uint data){
+    this->mData[offset] = data;
+}
 /*
 void RM_Record::SetType(vector<int> tp)
 {
@@ -395,4 +400,13 @@ bool RM_Record::IsNull(int pos)
     int ret = mData[pos/32];
     bool res = (bool)(((1 << offset) & mData[pos/32]) >> offset);
     return res;
+}
+
+void RM_Record::SetNull(int pos){
+    int offset = pos % 32;
+    int ret = mData[pos/32];
+    uint num = 1 << offset;
+    num = ~num;
+    mData[pos/32] = mData[pos/32] & num;
+    printf("num:%u\n",num);
 }
