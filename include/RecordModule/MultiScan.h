@@ -6,6 +6,7 @@
 #define MULTISCAN_H
 
 #include "RM_FileScan.h"
+#include "RM_FileHandle.h"
 #include "../config.h"
 
 using namespace std;
@@ -27,13 +28,13 @@ public:
 
 class DualScan {
 private:
-    RM_FileScan *mainScan;
-    RM_FileScan *viceScan;
+    RM_FileHandle *mainHandler;
+    RM_FileHandle *viceHandler;
     list<pair<RID, list<RID> > > *scanResult;
     list<pair<RID, list<RID>>>::iterator curResult;
     int CheckHandler();
 public:
-    DualScan(RM_FileScan *mScan, RM_FileScan *vScan);
+    DualScan(RM_FileHandle *mHandle, RM_FileHandle *vHandle);
     ~DualScan();
     int OpenScan(list<ScanQuery> queryList);
     int CloseScan();

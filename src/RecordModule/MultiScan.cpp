@@ -10,28 +10,21 @@ ScanQuery::ScanQuery(int mCol, IM::CompOp cp, int vCol)
 {
     queryType = RM::BASIC;  
     mainCol = mCol;
+    compOp = cp;
     viceCol = vCol;
 }
 
-DualScan::~DualScan() {
-    // if(mainScan != nullptr) {
-    //     delete mainScan;
-    // }
-    // if(viceScan != nullptr) {
-    //     delete viceScan;
-    // }
-}
+DualScan::~DualScan() {}
 
-DualScan::DualScan(RM_FileScan *mScan, RM_FileScan *vScan) {
-    mainScan = mScan;
-    viceScan = vScan;
+DualScan::DualScan(RM_FileHandle *mHandle, RM_FileHandle *vHandle){
+    mainHandler = mHandle;
+    viceHandler = vHandle;
     scanResult = new list<pair<RID, list<RID>>>();
 }
 
 int DualScan::CheckHandler()
 {
-    if(mainScan->fileHandler == nullptr || viceScan->fileHandler == nullptr)   {
-        cout << "Fail to open dual scan" << endl;
+    if(mainHandler == nullptr || viceHandler == nullptr)   {
         return 1;
     }
     return 0;
@@ -42,14 +35,15 @@ int DualScan::OpenScan(list<ScanQuery> queryList)
     if(CheckHandler()) {
         return 1;
     }
-    RM_FileHandle *mHandler = mainScan->fileHandler, *vHandler = viceScan->fileHandler;
+    RM_FileScan *mainScan = new RM_FileScan();
+    RM_FileScan *viceScan = new RM_FileScan();
     RM_Record rec;
     scanResult = new list<pair<RID, list<RID>>>;
-    mainScan->CloseScan();
-    viceScan->CloseScan();
-    mainScan->OpenScanAll(*mHandler);
-    while(mainScan->GetNextRec(*mHandler, rec) != 1)
+    mainScan->OpenScanAll(*mainHandler);
+    int cnt = 0;
+    while(mainScan->GetNextRec(*mainHandler, rec) != 1)
     {
+        cnt ++;
         RID mainRid;
         rec.GetRid(mainRid);
         for(auto iter = queryList.begin(); iter != queryList.end(); iter ++)
@@ -58,26 +52,31 @@ int DualScan::OpenScan(list<ScanQuery> queryList)
             IM::CompOp compOp = iter->compOp;
             string colStr;
             bool isNull;
-            if(mHandler->recordHandler->GetColumnStr(rec, mCol, colStr, isNull)){
+            if(mainHandler->recordHandler->GetColumnStr(rec, mCol, colStr, isNull)){
                 return 1;
             }
             char *cStr = (char*)colStr.c_str();
             // FIXME: Bug may occur, be aware
-            viceScan->OpenScan(*vHandler, vCol, compOp, cStr);
+            viceScan->OpenScan(*viceHandler, vCol, compOp, cStr);
         }
-        
         RM_Record vRecord;
         RID vRid;
         list<RID> ridList;
-        while(viceScan->GetNextRec(*vHandler, vRecord) != 1)
+        int scnt = 0;
+        while(viceScan->GetNextRec(*viceHandler, vRecord) != 1)
         {
+            scnt ++;
             vRecord.GetRid(vRid);
             ridList.push_back(vRid);
         }
-        pair<RID, list<RID>> item(mainRid, ridList);
-        scanResult->push_back(item);
+        if(!ridList.empty()) {
+            pair<RID, list<RID>> item(mainRid, ridList);
+            scanResult->push_back(item);
+        }
+        viceScan->CloseScan();
     }
     curResult = scanResult->begin();
+    int sz = scanResult->size();
     return 0;
 }
 
@@ -88,6 +87,7 @@ int DualScan::GetNextPair(pair<RID, list<RID>> &item)
     }
     item = *curResult;
     curResult ++;
+    return 0;
 }
 
 int DualScan::CloseScan() 
