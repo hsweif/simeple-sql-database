@@ -188,7 +188,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int nullSectLength = (itemNum % 32) ? itemNum/32 + 1 : itemNum/32;
     bufSize += nullSectLength;
     BufType buf = new uint[bufSize];
-    memset(buf, 0, sizeof(buf));
+    memset(buf, 0, bufSize);
 	for(int i = 0, cnt = 0; i < nullSectLength && cnt < itemNum; i ++)
 	{
 		uint curNum = 0;

@@ -481,8 +481,8 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					}
 					else{//x=4
 						if(upExpr.r->isType(hsql::ExprType::kExprLiteralString)){
-							string name = upExpr.r->name;
-							RM_node node(name);
+							//printf("update string:%s\n", upExpr.r->name);
+							RM_node node((string)(upExpr.r->name));
 							handler->recordHandler->SetColumn(upExpr.lPos,nextRec,node);
 						}
 						else if(upExpr.r->isType(hsql::ExprType::kExprLiteralInt)){
@@ -552,12 +552,15 @@ int executeCommand(const hsql::SQLStatement* stmt){
 								return -1;														 
 						}
 					}
-					else{//x=z+4 or x=z+y
+					else{//x=4+z or x=z+y
 						r2 = new RM_node();
 						handler->recordHandler->GetColumn(upExpr.r2Pos,nextRec,*r2);
 						cout<<"r2->type:"<<r2->type<<endl;
 					}
-					if(checkExprLegal(r1,r2,upExpr.lType,upExpr.binaryOp) == RM::ItemType::ERROR){
+					//get op result
+					RM::ItemType resultType = checkExprLegal(r1,r2,upExpr.lType,upExpr.binaryOp);
+					RM_node resultNode;
+					if(resultType == RM::ItemType::ERROR){
 						printf("update expr type error\n");
 						fileScan->CloseScan();
 						rmg->closeFile(*handler);
@@ -568,16 +571,39 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					}
 					switch(upExpr.binaryOp){
 						case hsql::OperatorType::kOpPlus:
-							printf("%d+%f\n",r1->num,r2->fNum);
+							if(resultType == RM::ItemType::CHAR){
+								resultNode.setCtx(r1->str+r2->str);
+							}
+							else if(resultType == RM::ItemType::FLOAT){
+								resultNode.setCtx(r1->fNum+r2->fNum);
+							}
+							else if(resultType == RM::ItemType::INT){
+								resultNode.setCtx((int)(r1->fNum+r2->fNum));
+							}
 							break;
 						case hsql::OperatorType::kOpMinus:
-							printf("-\n");
+							if(resultType == RM::ItemType::FLOAT){
+								resultNode.setCtx(r1->fNum-r2->fNum);
+							}
+							else if(resultType == RM::ItemType::INT){
+								resultNode.setCtx((int)(r1->fNum-r2->fNum));
+							}
 							break;
 						case hsql::OperatorType::kOpAsterisk:
-							printf("*\n");
+							if(resultType == RM::ItemType::FLOAT){
+								resultNode.setCtx((r1->fNum)*(r2->fNum));
+							}
+							else if(resultType == RM::ItemType::INT){
+								resultNode.setCtx((int)((r1->fNum)*(r2->fNum)));
+							}
 							break;
 						case hsql::OperatorType::kOpSlash:
-							printf("/\n");
+							if(resultType == RM::ItemType::FLOAT){
+								resultNode.setCtx((r1->fNum)/(r2->fNum));
+							}
+							else if(resultType == RM::ItemType::INT){
+								resultNode.setCtx((int)((r1->fNum)/(r2->fNum)));
+							}
 							break;
 						default:
 							printf("update binaryOp wrong\n");
@@ -588,6 +614,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 							delete r2;
 							return -1;							
 					}
+					handler->recordHandler->SetColumn(upExpr.lPos,nextRec,resultNode);
 					delete r1,r2;
 				}
 			}

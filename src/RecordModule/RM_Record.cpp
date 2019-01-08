@@ -78,6 +78,7 @@ void RM_node::setCtx(int n)
     type = RM::INT;
     length = 1;
     num = n;
+    fNum = (float)n;
     ctx = new uint;
     ctx[0] = (uint) n;
 }
@@ -87,6 +88,7 @@ void RM_node::setCtx(float f)
     type = RM::FLOAT;
     length = 1;
     fNum = f;
+    num = (int)f;
     ctx = new uint;
     // RM::float2Uint(f, ctx);
     // ctx[0] = f;
@@ -100,7 +102,7 @@ void RM_node::setCtx(string s)
     int strLength = s.length();
     length = s.length();
     ctx = new uint[length];
-    memset(ctx, 0, sizeof(ctx));
+    memset(ctx, 0, length);
     int cnt = 0;
     int offset = 0;
     for(int i = 0; i < strLength; i ++)
