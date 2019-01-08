@@ -32,29 +32,57 @@ RecordHandler::~RecordHandler()
     delete allowNull;
 }
 
+string RecordHandler::GetSplitLine(int i)
+{
+    string splitLine = "";
+    int times = (type[i] == RM::CHAR && itemLength[i] > ALIGN_WIDTH) ? itemLength[i] : ALIGN_WIDTH;
+    for(int i = 0; i < times; i ++) {
+        splitLine += "-";
+    }
+    splitLine += "+";
+    return splitLine;
+}
+
 int RecordHandler::PrintRecord(RM_Record &record)
 {
-    for(int i = 0; i < itemNum; i ++) {
+    for(int i = 0; i < itemNum; i ++)
+    {
         PrintColumn(record, i);
-        printf("|");
+        cout << "|";
     }
-    printf("\n");
+    cout << endl;
     string splitLine = "";
     for(int i = 0; i < itemNum; i ++)
     {
-        int times = (type[i] == RM::CHAR && itemLength[i] > ALIGN_WIDTH) ? itemLength[i] : ALIGN_WIDTH;
-        for(int i = 0; i < times; i ++) {
-            splitLine += "-";
-        }
-        splitLine += "+";
+        splitLine += GetSplitLine(i);
     }
+    cout << splitLine << endl;
+    return 0;
+}
+
+int RecordHandler::PrintRecord(RM_Record &record, vector<int> colIndex)
+{
+    for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++)
+    {
+        if(*iter < 0 || *iter >= itemNum) {
+            return 1;
+        }
+    }
+    string splitLine = "";
+    for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++)
+    {
+        PrintColumn(record, *iter);
+        cout << "|";
+        splitLine += GetSplitLine(*iter);
+    }
+    cout << endl;
     cout << splitLine << endl;
     return 0;
 }
 
 bool RecordHandler::isValidChar(uint c)
 {
-	if(c >= 32 && c <= 124 && c != '\0')
+	if(c >= 32 && c <= 124)
 		return true;
 	else
 		return false;
@@ -75,7 +103,6 @@ int RecordHandler::SetType(int pos, RM::ItemType tp) {
     if(pos >= itemNum || pos < 0 || isInitialized) {
         return 1;
     }
-    // cout << "Set Type: " << tp << endl;
     this->type[pos] = tp;
     return 0;
 }
@@ -146,15 +173,12 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int nullSectLength = (itemNum % 32) ? itemNum/32 + 1 : itemNum/32;
     bufSize += nullSectLength;
     BufType buf = new uint[bufSize];
-    int bz = sizeof(buf);
-    // FIXME: Check if bug occurs.
     memset(buf, 0, sizeof(uint)*bufSize);
 	for(int i = 0, cnt = 0; i < nullSectLength && cnt < itemNum; i ++)
 	{
 		uint curNum = 0;
 		for(int shift = 0; shift < 32 && cnt < itemNum; shift ++)
 		{
-		    int res = (items[cnt].isNull << shift);
 			curNum += (items[cnt].isNull << shift);
 			cnt ++;
 		}
