@@ -21,6 +21,7 @@ using namespace std;
 int main()
 {
 	MyBitMap::initConst();
-	ParseInput("../testcase/test1.txt");
+	// ParseInput("../testcase/test_update.txt");
+	ParseInput("../testcase/customer.txt");
 	return 0;
 }

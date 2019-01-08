@@ -18,13 +18,11 @@ RM_FileHandle::RM_FileHandle(bool _init) {
 RM_FileHandle::~RM_FileHandle()
 {
 	// AWARE
-	// if(isInitialized) {
-	//     if(pageUintMap) { delete pageUintMap; }
-	//     if(recordUintMap) { delete recordUintMap; }
-    //     if(recordBitMap) { delete recordBitMap; }
-    //     if(mBufpm) { delete mBufpm; }
-    //     if(recordHandler) { delete recordHandler; }
-	// }
+	if(isInitialized) {
+	    if(pageUintMap != nullptr) { delete pageUintMap; }
+	    if(recordUintMap != nullptr) { delete recordUintMap; }
+        if(recordHandler != nullptr) { delete recordHandler; }
+	}
 }
 
 int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
@@ -170,10 +168,12 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	// Below is for mapping
 	offset += colNum;
 	pageUintMap = new uint[PAGE_INT_NUM - offset];
-	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
+    // FIXME
+	for (int i = 0; i < (PAGE_INT_NUM - offset) >> 5; i++) {
 		pageUintMap[i] = firstPage[i + offset];
 	}
-	pageBitMap = new MyBitMap((PAGE_INT_NUM - offset) << 5,pageUintMap);
+	// pageBitMap = new MyBitMap((PAGE_INT_NUM - offset) << 5,pageUintMap);
+    pageBitMap = new MyBitMap(PAGE_INT_NUM - offset, pageUintMap);
 	if(recordPP%32 == 0) {
 		recordMapSize = recordPP/32;
 	}
@@ -480,10 +480,10 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		return 1;
 	}
 
-	if(CheckForMainKey(pData)) {
-		printf("Item with same main key already existed\n");
-		return 1;
-	}
+	// if(CheckForMainKey(pData)) {
+	// 	printf("Item with same main key already existed\n");
+	// 	return 1;
+	// }
 
 	if(CheckForForeignKey(pData, IM::IndexAction::INSERT)) {
         return 1;

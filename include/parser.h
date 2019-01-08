@@ -267,18 +267,12 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			printf("current path is not DBPath\n");
 			return -1;
 		}
-		//rmg = new RM_Manager((char*)currentDB.c_str());
 		RM_FileHandle *handler = new RM_FileHandle();
         rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
-		//handler->InitIndex(false);
-		//std::vector<char*> col = ((hsql::InsertStatement*)stmt)->columns[0];
 		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];
         vector<RM_node> items;
 		for(hsql::InsertValue* val:values){
 			items.clear();
-			//std::vector<hsql::Expr*> colValues = val->values[0];
-			cout<<"insert:"<<endl;
-            //items.clear();	
 			for(hsql::Expr* expr:val->values[0]){
 				if(!expr->isLiteral()){
 					printf("wrong type\n");
@@ -287,36 +281,41 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				}
 				if(expr->isType(hsql::ExprType::kExprLiteralFloat)){
 					RM_node fnode((float)(expr->fval));
-					cout<<"float:"<<(float)(expr->fval)<<endl;
+					// cout<<"float:"<<(float)(expr->fval)<<endl;
 					items.push_back(fnode);
 				}
 				else if(expr->isType(hsql::ExprType::kExprLiteralInt)){
 					RM_node inode((int)(expr->ival));
-					cout<<"int:"<<(int)(expr->ival)<<endl;
+					// cout<<"int:"<<(int)(expr->ival)<<endl;
 					items.push_back(inode);
 				}
 				else if(expr->isType(hsql::ExprType::kExprLiteralString)){
 					string name = expr->name;
 					RM_node snode(name);
-					cout<<"string:"<<(string)(expr->name)<<endl;
+					// cout<<"string:"<<(string)(expr->name)<<endl;
 					items.push_back(snode);
 				}
 				else{
 					RM_node node;
-					cout<<"null"<<endl;	
+					// cout<<"null"<<endl;
 					items.push_back(node);			
 				}
 			}
             RM_Record record;
-            printf("colNum:%d\n",items.size());
+            // printf("colNum:%d\n",items.size());
             if(handler->recordHandler->MakeRecord(record, items)) {
                 cout << "Error to make record." << endl;
             }
-            handler->recordHandler->PrintRecord(record);
-            handler->InsertRec(record);	
-            printf("insert success\n");	
+			handler->recordHandler->PrintRecord(record);
+            if(handler->InsertRec(record) == 0)	{
+				printf("insert success\n");
+			}
+			else{
+				printf("Fail to insert\n");
+			}
 		}
 		rmg->closeFile(*handler);
+		delete handler;
 	}
 	else if(stmt->isType(hsql::kStmtDelete)){
 		if(rmg == NULL){

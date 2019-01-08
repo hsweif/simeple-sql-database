@@ -29,7 +29,9 @@ RecordHandler::~RecordHandler()
     if(itemLength != NULL) {
         delete itemLength;
     }
-    delete allowNull;
+    if(allowNull != NULL) {
+        delete allowNull;
+    }
 }
 
 string RecordHandler::GetSplitLine(int i)

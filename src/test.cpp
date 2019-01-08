@@ -84,7 +84,7 @@ TEST(PipelineTest, Create) {
         handler->recordHandler = new RM::RecordHandler(colNum);
         handler->recordHandler->SetItemAttribute(0, 1, RM::INT, false);
         handler->recordHandler->SetItemAttribute(1, 1, RM::FLOAT, true);
-        handler->recordHandler->SetItemAttribute(2, 12, RM::CHAR, false);
+        handler->recordHandler->SetItemAttribute(2, 25, RM::CHAR, false);
         int sz = handler->recordHandler->GetRecordSize();
         vector<string> title;
         title.push_back("id");
@@ -119,7 +119,7 @@ TEST(PipelineTest, Insert) {
     //10 with id and 5 with null value
     printf("-------------These will be inserted-------------\n");
     RM_Record testRecord;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 100000; i++) {
         items.clear();
         string iStr;
         std::stringstream ss;
@@ -156,7 +156,8 @@ TEST(PipelineTest, Insert) {
         handler->recordHandler->PrintRecord(record);
     }
     rmg->closeFile(*handler);
-
+    delete handler;
+    delete rmg;
 }
 
 TEST(PipelineTest, InvalidInsert)

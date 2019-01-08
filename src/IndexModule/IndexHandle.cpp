@@ -97,15 +97,19 @@ int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record, RM::
             if(!result.isNull) {
                 if(result.type == RM::INT) {
                     int n = result.num;
+                    string tmp;
                     std::stringstream ss;
                     ss << n;
-                    ss >> ctx;
+                    ss >> tmp;
+                    ctx = tmp;
                 }
                 else if(result.type == RM::FLOAT) {
                     float f = result.fNum;
                     std::stringstream ss;
+                    string tmp;
                     ss << f;
-                    ss >> ctx;
+                    ss >> tmp;
+                    ctx = tmp;
                 }
                 else {
                     ctx = result.str;
