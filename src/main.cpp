@@ -23,5 +23,6 @@ int main()
 	MyBitMap::initConst();
 	// ParseInput("../testcase/test_update.txt");
 	ParseInput("../testcase/customer.sql");
+	// ParseInput("../testcase/test2.sql");
 	return 0;
 }

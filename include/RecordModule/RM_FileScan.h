@@ -23,6 +23,7 @@ private:
     bool noScanBefore;
     RM_FileHandle *fileHandler;
     int SetFilehandler(RM_FileHandle &fileHandle);
+    int resultNum;
 public:
     friend class RM::DualScan;
     RM_FileScan();
@@ -30,6 +31,7 @@ public:
     int OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, char *value);
     int OpenScan(RM_FileHandle &fileHandle, int col, bool isNull);
     int OpenScanAll(RM_FileHandle &fileHandle);
+    int ResultNum(){return scanResult->size();}
     int GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec); // Get next matching record
     int CloseScan(); // Terminate file scan
 };

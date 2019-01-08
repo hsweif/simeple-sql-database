@@ -3,6 +3,7 @@
 RM_FileScan::RM_FileScan()
 {
     this->scanResult = new list<RID>();
+    resultNum = 0;
     noScanBefore = true;
     fileHandler = nullptr;
 }
@@ -98,7 +99,7 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
 int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, bool isNull)
 {
     SetFilehandler(fileHandle);
-    if(noScanBefore) {
+    if(noScanBefore || !fileHandle.indexHandle->IsIndex(col)) {
         fileHandle.GetAllRid(scanResult);
     }
     for(auto iter = scanResult->begin(); iter != scanResult->end(); iter++)

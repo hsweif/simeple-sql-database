@@ -184,8 +184,6 @@ int getExpr(hsql::Expr *expr,std::vector<hsql::Expr*>* whereExprs){
 		return getExpr(expr->expr,whereExprs)+getExpr(expr->expr2,whereExprs);
 	}
 	else if(checkOp(expr->opType)){//legal op
-		printf("%s",expr->expr->name);
-		cout<<"unit"<<expr->opType<<" "<<expr->expr2->strName<<endl;
 		whereExprs->push_back(expr);
 		return 0;
 	}
@@ -338,7 +336,13 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		rmg->openFile(((hsql::DeleteStatement*)stmt)->tableName,*handler);
 		for(hsql::Expr *expr:*whereExprs){
 			int colPos;
-			int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+			int ret;
+			if(expr->opType != hsql::OperatorType::kOpNot) {
+				ret = handler->GetAttrIndex(expr->expr->name,colPos);
+			}
+			else {
+				ret = handler->GetAttrIndex(expr->expr->expr->name,colPos);
+			}
 			if(ret){
 				printf("attr not exist\n");
 				return -1;
@@ -399,7 +403,13 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		}*/	
 		for(hsql::Expr *expr:*whereExprs){
 			int colPos;
-			int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+			int ret;
+			if(expr->opType != hsql::OperatorType::kOpNot) {
+				ret = handler->GetAttrIndex(expr->expr->name,colPos);
+			}
+			else {
+				ret = handler->GetAttrIndex(expr->expr->expr->name,colPos);
+			}
 			if(ret){
 				printf("attr not exist\n");
 				return -1;
@@ -739,6 +749,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 						handler->recordHandler->PrintRecord(mRec,selectColPos);
 					}										
 				}
+				printf("Result Num: %d\n", fileScan->ResultNum());
 				fileScan->CloseScan();
 			}
 			else{
@@ -748,7 +759,14 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				rmg->openFile(tables[0].c_str(),*handler);
 				for(hsql::Expr *expr:*whereExprs){
 					int colPos;
-					int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+
+					int ret;
+					if(expr->opType != hsql::OperatorType::kOpNot) {
+						ret = handler->GetAttrIndex(expr->expr->name,colPos);
+					}
+					else {
+						ret = handler->GetAttrIndex(expr->expr->expr->name,colPos);
+					}
 					if(ret){
 						printf("attr not exist\n");
 						rmg->closeFile(*handler);
@@ -773,7 +791,8 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					while(!fileScan->GetNextRec(*handler, nextRec)){
 						handler->recordHandler->PrintRecord(nextRec);
 					}
-					fileScan->CloseScan();	
+					printf("Result Num: %d\n", fileScan->ResultNum());
+					fileScan->CloseScan();
 					rmg->closeFile(*handler);
 				}
 				else{
@@ -793,7 +812,8 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					while(!fileScan->GetNextRec(*handler, nextRec)){
 						handler->recordHandler->PrintRecord(nextRec,selectColPos);
 					}
-					fileScan->CloseScan();	
+					printf("Result Num: %d\n", fileScan->ResultNum());
+					fileScan->CloseScan();
 					rmg->closeFile(*handler);					
 				}
 			}		
@@ -901,6 +921,8 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				        }
 				    }
 				}
+				printf("Result Num: %d\n", dualScan->ResultNum());
+				dualScan->CloseScan();
 			    delete dualScan;
 			}
 			rmg->closeFile(*mainHandler);
