@@ -487,6 +487,44 @@ TEST(PipelineTest, ForeignKey)
     ASSERT_EQ(viceHandler->PrintColumnInfo(), 0);
     rmg->closeFile(*mainHandler);
     rmg->closeFile(*viceHandler);
+    delete rmg;
+    delete mainHandler;
+    delete viceHandler;
+}
+
+TEST(ChartInfo, PrintChartInfo)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *mainHandler = new RM_FileHandle();
+    RM_FileHandle *viceHandler = new RM_FileHandle();
+    ASSERT_EQ(rmg->openFile(chartName1, *mainHandler), true);
+    ASSERT_EQ(rmg->openFile(chartName2, *viceHandler), true);
+    string name1(chartName1);
+    string name2(chartName2);
+
+    ASSERT_EQ(mainHandler->PrintChartInfo(name1), 0);
+    ASSERT_EQ(mainHandler->PrintColumnInfo(), 0);
+    ASSERT_EQ(viceHandler->PrintChartInfo(name2), 0);
+    ASSERT_EQ(viceHandler->PrintColumnInfo(), 0);
+
+    vector<int> colIndex;
+    colIndex.push_back(0);
+    colIndex.push_back(1);
+    mainHandler->PrintTitle(colIndex);
+    RM_FileScan *scan = new RM_FileScan();
+    scan->OpenScanAll(*mainHandler);
+    RM_Record record;
+    while(!scan->GetNextRec(*mainHandler, record)) {
+        mainHandler->recordHandler->PrintRecord(record, colIndex);
+    }
+
+    rmg->closeFile(*mainHandler);
+    rmg->closeFile(*viceHandler);
+    scan->CloseScan();
+    delete scan;
+    delete rmg;
+    delete mainHandler;
+    delete viceHandler;
 }
 
 TEST(SQLParserTest, SelectTest)

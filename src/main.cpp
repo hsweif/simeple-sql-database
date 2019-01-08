@@ -18,57 +18,8 @@ unsigned char h[61];
 
 using namespace std;
 
-
-/*
-void test1(){
-    RM_Manager *rmg = new RM_Manager("test");
-    RM_FileHandle *handler = new RM_FileHandle();
-    rmg->createFile("helloworld1", 500);
-    string test = rmg->openFile("helloworld1", *handler) ? "successfully opened" : "fail to open";
-    BufType buf = new uint[500];
-    for(int i = 0;i < 500;i++)
-    	buf[i] = i;
-    BufType upBuf = new uint[500];
-    for (int i = 0; i < 500; i++)
-    	upBuf[i] = 0;
-    RM_Record pData;
-	RID insertId(1, 0);//useless
-	RID deleteId(1, 0);
-	RID queryId(1, 1);
-	RID upId(1, 1);
-	RM_Record rec;
-	RM_Record upRec;
-	upRec.SetRecord(upBuf,500, upId);
-    pData.SetRecord(buf,500,insertId);
-    handler->InsertRec(pData);
-	handler->InsertRec(pData);
-	handler->InsertRec(pData);
-	handler->InsertRec(pData);
-	handler->DeleteRec(deleteId);
-	handler->InsertRec(pData);
-	handler->InsertRec(pData);
-	handler->UpdateRec(upRec);
-	handler->GetRec(queryId, rec);
-	BufType recBuf = rec.GetData();
-	rmg->closeFile(*handler);
-}
-*/
-
-void testBitmap() {
-
-	MyBitMap *b = new MyBitMap(2 << 5, 2);
-	b->show();
-	cout << "left" << b->findLeftOne() << endl;
-	b->setBit(33, 1);
-	cout << "left" << b->findLeftOne() << endl;
-	//b->setBit(3, 1);
-	b->show();
-}
-
-int main() {
-#ifdef __DARWIN_UNIX03
-	printf("It is on Unix now.\n");
-#endif
+int main()
+{
 	MyBitMap::initConst();
 	ParseInput("../testcase/test1.txt");
 	return 0;

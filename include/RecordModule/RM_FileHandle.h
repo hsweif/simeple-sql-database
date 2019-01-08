@@ -75,6 +75,8 @@ public:
     int UpdateRec(RM_Record &rec);
     int RecordNum() const;
     int PrintAttribute(const string &attrName, RM_Record &rec);
+    int PrintChartInfo(string chartName);
+    int PrintColumnInfo();
     int PageNum() const {return pageCnt;}
     int GetAttrIndex(const string &attrName, int &index);
     bool isMainKey(uint key);
@@ -83,6 +85,7 @@ public:
     int GetForeignKeyInfo(int pos, pair<string, int> &info);
     int InitIndex(bool forceEmpty = false);
     void PrintTitle();
+    void PrintTitle(vector<int> colName);
     void SetFilePath();
     void SetType(vector<int> tp);
 	int SetMainKey(std::vector<int> mainKeys);
@@ -91,7 +94,6 @@ public:
 	static int CreateDir(string dirPath);
 	int GetAllRecord(vector<RM_Record> &result);
 	int GetAllRid(list<RID> *result);
-	int PrintColumnInfo();
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
 

@@ -45,15 +45,15 @@ string RecordHandler::GetSplitLine(int i)
 
 int RecordHandler::PrintRecord(RM_Record &record)
 {
+    cout << "|";
     for(int i = 0; i < itemNum; i ++)
     {
         PrintColumn(record, i);
         cout << "|";
     }
     cout << endl;
-    string splitLine = "";
-    for(int i = 0; i < itemNum; i ++)
-    {
+    string splitLine = "+";
+    for(int i = 0; i < itemNum; i ++) {
         splitLine += GetSplitLine(i);
     }
     cout << splitLine << endl;
@@ -68,7 +68,8 @@ int RecordHandler::PrintRecord(RM_Record &record, vector<int> colIndex)
             return 1;
         }
     }
-    string splitLine = "";
+    string splitLine = "+";
+    cout << "|";
     for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++)
     {
         PrintColumn(record, *iter);
