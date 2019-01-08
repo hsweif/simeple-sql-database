@@ -34,69 +34,27 @@ RecordHandler::~RecordHandler()
 
 int RecordHandler::PrintRecord(RM_Record &record)
 {
-    // BufType content = record.GetData();
-    // int offset = 0;
     for(int i = 0; i < itemNum; i ++) {
-        /*
-        uint item = content[offset];
-        if(type[i] == RM::INT) {
-            if(!record.IsNull(i)) {
-                printf("%d", (int)item);
-            }
-            else{
-                printf("NULL");
-            }
-            offset ++;
-        }
-        else if(type[i] == RM::FLOAT) {
-            if(!record.IsNull(i)) {
-                float f = RM::castUintToFloat(item);
-                printf("%f", f);
-            }
-            else{
-                printf("NULL");
-            }
-            offset ++;
-        }
-        else if(type[i] == RM::CHAR) {
-            int cnt = 0;
-            int l = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
-            if(!record.IsNull(i)) {
-                for(int k = 0; k < l && cnt < itemLength[i]; k ++)
-                {
-                    uint ctx = content[offset + k];
-                    uint mask = 255;
-                    for(int shift = 0; shift < 32 && cnt < itemLength[i]; shift += 8)
-                    {
-                        uint tmp = ((ctx & (mask << shift)) >> shift);
-                        if(isValidChar(tmp)) {
-                            char c = (char)tmp;
-                            printf("%c", c);
-                        }
-                        cnt ++;
-                    }
-                }
-            }
-            else{
-                printf("NULL");
-            }
-            offset += l;
-        }
-        */
         PrintColumn(record, i);
-        if(i != itemNum - 1) {
-            printf("|");
-        }
-        else{
-            printf("\n");
-        }
+        printf("|");
     }
+    printf("\n");
+    string splitLine = "";
+    for(int i = 0; i < itemNum; i ++)
+    {
+        int times = (type[i] == RM::CHAR && itemLength[i] > ALIGN_WIDTH) ? itemLength[i] : ALIGN_WIDTH;
+        for(int i = 0; i < times; i ++) {
+            splitLine += "-";
+        }
+        splitLine += "+";
+    }
+    cout << splitLine << endl;
     return 0;
 }
 
 bool RecordHandler::isValidChar(uint c)
 {
-	if(c >= 32 && c <= 124)
+	if(c >= 32 && c <= 124 && c != '\0')
 		return true;
 	else
 		return false;
@@ -188,7 +146,9 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int nullSectLength = (itemNum % 32) ? itemNum/32 + 1 : itemNum/32;
     bufSize += nullSectLength;
     BufType buf = new uint[bufSize];
-    memset(buf, 0, sizeof(buf));
+    int bz = sizeof(buf);
+    // FIXME: Check if bug occurs.
+    memset(buf, 0, sizeof(uint)*bufSize);
 	for(int i = 0, cnt = 0; i < nullSectLength && cnt < itemNum; i ++)
 	{
 		uint curNum = 0;
@@ -241,6 +201,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     }
     // Because cnt+1 = bufSize
     record.SetRecord(buf, bufSize, itemNum);
+	delete[] buf;
     return 0;
 }
 
@@ -406,14 +367,16 @@ int RecordHandler::PrintColumn(RM_Record &record, int col)
     }
     bool isNull;
     string colStr;
+    string nullStr = "NULL";
     if(this->GetColumnStr(record, col, colStr, isNull)) {
         return 1;
     }
+    int width = (type[col] == RM::CHAR && itemLength[col] > ALIGN_WIDTH) ? itemLength[col] : ALIGN_WIDTH;
     if(isNull) {
-        cout << "NULL";
+        cout << setiosflags(ios::left) << setw(width) << nullStr;
     }
     else {
-        cout << colStr;
+        cout << setiosflags(ios::left) << setw(width) << colStr;
     }
     return 0;
 }

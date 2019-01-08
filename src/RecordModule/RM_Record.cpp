@@ -1,6 +1,6 @@
 #include "../include/RecordModule/RM_Record.h"
 #include <iostream>
-#include <config.h>
+#include "config.h"
 
 using namespace std;
 
@@ -100,7 +100,7 @@ void RM_node::setCtx(string s)
     int strLength = s.length();
     length = s.length();
     ctx = new uint[length];
-    memset(ctx, 0, sizeof(ctx));
+    memset(ctx, 0, sizeof(uint)*length);
     int cnt = 0;
     int offset = 0;
     for(int i = 0; i < strLength; i ++)

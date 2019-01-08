@@ -7,6 +7,7 @@
 #define RM_RECORD_HANDLER_H
 
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include <cstring>
 #include <vector>
