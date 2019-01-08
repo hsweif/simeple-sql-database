@@ -171,6 +171,30 @@ int getExpr(hsql::Expr *expr,std::vector<hsql::Expr*>* whereExprs){
 }
 int getExprAnswer(){//4+2,"asd"+"asdsa",x+2+4
 }
+//x=y+z,illegal return ERROR
+RM::ItemType checkExprLegal(RM_node *r1,RM_node *r2,RM::ItemType lType,hsql::OperatorType op){
+	if(lType == RM::ItemType::CHAR){
+		if(r1->type != RM::ItemType::CHAR 
+		|| r2->type != RM::ItemType::CHAR 
+		|| op != hsql::OperatorType::kOpPlus){
+			return RM::ItemType::ERROR;
+		}
+		return RM::ItemType::CHAR;
+	}
+	else if(lType == RM::ItemType::INT){
+		if(r1->type == RM::ItemType::CHAR || r2->type == RM::ItemType::CHAR){
+			return RM::ItemType::ERROR;
+		}
+		return RM::ItemType::INT;
+	}
+	else if(lType == RM::ItemType::FLOAT){
+		if(r1->type == RM::ItemType::CHAR || r2->type == RM::ItemType::CHAR){
+			return RM::ItemType::ERROR;
+		}
+		return RM::ItemType::FLOAT;
+	}
+	return RM::ItemType::ERROR;
+}
 int executeCommand(const hsql::SQLStatement* stmt){
 	if(stmt->isType(hsql::kStmtCreate)){//create table
 		printf("create\n");
@@ -529,6 +553,30 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					else{//x=z+4 or x=z+y
 						r2 = new RM_node();
 						handler->recordHandler->GetColumn(upExpr.r2Pos,nextRec,*r2);
+						cout<<"r2->type:"<<r2->type<<endl;
+					}
+					//if(checkExprLegal(r1,r2,))
+					switch(upExpr.binaryOp){
+						case hsql::OperatorType::kOpPlus:
+							printf("%d+%f\n",r1->num,r2->fNum);
+							break;
+						case hsql::OperatorType::kOpMinus:
+							printf("-\n");
+							break;
+						case hsql::OperatorType::kOpAsterisk:
+							printf("*\n");
+							break;
+						case hsql::OperatorType::kOpSlash:
+							printf("/\n");
+							break;
+						default:
+							printf("update binaryOp wrong\n");
+							fileScan->CloseScan();
+							rmg->closeFile(*handler);
+							delete whereExprs;
+							delete r1;		
+							delete r2;
+							return -1;							
 					}
 					delete r1,r2;
 				}
