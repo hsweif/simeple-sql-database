@@ -747,8 +747,10 @@ int RM_FileHandle::PrintColumnInfo()
 	RM::ItemType *itemType = recordHandler->GetItemType();
 	int *itemLength = recordHandler->GetItemLength();
 	string colInfo = "| ";
+	string splitLine = "+-";
 	for(int i = 0; i < colNum; i ++)
     {
+	    int info_l = colInfo.length();
         colInfo += title[i];
         if(isMainKey(i)) {
         	colInfo += ", PRIMARY KEY";
@@ -760,7 +762,15 @@ int RM_FileHandle::PrintColumnInfo()
 		else{
 			colInfo += ", NOT ALLOW NULL";
 		}
-
+		pair<string, int> foreignInfo;
+        if(GetForeignKeyInfo(i, foreignInfo) == 1)
+        {
+            stringstream ss;
+            string foreColStr;
+            ss << foreignInfo.second;
+            ss >> foreColStr;
+            colInfo = colInfo + ", REFERENCE KEY " + foreignInfo.first + " COLUMN " + foreColStr;
+        }
         if(itemType[i] == RM::INT) {
         	colInfo += ", INT";
 		}
@@ -774,9 +784,20 @@ int RM_FileHandle::PrintColumnInfo()
 		    ss >> l_str;
 		    colInfo = colInfo + ", CHAR(" + l_str + ")";
 		}
-		colInfo += " | ";
+		colInfo += "|";
+		info_l = colInfo.length() - info_l;
+		for(int k = 0; k < info_l; k ++) {
+		    if(k != info_l - 1) {
+                splitLine += "-";
+            }
+            else{
+                splitLine += "+";
+            }
+        }
     }
+    cout << splitLine << endl;
     cout << colInfo << endl;
+    cout << splitLine << endl;
     return 0;
 }
 

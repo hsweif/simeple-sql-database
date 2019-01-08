@@ -34,8 +34,6 @@ int SQLParserTest(string query)
 
 	// check whether the parsing was successful
 	if (result.isValid()) {
-		printf("Parsed successfully!\n");
-		printf("Number of statements: %lu\n", result.size());
 		for (auto i = 0u; i < result.size(); ++i) {
 			// Print a statement summary.
 			hsql::printStatementInfo(result.getStatement(i));
@@ -99,8 +97,7 @@ TEST(PipelineTest, Create) {
         mainKey.push_back(0);
         handler->SetMainKey(mainKey);
     }
-    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
 
     // HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
     if (createNewDB) {
@@ -117,8 +114,7 @@ TEST(PipelineTest, Create) {
 TEST(PipelineTest, Insert) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     vector<RM_node> items;
     //10 with id and 5 with null value
     printf("-------------These will be inserted-------------\n");
@@ -167,8 +163,7 @@ TEST(PipelineTest, InvalidInsert)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RM_node person_a("IllegalGuy");
     RM_node id_a(0);
     RM_node f;
@@ -211,8 +206,7 @@ TEST(PipelineTest, InvalidInsert)
 TEST(PipelineTest, SearchForUniqueRangeCondition) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
     printf("-------------List all records with id < 5--------------\n");
@@ -242,8 +236,7 @@ TEST(PipelineTest, SearchForUniqueRangeCondition) {
 TEST(PipelineTest, SearchForUniqueNullCondition) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
     printf("-------------List all records with null float--------------\n");
@@ -275,8 +268,7 @@ TEST(PipelineTest, NestSearch)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
     printf("-------------List all records non-null float--------------\n");
@@ -461,21 +453,13 @@ TEST(PipelineTest, PrintAllRecord)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     printf("-------------Column Info--------------\n");
     handler->PrintColumnInfo();
-    printf("-------------Below items should be equaled--------------\n");
     handler->PrintTitle();
     vector<RM_Record> result;
     handler->GetAllRecord(result);
     for(int i = 0; i < result.size(); i ++) {
-        ASSERT_EQ(0, handler->PrintAttribute("id", result[i]));
-        cout << "|";
-        ASSERT_EQ(0, handler->PrintAttribute("test_float", result[i]));
-        cout << "|";
-        ASSERT_EQ(0, handler->PrintAttribute("name", result[i]));
-        cout << endl;
         handler->recordHandler->PrintRecord(result[i]);
     }
     ASSERT_EQ(result.size(), 10);
@@ -500,6 +484,7 @@ TEST(PipelineTest, ForeignKey)
     ASSERT_EQ(fkeyInfo.first, chartName);
     ASSERT_EQ(fkeyInfo.second, 0);
     ASSERT_EQ(viceHandler->GetForeignKeyInfo(1, fkeyInfo), 0);
+    ASSERT_EQ(viceHandler->PrintColumnInfo(), 0);
     rmg->closeFile(*mainHandler);
     rmg->closeFile(*viceHandler);
 }
