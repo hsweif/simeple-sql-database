@@ -227,7 +227,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		vector<string> title;
 		std::vector<hsql::ColumnDefinition*> col = ((hsql::CreateStatement*)stmt)->columns[0];	
 		int colNum = col.size();
-		RM_FileHandle *handler = new RM_FileHandle();
+		RM_FileHandle *handler = new RM_FileHandle(false);
 		handler->recordHandler = new RM::RecordHandler(colNum);
 		handler->indexHandle = new IM::IndexHandle(colNum);
 		RM::ItemType temp;
@@ -246,7 +246,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			for(char *key:*(((hsql::CreateStatement*)stmt)->primaryKeys)){
 				printf("primaryKey:%s\n", key);
 				for(int i=0;i<colNum;i++)
-					if(title[i].compare(key)){
+					if(title[i].compare(key) == 0){
 						mainKeys.push_back(i);
 						//handler->SetMainKey(i);
 						break;						
@@ -262,6 +262,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					printf("attr doesn't exist\n");
 					return -1;
 				}
+				printf("foreignKey:%s %s %s\n", relation->key,relation->foreignTableName,relation->foreignKey);
 				if(handler->AddForeignKey(rmg,relation->foreignTableName,relation->foreignKey,pos)){
 					printf("add foreignKey error\n");
 				}
