@@ -69,6 +69,7 @@ TEST(PipelineTest, Delete)
 }
 
 TEST(PipelineTest, Create) {
+    MyBitMap::initConst();
     bool createNewDB = true;
     if (createNewDB) {
         MyBitMap::initConst();
@@ -198,6 +199,16 @@ TEST(PipelineTest, InvalidInsert)
     items.push_back(person);
     ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
 
+    items.clear();
+    RM_node f1(0.24f);
+    items.push_back(person_a);
+    items.push_back(id);
+    items.push_back(f1);
+    // 类型错误的记录应该创建失败
+    testing::internal::CaptureStdout();
+    ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
+    std::string output = testing::internal::GetCapturedStdout();
+    ASSERT_EQ("Record's attribute type is invalid.\n", output);
     delete handler;
     delete rmg;
 }
@@ -325,7 +336,7 @@ TEST(PipelineTest, PrintAllRecord)
     ASSERT_EQ(test, "successfully opened");
     printf("-------------Column Info--------------\n");
     handler->PrintColumnInfo();
-    printf("-------------List all records --------------\n");
+    printf("-------------Below items should be equaled--------------\n");
     handler->PrintTitle();
     vector<RM_Record> result;
     handler->GetAllRecord(result);
