@@ -425,5 +425,4 @@ void RM_Record::SetNull(int pos){
     uint num = 1 << offset;
     num = ~num;
     mData[pos/32] = mData[pos/32] & num;
-    printf("num:%u\n",num);
 }

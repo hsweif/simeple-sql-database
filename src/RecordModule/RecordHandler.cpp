@@ -291,7 +291,8 @@ int RecordHandler::SetColumn(int pos, RM_Record &record, RM_node &input){
     {
         string cStr = input.str;
         int cnt = 0, str_l = cStr.length();
-        for(int k = 0; k < l; k ++)
+        int uint_l = l % 4 ? l/4 + 1 : l/4;
+        for(int k = 0; k < uint_l; k ++)
         {
             uint sum = 0;
             for(int shift = 0; shift < 32; shift += 8)
@@ -302,8 +303,8 @@ int RecordHandler::SetColumn(int pos, RM_Record &record, RM_node &input){
                     cnt ++;
                 }
             }
-            record.SetRecord(offset, sum);
-            offset ++;
+            record.SetRecord(k+offset, sum);
+            // offset ++;
         }
     }
     return 0;    
