@@ -3,7 +3,9 @@
 RM_FileScan::RM_FileScan()
 {
     this->scanResult = new list<RID>();
+    resultNum = 0;
     noScanBefore = true;
+    fileHandler = nullptr;
 }
 
 RM_FileScan::~RM_FileScan()
@@ -11,9 +13,18 @@ RM_FileScan::~RM_FileScan()
     delete this->scanResult;
 }
 
+int RM_FileScan::SetFilehandler(RM_FileHandle &fileHandle)
+{
+    if(fileHandler = nullptr) {
+        *fileHandler = fileHandle;
+        return 0;
+    }
+}
+
 int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, char *value)
 {
-    if(noScanBefore)
+    SetFilehandler(fileHandle);
+    if(noScanBefore && fileHandle.indexHandle->IsIndex(col))
     {
         if(comOp == IM::LS || comOp == IM::LEQ)
         {
@@ -62,6 +73,10 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
     }
     else
     {
+        if(noScanBefore) {
+            fileHandle.GetAllRid(scanResult);
+            noScanBefore = false;
+        }
         curResult = scanResult->begin();
         while(curResult != scanResult->end())
         {
@@ -84,8 +99,10 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
 
 int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, bool isNull)
 {
+    SetFilehandler(fileHandle);
     if(noScanBefore) {
         fileHandle.GetAllRid(scanResult);
+        noScanBefore = false;
     }
     for(auto iter = scanResult->begin(); iter != scanResult->end(); iter++)
     {
@@ -107,6 +124,7 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, bool isNull)
 
 int RM_FileScan::OpenScanAll(RM_FileHandle &fileHandle)
 {
+    SetFilehandler(fileHandle);
     if(noScanBefore) {
         fileHandle.GetAllRid(scanResult);
     }
@@ -115,6 +133,7 @@ int RM_FileScan::OpenScanAll(RM_FileHandle &fileHandle)
 
 int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
 {
+    SetFilehandler(fileHandle);
     RM_Record nRec;
     if(curResult != scanResult->end() && !scanResult->empty()) {
         if(fileHandle.GetRec(*curResult, nRec)) {
@@ -133,4 +152,5 @@ int RM_FileScan::CloseScan()
 {
     scanResult->clear();
     noScanBefore = true;
+    fileHandler = nullptr;
 }

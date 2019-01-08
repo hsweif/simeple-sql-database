@@ -29,65 +29,57 @@ RecordHandler::~RecordHandler()
     if(itemLength != NULL) {
         delete itemLength;
     }
-    delete allowNull;
+    if(allowNull != NULL) {
+        delete allowNull;
+    }
+}
+
+string RecordHandler::GetSplitLine(int i)
+{
+    string splitLine = "";
+    int times = (type[i] == RM::CHAR && itemLength[i] > ALIGN_WIDTH) ? itemLength[i] : ALIGN_WIDTH;
+    for(int i = 0; i < times; i ++) {
+        splitLine += "-";
+    }
+    splitLine += "+";
+    return splitLine;
 }
 
 int RecordHandler::PrintRecord(RM_Record &record)
 {
-    BufType content = record.GetData();
-    int offset = 0;
+    cout << "|";
+    for(int i = 0; i < itemNum; i ++)
+    {
+        PrintColumn(record, i);
+        cout << "|";
+    }
+    cout << endl;
+    string splitLine = "+";
     for(int i = 0; i < itemNum; i ++) {
-        uint item = content[offset];
-        if(type[i] == RM::INT) {
-            if(!record.IsNull(i)) {
-                printf("%d", (int)item);
-            }
-            else{
-                printf("NULL");
-            }
-            offset ++;
-        }
-        else if(type[i] == RM::FLOAT) {
-            if(!record.IsNull(i)) {
-                float f = RM::castUintToFloat(item);
-                printf("%f", f);
-            }
-            else{
-                printf("NULL");
-            }
-            offset ++;
-        }
-        else if(type[i] == RM::CHAR) {
-            int cnt = 0;
-            int l = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
-            if(!record.IsNull(i)) {
-                for(int k = 0; k < l && cnt < itemLength[i]; k ++)
-                {
-                    uint ctx = content[offset + k];
-                    uint mask = 255;
-                    for(int shift = 0; shift < 32 && cnt < itemLength[i]; shift += 8)
-                    {
-                        uint tmp = ((ctx & (mask << shift)) >> shift);
-                        if(isValidChar(tmp)) {
-                            char c = (char)tmp;
-                            printf("%c", c);
-                        }
-                        cnt ++;
-                    }
-                }
-            }
-            else{
-                printf("NULL");
-            }
-            offset += l;
-        }
-        if(i != itemNum - 1) {
-            printf("|");
-        }
-        else{
-            printf("\n");
+        splitLine += GetSplitLine(i);
+    }
+    cout << splitLine << endl;
+    return 0;
+}
+
+int RecordHandler::PrintRecord(RM_Record &record, vector<int> colIndex)
+{
+    for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++)
+    {
+        if(*iter < 0 || *iter >= itemNum) {
+            return 1;
         }
     }
+    string splitLine = "+";
+    cout << "|";
+    for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++)
+    {
+        PrintColumn(record, *iter);
+        cout << "|";
+        splitLine += GetSplitLine(*iter);
+    }
+    cout << endl;
+    cout << splitLine << endl;
     return 0;
 }
 
@@ -114,7 +106,6 @@ int RecordHandler::SetType(int pos, RM::ItemType tp) {
     if(pos >= itemNum || pos < 0 || isInitialized) {
         return 1;
     }
-    // cout << "Set Type: " << tp << endl;
     this->type[pos] = tp;
     return 0;
 }
@@ -156,6 +147,20 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
         }
     }
 
+    for(int i = 0; i < this->itemNum; i ++) {
+        if(items[i].type != type[i]) {
+            cout << "Record's attribute type is invalid." << endl;
+            return 1;
+        }
+        if(items[i].type == RM::ItemType::CHAR && !items[i].isNull)
+        {
+            if(items[i].length > itemLength[i]) {
+                cout << "Record's char attribute is too long." << endl;
+                return 1;
+            }
+        }
+    }
+
     int bufSize = 0;
     for(int i = 0; i < this->itemNum; i ++) {
         int tmp = 0;
@@ -171,13 +176,12 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     int nullSectLength = (itemNum % 32) ? itemNum/32 + 1 : itemNum/32;
     bufSize += nullSectLength;
     BufType buf = new uint[bufSize];
-    memset(buf, 0, sizeof(buf));
+    memset(buf, 0, sizeof(uint)*bufSize);
 	for(int i = 0, cnt = 0; i < nullSectLength && cnt < itemNum; i ++)
 	{
 		uint curNum = 0;
 		for(int shift = 0; shift < 32 && cnt < itemNum; shift ++)
 		{
-		    int res = (items[cnt].isNull << shift);
 			curNum += (items[cnt].isNull << shift);
 			cnt ++;
 		}
@@ -224,6 +228,7 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
     }
     // Because cnt+1 = bufSize
     record.SetRecord(buf, bufSize, itemNum);
+	delete[] buf;
     return 0;
 }
 
@@ -252,7 +257,7 @@ int RecordHandler::GetColumn(int pos, RM_Record &record, RM_node &result)
     }
     else if(type[pos] == RM::FLOAT)
     {
-        float f = (float)ctx[offset];
+        float f = RM::castUintToFloat(ctx[offset]);
         result.setCtx(f);
     }
     else if(type[pos] == RM::CHAR)
@@ -262,7 +267,8 @@ int RecordHandler::GetColumn(int pos, RM_Record &record, RM_node &result)
         int shift = 0, mask = 255, cnt = 0;
         for(int k = 0; k < l; k ++)
         {
-            uint tmp = (uint)((ctx[cnt] & (mask << shift)) >> shift);
+            uint tmp = (uint)((ctx[cnt+offset] & (mask << shift)) >> shift);
+            uint tt = ctx[cnt+offset];
             if(!isValidChar(tmp)) {
                 break;
             }
@@ -277,12 +283,59 @@ int RecordHandler::GetColumn(int pos, RM_Record &record, RM_node &result)
             str += c;
         }
         result.setCtx(str);
-        result.length = l;
+        result.length = (int)str.length();
     }
     return 0;
 }
 
-
+int RecordHandler::SetColumn(int pos, RM_Record &record, RM_node &input){
+    if(pos < 0 || pos >= itemNum) {
+        return 1;
+    }
+    if(input.isNull){
+        record.SetNull(pos);
+    } 
+    int l = itemLength[pos];
+    int offset = this->itemNum%32 ? this->itemNum/32+1 : this->itemNum/32;
+    for(int i = 0; i < pos; i ++) {
+        int tmp = 0;
+        if(type[i] == RM::INT || type[i] == RM::FLOAT) {
+            tmp = 1;
+        } else{
+            tmp = (itemLength[i] % 4) ? itemLength[i]/4 + 1 : itemLength[i]/4;
+        }
+        offset += tmp;
+    } 
+    if(type[pos] == RM::INT)
+    {
+        record.SetRecord(offset,(input.getCtx())[0]);
+    }
+    else if(type[pos] == RM::FLOAT)
+    {
+        record.SetRecord(offset,(input.getCtx())[0]);
+    }
+    else if(type[pos] == RM::CHAR)
+    {
+        string cStr = input.str;
+        int cnt = 0, str_l = cStr.length();
+        int uint_l = l % 4 ? l/4 + 1 : l/4;
+        for(int k = 0; k < uint_l; k ++)
+        {
+            uint sum = 0;
+            for(int shift = 0; shift < 32; shift += 8)
+            {
+                if(cnt < str_l)
+                {
+                    sum += (uint)cStr[cnt] << shift;
+                    cnt ++;
+                }
+            }
+            record.SetRecord(k+offset, sum);
+            // offset ++;
+        }
+    }
+    return 0;    
+}
 /**
  * 用来设定每一列的信息,初始化时应该唯一地使用这个方法
  * @param pos 第几列，从0开始
@@ -329,6 +382,64 @@ int RecordHandler::SetRecordSize(int size)
     }
 }
 
+/**
+ * 打印指定的列的内容，用在select a.name 之类的时候
+ * @param record 记录
+ * @param col 想打印出记录的那一列的内容
+ * @return 0成功
+ */
+int RecordHandler::PrintColumn(RM_Record &record, int col)
+{
+    if(col > itemNum || col < 0) {
+        return 1;
+    }
+    bool isNull;
+    string colStr;
+    string nullStr = "NULL";
+    if(this->GetColumnStr(record, col, colStr, isNull)) {
+        return 1;
+    }
+    int width = (type[col] == RM::CHAR && itemLength[col] > ALIGN_WIDTH) ? itemLength[col] : ALIGN_WIDTH;
+    if(isNull) {
+        cout << setiosflags(ios::left) << setw(width) << nullStr;
+    }
+    else {
+        cout << setiosflags(ios::left) << setw(width) << colStr;
+    }
+    return 0;
+}
 
+int RecordHandler::GetColumnStr(RM_Record &record, int col, string &colStr, bool &isNull)
+{
+    if(col > itemNum || col < 0) {
+        return 1;
+    }
+    RM_node node;
+    this->GetColumn(col, record, node);
+    if(node.isNull) {
+        colStr = "";
+        isNull = true;
+    }
+    else
+    {
+        isNull = false;
+        stringstream ss;
+        if(node.type == RM::INT) {
+            ss << node.num;
+            ss >> colStr;
+        }
+        else if(node.type == RM::FLOAT) {
+            ss << node.fNum;
+            ss >> colStr;
+        }
+        else if(node.type == RM::CHAR){
+            colStr = node.str;
+        }
+        else{
+            return 1;
+        }
+    }
+    return 0;
+}
 
 }

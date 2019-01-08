@@ -8,6 +8,9 @@
 
 namespace bpt {
 
+enum KeyType{
+    CHAR, INT, FLOAT
+};
 /* predefined B+ info */
 #define BP_ORDER 20
 
@@ -15,14 +18,29 @@ namespace bpt {
 typedef RID value_t;
 struct key_t {
     char k[16];
+    int num;
+    float fNum;
+    KeyType type;
 
     key_t(const char *str = "")
     {
         //bzero(k, sizeof(k));
         memset(k,'0',strlen(k));
         strcpy(k, str);
+        type = CHAR;
     }
 
+    key_t(int n)
+    {
+        num = n;
+        type = INT;
+    }
+
+    key_t(float f)
+    {
+        fNum = f;
+        type = FLOAT;
+    }
 
     bool operator != (const key_t &b)
     {

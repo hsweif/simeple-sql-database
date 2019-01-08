@@ -41,7 +41,9 @@ struct RM_node
     void setCtx(int n);
     void setCtx(float f);
     void setCtx(string s);
+    BufType getCtx();
     bool CmpCtx(IM::CompOp compOp, string value);
+    bool operator == (const RM_node &b);
 };
 
 class RM_Record {
@@ -55,18 +57,15 @@ public:
 	RM_Record();
 	~RM_Record (){};
 	int SetRecord	(BufType pData, int size, int cNum);
-	// void SetType(vector<int> tp);
+	void SetRecord   (int offset,uint data);
 	BufType GetData () const; // 返回不包括NULL位图的内容
 	BufType GetBuf () const; // 返回整个mData，包括NULL位图
 	//   the record's contents
 	int GetRid     (RID &rid) const;       // Get the record id
 	int RecordSize() const { return recordSize;	}
 	int BufSize() const { return bufSize; }
-	// int GetSerializeRecord(BufType *rec, vector<RM_node> data, int &recordSize);
-	// int GetNodes(vector<RM_node> &result, BufType serializedBuf);
-	// int GetColumn(int col, string *content);
 	bool IsNull(int pos);
+	void SetNull(int pos);
 	int SetRID(RID &rid) { this->mRid = rid;};
-	// void Print();
 };
 #endif

@@ -7,6 +7,7 @@
 #define RM_RECORD_HANDLER_H
 
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include <cstring>
 #include <vector>
@@ -28,20 +29,26 @@ private:
 public:
     int itemNum;
     bool isInitialized; // 为真时表示在FileHandle的init前就已经设定好值了
+
     RecordHandler(int length);
-    bool isValidChar(uint c);
     ~RecordHandler();
+    string GetSplitLine(int i);
+    bool isValidChar(uint c);
     int PrintRecord(RM_Record &record);
+    int PrintRecord(RM_Record &record, vector<int> colIndex);
+    int SetColumn(int pos, RM_Record &record, RM_node &input);
     int GetColumn(int pos, RM_Record &record, RM_node &result);
+    int PrintColumn(RM_Record &record, int col);
+    int GetColumnStr(RM_Record &record, int col, string &colStr, bool &isNull);
     int SetType(int pos, RM::ItemType tp);
     RM::ItemType* GetItemType() const {return type;}
     int* GetItemLength() const {return itemLength;}
     int SetItemLength(int pos, int _length);
     int SetNullInfo(bool *nullInfo, int length);
     int SetRecordSize(int size);
-    int IsAllowNull(int pos);
     int SetItemAttribute(int pos, int length, RM::ItemType itemType, bool isNull);
     int GetRecordSize() const {return recordSize;}
+    int IsAllowNull(int pos);
     int MakeRecord(RM_Record &record, vector<RM_node> &items);
 };
 

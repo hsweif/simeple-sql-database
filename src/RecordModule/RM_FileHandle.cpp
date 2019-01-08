@@ -11,17 +11,17 @@ RM_FileHandle::RM_FileHandle(bool _init) {
 	}
 	this->isInitialized = _init;
 	this->recordHandler = nullptr;
+	this->foreignKeyNum = 0;
+	this->relatedRManager = nullptr;
 }
 
 RM_FileHandle::~RM_FileHandle()
 {
 	// AWARE
 	if(isInitialized) {
-        delete pageUintMap;
-        delete recordUintMap;
-        delete recordBitMap;
-        delete mBufpm;
-        delete recordHandler;
+	    if(pageUintMap != nullptr) { delete pageUintMap; }
+	    if(recordUintMap != nullptr) { delete recordUintMap; }
+        if(recordHandler != nullptr) { delete recordHandler; }
 	}
 }
 
@@ -42,6 +42,9 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	}
 	recordHandler->SetRecordSize(recordSize);
 
+	if(isInitialized) {
+	    this->indexHandle = new IM::IndexHandle(colNum);
+    }
 
 	vector<string> tmpTitle;
 	/**
@@ -111,6 +114,51 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	    offset += mainKeyCnt;
 	}
 
+	// Below is for foreign key
+	if(isInitialized) {
+		foreignKeyNum = (uint)firstPage[offset];
+	}
+	offset ++;
+	if(isInitialized){
+		foreignKey.clear();
+		for(int i = 0; i < foreignKeyNum; i ++)
+		{
+			int colIndex = (int)firstPage[offset];
+			offset ++;
+			int fIndex = (int)firstPage[offset];
+			offset ++;
+			string fChart = "";
+			int l = RM::TITLE_LENGTH % 4 ? RM::TITLE_LENGTH/4 + 1 : RM::TITLE_LENGTH/4;
+			bool flag = false;
+			for(int i = 0; i < l; i ++)
+			{
+			    if(flag) {
+			    	break;
+				}
+				uint ctx = firstPage[offset+i];
+				int mask = 255;
+				for(int shift = 0; shift < 32; shift += 8)
+				{
+					char c = (char)(((mask << shift) & ctx) >> shift);
+					if(c == '\0') {
+						flag = true;
+						break;
+					}
+					else{
+						fChart += c;
+					}
+				}
+			}
+			offset += l;
+			pair<string, int> fInfo(fChart, fIndex);
+			pair<int, pair<string, int>> item(colIndex, fInfo);
+			foreignKey.push_back(item);
+		}
+	}
+	else{
+		int l = RM::TITLE_LENGTH % 4 ? RM::TITLE_LENGTH/4 + 1 : RM::TITLE_LENGTH/4;
+		offset += foreignKeyNum * (2 + l);
+	}
 
 	// Below is for mutable item length;
 	for(int i = 0; i < colNum; i ++) {
@@ -123,10 +171,12 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	// Below is for mapping
 	offset += colNum;
 	pageUintMap = new uint[PAGE_INT_NUM - offset];
-	for (int i = 0; i < PAGE_INT_NUM - offset; i++) {
+    // FIXME
+	for (int i = 0; i < (PAGE_INT_NUM - offset) >> 5; i++) {
 		pageUintMap[i] = firstPage[i + offset];
 	}
-	pageBitMap = new MyBitMap((PAGE_INT_NUM - offset) << 5,pageUintMap);
+	// pageBitMap = new MyBitMap((PAGE_INT_NUM - offset) << 5,pageUintMap);
+    pageBitMap = new MyBitMap(PAGE_INT_NUM - offset, pageUintMap);
 	if(recordPP%32 == 0) {
 		recordMapSize = recordPP/32;
 	}
@@ -189,7 +239,46 @@ int RM_FileHandle::updateHead() {
 		readBuf[offset] = mainKey[i];	
 		offset++;
 	}
-	
+
+	// This is for foreign key
+	readBuf[offset] = foreignKeyNum;
+	offset ++;
+    for(int i = 0; i < foreignKeyNum; i ++)
+    {
+        pair<int, pair<string, int>> item = foreignKey[i];
+        readBuf[offset] = item.first;
+        offset ++;
+		readBuf[offset] = item.second.second;
+		int s_length = item.second.first.length();
+        offset ++;
+        int l = RM::TITLE_LENGTH % 4 ? RM::TITLE_LENGTH/4 + 1 : RM::TITLE_LENGTH/4;
+        bool flag = false;
+        int cnt = 0;
+        for(int i = 0; i < l; i ++)
+        {
+            readBuf[i + offset] = 0;
+            if(!flag)
+			{
+                int mask = 255;
+                for(int shift = 0; shift < 32; shift += 8)
+                {
+                    char c;
+                    if(cnt == s_length) {
+                        flag = true;
+                        c = '\0';
+                        readBuf[i+offset] += (uint)((c & mask) << shift);
+                        break;
+                    }
+                    else{
+						c = item.second.first[cnt];
+						readBuf[i+offset] += (uint)((c & mask) << shift);
+                        cnt ++;
+                    }
+                }
+			}
+        }
+        offset += l;
+    }
 
 	// This is for mutable item length;
 	int *itemLength = recordHandler->GetItemLength();
@@ -237,11 +326,11 @@ int RM_FileHandle::SetMainKey(std::vector<int> mainKeys)
 			return 1;
 		}
 		mainKey.push_back((uint)key);
+		indexHandle->SetIndex(key, true);
 	}
 	mainKeyCnt = (int)mainKey.size();
 	return 0;
 }
-
 
 int RM_FileHandle::UpdateRec(RM_Record &rec) {
 	RID rid;
@@ -261,9 +350,11 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 		}
 		recordBitMap = new MyBitMap(recordMapSize << 5, recordUintMap);
 	}
-	BufType upBuf = rec.GetData();
-	for (int i = 0; i < recordSize; i++)
-		readBuf[recordMapSize + i + slot * recordSize] = upBuf[i];
+	BufType upBuf = rec.GetBuf();
+    // BufType upBuf = rec.GetData();
+	for (int i = 0; i < recordSize; i++) {
+        readBuf[recordMapSize + i + slot * recordSize] = upBuf[i];
+    }
 	if (recordBitMap->getBit(slot))//1
 	{
 		recordBitMap->setBit(slot, 0);
@@ -278,6 +369,70 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 	return 0;
 }
 
+int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
+{
+	if(foreignKeyNum == 0) {
+		return 0;
+	}
+	if(this->relatedRManager == nullptr) {
+		return 1;
+	}
+	for(auto iter = foreignKey.begin(); iter != foreignKey.end(); iter ++)
+	{
+	    int colIndex = iter->first;
+	    bool isNull;
+	    RM_FileHandle *handler = new RM_FileHandle();
+
+	    char *chartName;
+	    string chartStr = iter->second.first;
+        int l = chartStr.length();
+        chartName = new char[l];
+        for(int i = 0; i < l; i ++) {
+            chartName[i] = chartStr[i];
+        }
+
+	    if(!relatedRManager->openFile(chartName, *handler)) {
+			return 1;
+		}
+
+		string cStr;
+	    recordHandler->GetColumnStr(rec, colIndex, cStr, isNull);
+		char *colKey;
+
+        l = cStr.length();
+        colKey = new char[l];
+        for(int i = 0; i < l; i ++) {
+            colKey[i] = cStr[i];
+        }
+
+	    if(isNull) {
+	    	return 1;
+		}
+		int pos = iter->second.second;
+		bool res = handler->indexHandle->Existed(pos, colKey);
+        if(action == IM::IndexAction::INSERT){
+            if(!res) {
+                printf("Reference key doesn't exist. It is unable to insert.\n");
+            	return 1;
+			}
+        }
+        else if(action == IM::IndexAction::DELETE) {
+			if(res) {
+                printf("Reference key still exist. It is unable to delete.\n");
+				return 1;
+			}
+        }
+        else if(action == IM::IndexAction::UPDATE) {
+        	if(!res) {
+                printf("Reference key doesn't exist. It is unable to update.\n");
+        		return 1;
+			}
+        }
+        delete[] chartName;
+        delete[] colKey;
+	}
+	return 0;
+}
 
 int RM_FileHandle::CheckForMainKey(RM_Record &pData)
 {
@@ -329,10 +484,14 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		return 1;
 	}
 
-	if(CheckForMainKey(pData)) {
-		printf("Item with same main key already existed\n");
-		return 1;
-	}
+	// if(CheckForMainKey(pData)) {
+	// 	printf("Item with same main key already existed\n");
+	// 	return 1;
+	// }
+
+	if(CheckForForeignKey(pData, IM::IndexAction::INSERT)) {
+        return 1;
+    }
 
 	//check space
 	int pageIndex = pageBitMap->findLeftOne();
@@ -390,6 +549,9 @@ int RM_FileHandle::DeleteRec(const RID &rid) {
 	if (page <= 0 || page >= pageCnt || slot < 0 || slot >= recordPP) {
 		return 1;
 	}
+	if(CheckForForeignKey(record, IM::IndexAction::DELETE)) {
+	    return 1;
+    }
 	int bufIndex;
 	readBuf = this->mBufpm->getPage(this->fileId, page, bufIndex);
 	if (bufLastIndex != bufIndex)
@@ -485,7 +647,7 @@ int RM_FileHandle::InitIndex(bool forceEmpty)
 	if(title.empty() || colNum <= 0) {
 		return 1;
 	}
-	this->indexHandle = new IM::IndexHandle(title, this->indexPath);
+	this->indexHandle->SetIndexHandle(title, this->indexPath);
 	for(int i = 0; i < title.size(); i ++) {
 		this->indexHandle->CreateIndex((char*)title[i].data(), i, forceEmpty);
 	}
@@ -495,10 +657,41 @@ int RM_FileHandle::InitIndex(bool forceEmpty)
 void RM_FileHandle::PrintTitle()
 {
 	int sz = title.size();
+	RM::ItemType *type = recordHandler->GetItemType();
+	int *length = recordHandler->GetItemLength();
+	string splitLine = "+";
 	for(int i = 0; i < sz; i ++) {
-		cout << title[i] << " | ";
+	    splitLine += recordHandler->GetSplitLine(i);
+    }
+    cout << splitLine << endl;
+	cout << "|";
+	for(int i = 0; i < sz; i ++) {
+	    int width = (type[i] == RM::CHAR && length[i] > ALIGN_WIDTH) ? length[i] : ALIGN_WIDTH;
+		cout << setiosflags(ios::left) << setw(width) << title[i];
+		cout << "|";
 	}
 	cout << endl;
+	cout << splitLine << endl;
+}
+
+void RM_FileHandle::PrintTitle(vector<int> colIndex)
+{
+    string splitLine = "+";
+    for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++) {
+        splitLine += recordHandler->GetSplitLine(*iter);
+    }
+    cout << splitLine << endl;
+    cout << "|";
+    RM::ItemType *type = recordHandler->GetItemType();
+    int *length = recordHandler->GetItemLength();
+    for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++) {
+        int i = *iter;
+        int width = (type[i] == RM::CHAR && length[i] > ALIGN_WIDTH) ? length[i] : ALIGN_WIDTH;
+        cout << setiosflags(ios::left) << setw(width) << title[i];
+        cout << "|";
+    }
+    cout << endl;
+    cout << splitLine << endl;
 }
 
 int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)
@@ -579,8 +772,10 @@ int RM_FileHandle::PrintColumnInfo()
 	RM::ItemType *itemType = recordHandler->GetItemType();
 	int *itemLength = recordHandler->GetItemLength();
 	string colInfo = "| ";
+	string splitLine = "+-";
 	for(int i = 0; i < colNum; i ++)
     {
+	    int info_l = colInfo.length();
         colInfo += title[i];
         if(isMainKey(i)) {
         	colInfo += ", PRIMARY KEY";
@@ -592,7 +787,15 @@ int RM_FileHandle::PrintColumnInfo()
 		else{
 			colInfo += ", NOT ALLOW NULL";
 		}
-
+		pair<string, int> foreignInfo;
+        if(GetForeignKeyInfo(i, foreignInfo) == 1)
+        {
+            stringstream ss;
+            string foreColStr;
+            ss << foreignInfo.second;
+            ss >> foreColStr;
+            colInfo = colInfo + ", REFERENCE KEY " + foreignInfo.first + " COLUMN " + foreColStr;
+        }
         if(itemType[i] == RM::INT) {
         	colInfo += ", INT";
 		}
@@ -606,8 +809,110 @@ int RM_FileHandle::PrintColumnInfo()
 		    ss >> l_str;
 		    colInfo = colInfo + ", CHAR(" + l_str + ")";
 		}
-		colInfo += " | ";
+		colInfo += "|";
+		info_l = colInfo.length() - info_l;
+		for(int k = 0; k < info_l; k ++) {
+		    if(k != info_l - 1) {
+                splitLine += "-";
+            }
+            else{
+                splitLine += "+";
+            }
+        }
     }
+    cout << splitLine << endl;
     cout << colInfo << endl;
+    cout << splitLine << endl;
     return 0;
 }
+
+int RM_FileHandle::PrintAttribute(const string &attrName, RM_Record &rec)
+{
+	int index;
+    if(GetAttrIndex(attrName, index)){
+    	return 1;
+    }
+    return recordHandler->PrintColumn(rec, index);
+}
+
+int RM_FileHandle::GetAttrIndex(const string &attrName, int &index)
+{
+	auto iter = colNameMap.find(attrName);
+    if(iter == colNameMap.end()) {
+    	return 1;
+	}
+	index = colNameMap[attrName];
+	return 0;	
+}
+
+int RM_FileHandle::AddForeignKey(RM_Manager *rmg, string chartName, string attrName, int col)
+{
+	foreignKeyNum ++;
+	char *cName = new char[chartName.length()];
+	RM_FileHandle *handler = new RM_FileHandle();
+	for(int i = 0; i < chartName.length(); i ++) {
+		cName[i] = chartName[i];
+	}
+
+	if(!rmg->openFile(cName, *handler)) {
+		return 1;
+	}
+	int index;
+	if(handler->GetAttrIndex(attrName, index)){
+		return 1;
+	}
+	if(!handler->isMainKey(index)) {
+		return 1;
+	}
+	pair<string, int> relatedCol(chartName, index);
+    pair<int, pair<string, int> > newKey(col, relatedCol);
+	foreignKey.push_back(newKey);
+	rmg->closeFile(*handler);
+	delete handler;
+	delete[] cName;
+   	return 0;
+}
+
+int RM_FileHandle::GetForeignKeyInfo(int pos, pair<string, int> &info)
+{
+	if(pos < 0 || pos >= colNum)	{
+		return -1;
+	}
+	for(auto iter = foreignKey.begin(); iter != foreignKey.end(); iter ++)
+	{
+		if(iter->first == pos)
+		{
+			info = iter->second;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int RM_FileHandle::PrintChartInfo(string chartName)
+{
+    int width = 25;
+    stringstream ss;
+    string splitLine = "+";
+    for(int i = 0; i <  2*width; i ++) {
+        if(i != width-1) {
+            splitLine += "-";
+        }
+        else{
+            splitLine += "+";
+        }
+    }
+    splitLine += "+";
+    cout << splitLine << endl;
+    cout << setw(width) << left << "|Name " << "|" << right << setw(width) << chartName << "|" << endl;
+    cout << splitLine << endl;
+    cout << setw(width) << left << "|Record Number " << "|" << right << setw(width) << recordSum << "|" << endl;
+    cout << splitLine << endl;
+    cout << setw(width) << left << "|Page Number " << "|" << right << setw(width) << pageCnt << "|" << endl;
+    cout << splitLine << endl;
+    cout << setw(width) << left << "|Record Size(Byte) " << "|" << right << setw(width) << 4*recordSize << "|" << endl;
+    cout << splitLine << endl;
+    return 0;
+}
+
+

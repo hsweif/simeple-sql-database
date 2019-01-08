@@ -1,5 +1,7 @@
 create database abc
 use database abc
-create table test231(id int, name char(10), grade float)
-insert into test231 values (1, 'mike',2.3),(2,'jack',3.4),(3,'kate',3.3),(4, 'alex', 3.4), (-5,'demon', 4.0)
-select * from test231
+create table test1(x int,y char(20),z float)
+create table test2(x int,y int)
+insert into test1 values (101,'asdsad',10.5),(202,'12345',9.5),(303,'12312',0.5),(300,'asd',0.5)
+insert into test2 values (101,10),(101,9),(303,0),(300,5)
+select test1.x,test2.y from test1,test2 where (test1.x=test2.x) AND (test1.x>test2.y)

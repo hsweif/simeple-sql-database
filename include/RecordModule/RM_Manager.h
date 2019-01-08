@@ -19,6 +19,9 @@
 #include <sys/stat.h>
 
 using namespace std;
+
+class RM_FileHandle;
+
 class RM_Manager{
 private:
     char *dataPath;

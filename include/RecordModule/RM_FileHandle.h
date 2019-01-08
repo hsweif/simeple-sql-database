@@ -8,6 +8,7 @@
 #include "../utils/MyBitMap.h"
 #include "../IndexModule/IndexHandle.h"
 #include "RecordHandler.h"
+#include "RM_Manager.h"
 #include <iostream>
 #include <string>
 #include <map>
@@ -27,6 +28,7 @@ namespace RM
 {
 	const int TITLE_LENGTH = 16;
 }
+class RM_Manager;
 
 class RM_FileHandle {
 private:
@@ -44,16 +46,20 @@ private:
 	int colNum;
 	uint *pageUintMap;
 	uint *recordUintMap;
+	int foreignKeyNum;
     MyBitMap* pageBitMap;
     MyBitMap* recordBitMap;//current reading page's map
     BufPageManager *mBufpm;
 	BufType readBuf;
 	vector<string> title;
 	int CheckForMainKey(RM_Record &pData);
+	int CheckForForeignKey(RM_Record &rec, IM::IndexAction action);
 	map<string, int> colNameMap;
+	vector< pair<int, pair<string, int>> > foreignKey;
 
 public:
 	string indexPath;
+	RM_Manager *relatedRManager;
 	IM::IndexHandle *indexHandle;
     RM::RecordHandler *recordHandler;
 	int CheckForMainKey();
@@ -68,11 +74,18 @@ public:
     int DeleteRec(const RID &rid);                    // Delete a record
     int UpdateRec(RM_Record &rec);
     int RecordNum() const;
+    int PrintAttribute(const string &attrName, RM_Record &rec);
+    int PrintChartInfo(string chartName);
+    int PrintColumnInfo();
     int PageNum() const {return pageCnt;}
+    int GetAttrIndex(const string &attrName, int &index);
     bool isMainKey(uint key);
     void SetTitle(vector<string> t);
+    int AddForeignKey(RM_Manager *rmg, string chartName, string attrName, int col);
+    int GetForeignKeyInfo(int pos, pair<string, int> &info);
     int InitIndex(bool forceEmpty = false);
     void PrintTitle();
+    void PrintTitle(vector<int> colName);
     void SetFilePath();
     void SetType(vector<int> tp);
 	int SetMainKey(std::vector<int> mainKeys);
@@ -81,7 +94,6 @@ public:
 	static int CreateDir(string dirPath);
 	int GetAllRecord(vector<RM_Record> &result);
 	int GetAllRid(list<RID> *result);
-	int PrintColumnInfo();
     // int ForcePages     (PageNum pageNum = ALL_PAGES) const; // Write dirty page(s)
 };
 

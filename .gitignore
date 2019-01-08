@@ -5,6 +5,7 @@ main
 .vscode*
 .idea/
 *.vcxproj*
+testcase/
 cmake-build-debug/
 build/
 *CMakeFiles/*

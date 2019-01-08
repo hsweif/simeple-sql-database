@@ -7,6 +7,7 @@
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include "CommandModule/dataBaseManager.h"
+#include "RecordModule/MultiScan.h"
 #include "SQLParser.h"
 #include "util/sqlhelper.h"
 #include <vector>
@@ -21,8 +22,9 @@ int current = 0;
 int tt = 0;
 unsigned char h[61];
 
-char *dbName = "abctesting12";
-vector<RM_Record> orig;
+char dbName[20] = "NewTesting111";
+char chartName1[10] = "chart1";
+char chartName2[10] = "chart2";
 
 int SQLParserTest(string query)
 {
@@ -32,8 +34,6 @@ int SQLParserTest(string query)
 
 	// check whether the parsing was successful
 	if (result.isValid()) {
-		printf("Parsed successfully!\n");
-		printf("Number of statements: %lu\n", result.size());
 		for (auto i = 0u; i < result.size(); ++i) {
 			// Print a statement summary.
 			hsql::printStatementInfo(result.getStatement(i));
@@ -49,12 +49,24 @@ int SQLParserTest(string query)
 	}
 }
 
+TEST(IOTest, stdioRedirect)
+{
+    string str = "My test";
+    std::cout << str;
+    testing::internal::CaptureStdout();
+    std::cout << str;
+    std::string output = testing::internal::GetCapturedStdout();
+    ASSERT_EQ(str, output);
+    std::cout <<  str << " " << output << endl;
+}
+
 TEST(PipelineTest, Delete)
 {
     ASSERT_EQ(DropDB(dbName), 0);
 }
 
 TEST(PipelineTest, Create) {
+    MyBitMap::initConst();
     bool createNewDB = true;
     if (createNewDB) {
         MyBitMap::initConst();
@@ -70,23 +82,23 @@ TEST(PipelineTest, Create) {
     RM_FileHandle *handler = new RM_FileHandle(false);
     if (createNewDB) {
         handler->recordHandler = new RM::RecordHandler(colNum);
+        handler->indexHandle = new IM::IndexHandle(colNum);
         handler->recordHandler->SetItemAttribute(0, 1, RM::INT, false);
         handler->recordHandler->SetItemAttribute(1, 1, RM::FLOAT, true);
-        handler->recordHandler->SetItemAttribute(2, 12, RM::CHAR, false);
+        handler->recordHandler->SetItemAttribute(2, 25, RM::CHAR, false);
         int sz = handler->recordHandler->GetRecordSize();
         vector<string> title;
         title.push_back("id");
         title.push_back("test_float");
         title.push_back("name");
         handler->SetTitle(title);
-        rmg->createFile(dbName, sz, colNum);
+        rmg->createFile(chartName1, sz, colNum);
         // 在init前面才不会被覆盖
         vector<int> mainKey;
         mainKey.push_back(0);
         handler->SetMainKey(mainKey);
     }
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
 
     // HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
     if (createNewDB) {
@@ -94,6 +106,8 @@ TEST(PipelineTest, Create) {
     }
 
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
 }
 
 
@@ -101,11 +115,11 @@ TEST(PipelineTest, Create) {
 TEST(PipelineTest, Insert) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     vector<RM_node> items;
     //10 with id and 5 with null value
     printf("-------------These will be inserted-------------\n");
+    RM_Record testRecord;
     for (int i = 0; i < 10; i++) {
         items.clear();
         string iStr;
@@ -113,50 +127,45 @@ TEST(PipelineTest, Insert) {
         ss << i;
         ss >> iStr;
         float f = (float)i + 0.5f;
-        RM_node person_a("person" + iStr);
+        RM_node person_a("NAperson" + iStr);
         RM_node id_a(i);
         RM_node test_f(f);
         items.push_back(id_a);
         items.push_back(test_f);
         items.push_back(person_a);
         RM_Record record;
-        if (handler->recordHandler->MakeRecord(record, items)) {
-            cout << "Error to make record." << endl;
-        }
+        ASSERT_EQ(handler->recordHandler->MakeRecord(record, items), 0);
         handler->recordHandler->PrintRecord(record);
         handler->InsertRec(record);
-        orig.push_back(record);
     }
+
     for (int i = 10; i < 15; i++) {
         items.clear();
         string iStr;
         std::stringstream ss;
         ss << i;
         ss >> iStr;
-        RM_node person_a("N_person" + iStr);
+        RM_node person_a("Nperson" + iStr);
         RM_node id_a(i);
         RM_node null_f;
         items.push_back(id_a);
         items.push_back(null_f);
         items.push_back(person_a);
         RM_Record record;
-        if (handler->recordHandler->MakeRecord(record, items)) {
-            cout << "Error to make record." << endl;
-        }
+        ASSERT_EQ(handler->recordHandler->MakeRecord(record, items), 0);
         handler->InsertRec(record);
         handler->recordHandler->PrintRecord(record);
-        orig.push_back(record);
     }
     rmg->closeFile(*handler);
-
+    delete handler;
+    delete rmg;
 }
 
 TEST(PipelineTest, InvalidInsert)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RM_node person_a("IllegalGuy");
     RM_node id_a(0);
     RM_node f;
@@ -173,13 +182,33 @@ TEST(PipelineTest, InvalidInsert)
     items[0] = emptyID;
     // 主键为空的记录应该在创建记录时失败
     ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
+
+    // 长度过长的记录应该创建失败
+    items.clear();
+    RM_node person("ThisNameIsAbsolutelyTooLong"), id(27);
+    items.push_back(id);
+    items.push_back(f);
+    items.push_back(person);
+    ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
+
+    items.clear();
+    RM_node f1(0.24f);
+    items.push_back(person_a);
+    items.push_back(id);
+    items.push_back(f1);
+    // 类型错误的记录应该创建失败
+    testing::internal::CaptureStdout();
+    ASSERT_NE(handler->recordHandler->MakeRecord(record, items), 0);
+    std::string output = testing::internal::GetCapturedStdout();
+    ASSERT_EQ("Record's attribute type is invalid.\n", output);
+    delete handler;
+    delete rmg;
 }
 
 TEST(PipelineTest, SearchForUniqueRangeCondition) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
     printf("-------------List all records with id < 5--------------\n");
@@ -201,13 +230,15 @@ TEST(PipelineTest, SearchForUniqueRangeCondition) {
     ASSERT_EQ(cnt, 10);
     fileScan->CloseScan();
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+    delete fileScan;
 }
 
 TEST(PipelineTest, SearchForUniqueNullCondition) {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
     printf("-------------List all records with null float--------------\n");
@@ -230,14 +261,16 @@ TEST(PipelineTest, SearchForUniqueNullCondition) {
     ASSERT_EQ(cnt, 10);
     fileScan->CloseScan();
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+    delete fileScan;
 }
 
 TEST(PipelineTest, NestSearch)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     RM_FileScan *fileScan = new RM_FileScan;
     RM_Record nextRec;
     printf("-------------List all records non-null float--------------\n");
@@ -279,26 +312,221 @@ TEST(PipelineTest, NestSearch)
     fileScan->CloseScan();
 
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+    delete fileScan;
+}
+
+TEST(PipelineTest, ChartConnect)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *mainHandler = new RM_FileHandle();
+    RM_FileHandle *viceHandler = new RM_FileHandle(false);
+    int colNum = 2;
+    viceHandler->recordHandler = new RM::RecordHandler(colNum);
+    viceHandler->recordHandler->SetItemAttribute(0, 1, RM::INT, false);
+    viceHandler->recordHandler->SetItemAttribute(1, 12, RM::CHAR, false);
+    int sz = viceHandler->recordHandler->GetRecordSize();
+    vector<string> title;
+    title.push_back("id");
+    title.push_back("name");
+    rmg->createFile(chartName2, sz, colNum);
+    viceHandler->SetTitle(title);
+    ASSERT_EQ(rmg->openFile(chartName1, *mainHandler), true);
+    ASSERT_EQ(rmg->openFile(chartName2, *viceHandler), true);
+    viceHandler->InitIndex(true);
+    vector<RM_node> items;
+    //10 with id and 5 with null value
+    for (int i = 0; i < 10; i++) {
+        items.clear();
+        string iStr;
+        std::stringstream ss;
+        ss << i;
+        ss >> iStr;
+        RM_node person_a("elephant" + iStr);
+        RM_node id_a(i);
+        items.push_back(id_a);
+        items.push_back(person_a);
+        RM_Record record;
+        ASSERT_EQ(viceHandler->recordHandler->MakeRecord(record, items), 0);
+        viceHandler->InsertRec(record);
+    }
+    list<RM::ScanQuery> queryList;
+    vector<RM_Record> result;
+    viceHandler->GetAllRecord(result);
+    ASSERT_EQ(result.size(), 10);
+    RM::ScanQuery sQuery(0, IM::EQ, 0);
+    queryList.push_back(sQuery);
+    RM::DualScan *dualScan = new RM::DualScan(mainHandler, viceHandler);
+    dualScan->OpenScan(queryList);
+    int cnt = 0;
+    pair<RID, list<RID>> item;
+    while(!dualScan->GetNextPair(item)) {
+        RID mainID = item.first;
+        list<RID> viceList = item.second;
+        RM_Record mRecord, vRecord;
+        mainHandler->GetRec(mainID, mRecord);
+        mainHandler->recordHandler->PrintRecord(mRecord);
+        for(auto iter = viceList.begin(); iter != viceList.end(); iter ++) {
+            RID vRid = *iter;
+            viceHandler->GetRec(vRid, vRecord);
+            viceHandler->recordHandler->PrintRecord(vRecord);
+        }
+        cnt ++;
+    }
+    ASSERT_EQ(cnt, 10);
+
+    string chartName(chartName1);
+    ASSERT_EQ(viceHandler->AddForeignKey(rmg, chartName, "id", 0), 0);
+    pair<string, int> fkeyInfo;
+    ASSERT_EQ(viceHandler->GetForeignKeyInfo(0, fkeyInfo), 1);
+    ASSERT_EQ(fkeyInfo.first, chartName);
+    ASSERT_EQ(fkeyInfo.second, 0);
+    ASSERT_EQ(viceHandler->GetForeignKeyInfo(1, fkeyInfo), 0);
+
+    RM_node id1(1000), id2(0);
+    RM_node node1("test"), node2("test1");
+    items.clear();
+    items.push_back(id1);
+    items.push_back(node1);
+    RM_Record record;
+    ASSERT_EQ(viceHandler->recordHandler->MakeRecord(record, items), 0);
+    ASSERT_EQ(viceHandler->InsertRec(record), 1);
+    items.clear();
+    items.push_back(id2);
+    items.push_back(node2);
+    ASSERT_EQ(viceHandler->recordHandler->MakeRecord(record, items), 0);
+    RID rid(1,0);
+    ASSERT_EQ(viceHandler->DeleteRec(rid), 1);
+    rmg->closeFile(*mainHandler);
+    rmg->closeFile(*viceHandler);
+}
+
+TEST(PipelineTest, UpdateRecord)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *handler = new RM_FileHandle();
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
+    RM_node forTest(233), forTestStr("alexf"), forTestFloat(7.8f);
+    RM_node testResult;
+    RM_Record testRecord;
+    RID rid(1,0);
+    ASSERT_EQ(handler->GetRec(rid, testRecord), 0);
+    ASSERT_EQ(handler->recordHandler->SetColumn(0, testRecord, forTest), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(0, testRecord, testResult), 0);
+    ASSERT_EQ(forTest == testResult, true);
+    ASSERT_EQ(handler->recordHandler->SetColumn(1, testRecord, forTestFloat), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(1, testRecord, testResult), 0);
+    ASSERT_EQ(forTestFloat == testResult, true);
+    ASSERT_EQ(handler->recordHandler->SetColumn(2, testRecord, forTestStr), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(2, testRecord, testResult), 0);
+    ASSERT_EQ(forTestStr == testResult, true);
+    ASSERT_EQ(handler->UpdateRec(testRecord), 0);
+    rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+}
+
+TEST(PipelineTest, DeleteNullRecord)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *handler = new RM_FileHandle();
+    RM_FileScan *fileScan = new RM_FileScan;
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
+    RM_Record nextRec;
+    fileScan->OpenScan(*handler, 1, true);
+    while(fileScan->GetNextRec(*handler, nextRec) != 1) {
+        RID rid;
+        nextRec.GetRid(rid);
+        cout << "The rid to delete is" << rid << endl;
+        ASSERT_EQ(handler->DeleteRec(rid), 0);
+    }
+    vector<RM_Record> result;
+    handler->GetAllRecord(result);
+    ASSERT_EQ(result.size(), 10);
+    rmg->closeFile(*handler);
+    fileScan->CloseScan();
+    delete handler;
+    delete rmg;
+    delete fileScan;
 }
 
 TEST(PipelineTest, PrintAllRecord)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
     RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
     printf("-------------Column Info--------------\n");
     handler->PrintColumnInfo();
-    printf("-------------List all records --------------\n");
     handler->PrintTitle();
     vector<RM_Record> result;
     handler->GetAllRecord(result);
     for(int i = 0; i < result.size(); i ++) {
         handler->recordHandler->PrintRecord(result[i]);
     }
-    ASSERT_EQ(result.size(), 15);
-    ASSERT_EQ(result.size(), orig.size());
+    ASSERT_EQ(result.size(), 10);
     rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+}
+
+
+
+
+TEST(PipelineTest, ForeignKey)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *mainHandler = new RM_FileHandle();
+    RM_FileHandle *viceHandler = new RM_FileHandle();
+    pair<string, int> fkeyInfo;
+    ASSERT_EQ(rmg->openFile(chartName1, *mainHandler), true);
+    ASSERT_EQ(rmg->openFile(chartName2, *viceHandler), true);
+    ASSERT_EQ(viceHandler->GetForeignKeyInfo(0, fkeyInfo), 1);
+    string chartName(chartName1);
+    ASSERT_EQ(fkeyInfo.first, chartName);
+    ASSERT_EQ(fkeyInfo.second, 0);
+    ASSERT_EQ(viceHandler->GetForeignKeyInfo(1, fkeyInfo), 0);
+    ASSERT_EQ(viceHandler->PrintColumnInfo(), 0);
+    rmg->closeFile(*mainHandler);
+    rmg->closeFile(*viceHandler);
+    delete rmg;
+    delete mainHandler;
+    delete viceHandler;
+}
+
+TEST(ChartInfo, PrintChartInfo)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *mainHandler = new RM_FileHandle();
+    RM_FileHandle *viceHandler = new RM_FileHandle();
+    ASSERT_EQ(rmg->openFile(chartName1, *mainHandler), true);
+    ASSERT_EQ(rmg->openFile(chartName2, *viceHandler), true);
+    string name1(chartName1);
+    string name2(chartName2);
+
+    ASSERT_EQ(mainHandler->PrintChartInfo(name1), 0);
+    ASSERT_EQ(mainHandler->PrintColumnInfo(), 0);
+    ASSERT_EQ(viceHandler->PrintChartInfo(name2), 0);
+    ASSERT_EQ(viceHandler->PrintColumnInfo(), 0);
+
+    vector<int> colIndex;
+    colIndex.push_back(0);
+    colIndex.push_back(1);
+    mainHandler->PrintTitle(colIndex);
+    RM_FileScan *scan = new RM_FileScan();
+    scan->OpenScanAll(*mainHandler);
+    RM_Record record;
+    while(!scan->GetNextRec(*mainHandler, record)) {
+        mainHandler->recordHandler->PrintRecord(record, colIndex);
+    }
+
+    rmg->closeFile(*mainHandler);
+    rmg->closeFile(*viceHandler);
+    scan->CloseScan();
+    delete scan;
+    delete rmg;
+    delete mainHandler;
+    delete viceHandler;
 }
 
 TEST(SQLParserTest, SelectTest)
