@@ -78,9 +78,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	}
 	if(!recordHandler->isInitialized) {
 		this->SetTitle(tmpTitle);
-	    InitIndex(false);
 	}
-
 	// TODO: Add support for null key
 	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
 	int offset = HEAD_OFFSET + colNum + (RM::TITLE_LENGTH/4)*colNum;
@@ -106,9 +104,12 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	{
         mainKey.clear();
         for(int i = 0; i < mainKeyCnt; i++){
-            mainKey.push_back((uint)firstPage[offset]);
+            uint pos = (uint)firstPage[offset];
+            mainKey.push_back(pos);
+            indexHandle->SetIndex(pos, true);
             offset++;
         }
+        InitIndex(false);
 	}
 	else{
 	    offset += mainKeyCnt;
@@ -235,7 +236,7 @@ int RM_FileHandle::updateHead() {
 	offset += nullSectLength;
 	readBuf[offset] = mainKeyCnt;
 	offset ++;
-	for(int i = 0;i<mainKey.size();i++){
+	for(int i = 0;i<mainKeyCnt;i++){
 		readBuf[offset] = mainKey[i];	
 		offset++;
 	}
@@ -484,10 +485,10 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 		return 1;
 	}
 
-	// if(CheckForMainKey(pData)) {
-	// 	printf("Item with same main key already existed\n");
-	// 	return 1;
-	// }
+	if(CheckForMainKey(pData)) {
+		printf("Item with same main key already existed\n");
+		return 1;
+	}
 
 	if(CheckForForeignKey(pData, IM::IndexAction::INSERT)) {
         return 1;
