@@ -11,7 +11,7 @@ enum CompOp{
     GT, LS, GEQ, LEQ, EQ, NEQ, ERROR
 };
 
-
-
 }
+
+#define ALIGN_WIDTH 16
 #endif //CONFIG_H

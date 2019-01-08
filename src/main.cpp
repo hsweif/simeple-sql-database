@@ -18,88 +18,7 @@ unsigned char h[61];
 
 using namespace std;
 
-void NewTest(bool createNewDB, char *dbName)
-{
-	string mode = createNewDB ? "Create new database" : "Use currently data base";
-	cout << mode << endl;
-	if (createNewDB) {
-		CreateDB(dbName);
-	}
-	DIR *dir = UseDB(dbName);
-	if (dir == NULL) {
-		cout << "Error in opening database." << endl;
-		return;
-	}
-	RM_Manager *rmg = new RM_Manager(dbName);
-	int colNum = 2;
 
-	RM_FileHandle *handler = new RM_FileHandle();
-	if (createNewDB)
-	{
-		handler->recordHandler = new RM::RecordHandler(colNum);
-		handler->recordHandler->SetItemAttribute(0, 8, RM::CHAR, false);
-		handler->recordHandler->SetItemAttribute(1, 1, RM::INT, true);
-		int sz = handler->recordHandler->GetRecordSize();
-		vector<string> title;
-		title.push_back("name");
-		title.push_back("id");
-		handler->SetTitle(title);
-		handler->InitIndex(true);
-        rmg->createFile(dbName, sz, colNum);
-	}
-
-	string test = rmg->openFile(dbName, *handler) ? "successfully opened" : "fail to open";
-	if(createNewDB) {
-		handler->InitIndex(true);
-	}
-	cout << test << endl;
-
-	// 在init后面才不会被覆盖
-	// handler->SetMainKey(1);
-
-	// HINT: SetTitle 的同时会生成索引，必须在openFile后（handler需要先init）
-	if(createNewDB) {
-        vector<RM_node> items;
-        for(int i = 0; i < 50; i ++) {
-            items.clear();
-            RM_node person_a("person_test");
-            RM_node id_a(i);
-            items.push_back(person_a);
-            items.push_back(id_a);
-            RM_Record record;
-            if(handler->recordHandler->MakeRecord(record, items)) {
-                cout << "Error to make record." << endl;
-            }
-            handler->InsertRec(record);
-        }
-
-	}
-
-	RM_FileScan *fileScan = new RM_FileScan;
-	RM_Record nextRec;
-
-	printf("-------------List all records with id < 20--------------\n");
-	fileScan->OpenScan(*handler, 1, IM::LS, "20");
-	while(!fileScan->GetNextRec(*handler, nextRec)) {
-		handler->recordHandler->PrintRecord(nextRec);
-	}
-	fileScan->CloseScan();
-	printf("-------------List all records with id > 30--------------\n");
-	fileScan->OpenScan(*handler, 1, IM::GT, "30");
-	while(!fileScan->GetNextRec(*handler, nextRec)) {
-		handler->recordHandler->PrintRecord(nextRec);
-	}
-	fileScan->CloseScan();
-
-	printf("-------------List all records in the file--------------\n");
-	handler->PrintTitle();
-	vector<RM_Record> result;
-	handler->GetAllRecord(result);
-	for (int i = 0; i < result.size(); i ++) {
-		handler->recordHandler->PrintRecord(result[i]);
-	}
-	rmg->closeFile(*handler);
-}
 /*
 void test1(){
     RM_Manager *rmg = new RM_Manager("test");
@@ -146,50 +65,11 @@ void testBitmap() {
 	b->show();
 }
 
-
-int SQLParserTest()
-{
-	string query = "SELECT * FROM test WHERE a+b<=3;";
-	// parse a given query
-	hsql::SQLParserResult result;
-	hsql::SQLParser::parse(query, &result);
-
-	// check whether the parsing was successful
-
-	if (result.isValid()) {
-		printf("Parsed successfully!\n");
-		printf("Number of statements: %lu\n", result.size());
-
-		for (auto i = 0u; i < result.size(); ++i) {
-			// Print a statement summary.
-			hsql::printStatementInfo(result.getStatement(i));
-		}
-		return 0;
-	} else {
-		fprintf(stderr, "Given string is not a valid SQL query.\n");
-		fprintf(stderr, "%s (L%d:%d)\n",
-		        result.errorMsg(),
-		        result.errorLine(),
-		        result.errorColumn());
-		return -1;
-	}
-}
-
-
 int main() {
 #ifdef __DARWIN_UNIX03
 	printf("It is on Unix now.\n");
 #endif
 	MyBitMap::initConst();
-	// ParseInput("../testcase/test1.txt");
 	ParseInput("../testcase/test1.txt");
-	/*
-    int ret = SQLParserTest();
-    printf("SQLTest result: %d\n", ret);
-    hsql::SQLParserResult result;
-	char *dbName = "NewTesting";
-	NewTest(true, dbName);
-    NewTest(false, dbName);
-    */
 	return 0;
 }

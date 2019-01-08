@@ -653,10 +653,20 @@ int RM_FileHandle::InitIndex(bool forceEmpty)
 void RM_FileHandle::PrintTitle()
 {
 	int sz = title.size();
+	RM::ItemType *type = recordHandler->GetItemType();
+	int *length = recordHandler->GetItemLength();
+	string splitLine = "";
 	for(int i = 0; i < sz; i ++) {
-		cout << title[i] << " | ";
+	    int width = (type[i] == RM::CHAR && length[i] > ALIGN_WIDTH) ? length[i] : ALIGN_WIDTH;
+	    for(int k = 0; k < width; k ++) {
+	        splitLine += "-";
+        }
+		cout << setiosflags(ios::left) << setw(width) << title[i];
+		cout << "|";
+        splitLine += "+";
 	}
 	cout << endl;
+	cout << splitLine << endl;
 }
 
 int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)

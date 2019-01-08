@@ -130,7 +130,7 @@ TEST(PipelineTest, Insert) {
         ss << i;
         ss >> iStr;
         float f = (float)i + 0.5f;
-        RM_node person_a("person" + iStr);
+        RM_node person_a("NAperson" + iStr);
         RM_node id_a(i);
         RM_node test_f(f);
         items.push_back(id_a);
@@ -140,7 +140,6 @@ TEST(PipelineTest, Insert) {
         ASSERT_EQ(handler->recordHandler->MakeRecord(record, items), 0);
         handler->recordHandler->PrintRecord(record);
         handler->InsertRec(record);
-        testRecord = record;
     }
 
     for (int i = 10; i < 15; i++) {
@@ -149,16 +148,14 @@ TEST(PipelineTest, Insert) {
         std::stringstream ss;
         ss << i;
         ss >> iStr;
-        RM_node person_a("N_person" + iStr);
+        RM_node person_a("Nperson" + iStr);
         RM_node id_a(i);
         RM_node null_f;
         items.push_back(id_a);
         items.push_back(null_f);
         items.push_back(person_a);
         RM_Record record;
-        if (handler->recordHandler->MakeRecord(record, items)) {
-            cout << "Error to make record." << endl;
-        }
+        ASSERT_EQ(handler->recordHandler->MakeRecord(record, items), 0);
         handler->InsertRec(record);
         handler->recordHandler->PrintRecord(record);
     }
@@ -375,7 +372,6 @@ TEST(PipelineTest, ChartConnect)
         list<RID> viceList = item.second;
         RM_Record mRecord, vRecord;
         mainHandler->GetRec(mainID, mRecord);
-        printf("---------------------------\n");
         mainHandler->recordHandler->PrintRecord(mRecord);
         for(auto iter = viceList.begin(); iter != viceList.end(); iter ++) {
             RID vRid = *iter;
@@ -431,13 +427,7 @@ TEST(PipelineTest, UpdateRecord)
     ASSERT_EQ(handler->recordHandler->SetColumn(2, testRecord, forTestStr), 0);
     ASSERT_EQ(handler->recordHandler->GetColumn(2, testRecord, testResult), 0);
     ASSERT_EQ(forTestStr == testResult, true);
-    testing::internal::CaptureStdout();
-    handler->recordHandler->PrintRecord(testRecord);
-    string output = testing::internal::GetCapturedStdout();
-    string expectedRecord = "233|7.8|alexf\n";
     ASSERT_EQ(handler->UpdateRec(testRecord), 0);
-    // ASSERT_EQ(handler->InsertRec(testRecord), 0);
-    ASSERT_EQ(expectedRecord, output);
     rmg->closeFile(*handler);
     delete handler;
     delete rmg;
@@ -480,7 +470,6 @@ TEST(PipelineTest, PrintAllRecord)
     vector<RM_Record> result;
     handler->GetAllRecord(result);
     for(int i = 0; i < result.size(); i ++) {
-        printf("---------------------------\n");
         ASSERT_EQ(0, handler->PrintAttribute("id", result[i]));
         cout << "|";
         ASSERT_EQ(0, handler->PrintAttribute("test_float", result[i]));
