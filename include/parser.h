@@ -481,7 +481,56 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					}
 				}
 				else{
-
+					RM_node *r1;
+					RM_node *r2;
+					if(upExpr.r1Pos < 0){//x=4+z or x=4+3
+						switch(upExpr.r->expr->type){
+							case hsql::ExprType::kExprLiteralFloat:
+								r1 = new RM_node((float)(upExpr.r->expr->fval));
+								break;
+							case hsql::ExprType::kExprLiteralString:
+								r1 = new RM_node((string)(upExpr.r->expr->name));
+								break;
+							case hsql::ExprType::kExprLiteralInt:
+								r1 = new RM_node((int)(upExpr.r->expr->ival));
+								break;
+							default:
+								printf("update setExpr wrong\n");
+								fileScan->CloseScan();
+								rmg->closeFile(*handler);
+								delete whereExprs;		
+								return -1;														 
+						}
+					}
+					else{//x=z+4 or x=z+y
+						r1 = new RM_node();
+						handler->recordHandler->GetColumn(upExpr.r1Pos,nextRec,*r1);
+					}
+					if(upExpr.r2Pos < 0){//x=z+4 or x=4+3
+						switch(upExpr.r->expr2->type){
+							case hsql::ExprType::kExprLiteralFloat:
+								r2 = new RM_node((float)(upExpr.r->expr2->fval));
+								break;
+							case hsql::ExprType::kExprLiteralString:
+								r2 = new RM_node(upExpr.r->expr2->name);
+								break;
+							case hsql::ExprType::kExprLiteralInt:
+								r2 = new RM_node((int)(upExpr.r->expr2->ival));
+								break;
+							default:
+								printf("update setExpr wrong\n");
+								fileScan->CloseScan();
+								rmg->closeFile(*handler);
+								delete whereExprs;
+								delete r1;		
+								return -1;														 
+						}
+					}
+					else{//x=z+4 or x=z+y
+						r2 = new RM_node();
+						handler->recordHandler->GetColumn(upExpr.r2Pos,nextRec,*r2);
+					}
+					delete r1,r2;
 				}
 			}
 			records.push_back(nextRec);	
