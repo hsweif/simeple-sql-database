@@ -218,8 +218,9 @@ int bplus_tree::insert(const key_t& key, value_t value)
 
     // check if we have the same key
     // HINT: We need to support multiple keys, modified by fxw
-    // if (binary_search(begin(leaf), end(leaf), key))
+    // if (binary_search(begin(leaf), end(leaf), key)) {
     //     return 1;
+    // }
 
     if (leaf.n == meta.order) {
         // split when full

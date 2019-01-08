@@ -229,6 +229,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		int colNum = col.size();
 		RM_FileHandle *handler = new RM_FileHandle();
 		handler->recordHandler = new RM::RecordHandler(colNum);
+		handler->indexHandle = new IM::IndexHandle(colNum);
 		RM::ItemType temp;
 		int ret, l;
 		for(int i = 0;i < colNum;i++){
@@ -269,7 +270,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			printf("current path is not DBPath\n");
 			return -1;
 		}
-		RM_FileHandle *handler = new RM_FileHandle(false);
+		RM_FileHandle *handler = new RM_FileHandle();
         rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
 		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];
         vector<RM_node> items;

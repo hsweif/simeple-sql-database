@@ -3,24 +3,22 @@
 
 namespace IM{
 
-IndexHandle::IndexHandle()
+IndexHandle::IndexHandle(int cNum)
 {
     indexNum = 0;
-    colNum = 0;
+    colNum = cNum;
     indexPath = "";
-}
-
-IndexHandle::IndexHandle(vector<string> tt, string idxPath)
-{
-    IndexHandle();
-    indexPath = idxPath;
-    title = tt;
-    colNum = title.size();
     for(int i = 0; i < colNum; i ++) {
         isIndex.push_back(false);
     }
-    // Temporarily
-    // SetIndex(0, true);
+}
+
+int IndexHandle::SetIndexHandle(vector<string> tt, string idxPath)
+{
+    indexPath = idxPath;
+    title = tt;
+    colNum = title.size();
+    return 0;
 }
 
 int IndexHandle::SetIndex(int pos, bool value)
@@ -35,7 +33,7 @@ int IndexHandle::SetIndex(int pos, bool value)
 int IndexHandle::CreateIndex(char *indexName, int pos, bool forceEmpty)
 {
     string indexStr(indexName);
-    if(indexStr == "") {
+    if(indexStr == "" || !isIndex[pos]) {
         return 1;
     }
     int cnt = 0;

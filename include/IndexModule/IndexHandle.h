@@ -21,7 +21,7 @@ using namespace std;
 namespace IM{
 #define SMALLER 0
 #define LARGER 1
-#define MAX_RESULT 1000
+#define MAX_RESULT 500000
 
 enum IndexAction{
     UPDATE, DELETE, INSERT
@@ -44,18 +44,19 @@ class IndexHandle
 private:
     list<node> index;
     vector<string> title;
-    vector<bool> isIndex;
     int indexNum;
     int colNum;
     string indexPath;
+    vector<bool> isIndex;
 public:
-    IndexHandle();
-    IndexHandle(vector<string> tt, string idxPath);
+    IndexHandle(int cNum);
+    int SetIndexHandle(vector<string> tt, string idxPath);
     int CreateIndex(char *indexName, int pos, bool forceEmpty);
     int DeleteIndex(char *indexName, int pos);
     int IndexAction(IndexAction actionType, RM_Record &record, RM::RecordHandler *recordHandler);
     int SetIndex(int pos, bool value = true);
     int SearchRange(list<RID> &result, char* left, char* right, CompOp comOP, int col);
+    bool IsIndex(int pos) {return isIndex[pos];}
     bool Existed(int pos, char *key);
 };
 

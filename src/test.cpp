@@ -82,6 +82,7 @@ TEST(PipelineTest, Create) {
     RM_FileHandle *handler = new RM_FileHandle(false);
     if (createNewDB) {
         handler->recordHandler = new RM::RecordHandler(colNum);
+        handler->indexHandle = new IM::IndexHandle(colNum);
         handler->recordHandler->SetItemAttribute(0, 1, RM::INT, false);
         handler->recordHandler->SetItemAttribute(1, 1, RM::FLOAT, true);
         handler->recordHandler->SetItemAttribute(2, 25, RM::CHAR, false);
@@ -119,7 +120,7 @@ TEST(PipelineTest, Insert) {
     //10 with id and 5 with null value
     printf("-------------These will be inserted-------------\n");
     RM_Record testRecord;
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 10; i++) {
         items.clear();
         string iStr;
         std::stringstream ss;

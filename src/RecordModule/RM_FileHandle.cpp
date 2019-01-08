@@ -42,6 +42,9 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	}
 	recordHandler->SetRecordSize(recordSize);
 
+	if(isInitialized) {
+	    this->indexHandle = new IM::IndexHandle(colNum);
+    }
 
 	vector<string> tmpTitle;
 	/**
@@ -323,6 +326,7 @@ int RM_FileHandle::SetMainKey(std::vector<int> mainKeys)
 			return 1;
 		}
 		mainKey.push_back((uint)key);
+		indexHandle->SetIndex(key, true);
 	}
 	mainKeyCnt = (int)mainKey.size();
 	return 0;
@@ -643,7 +647,7 @@ int RM_FileHandle::InitIndex(bool forceEmpty)
 	if(title.empty() || colNum <= 0) {
 		return 1;
 	}
-	this->indexHandle = new IM::IndexHandle(title, this->indexPath);
+	this->indexHandle->SetIndexHandle(title, this->indexPath);
 	for(int i = 0; i < title.size(); i ++) {
 		this->indexHandle->CreateIndex((char*)title[i].data(), i, forceEmpty);
 	}
