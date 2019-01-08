@@ -933,35 +933,38 @@ int executeCommand(const hsql::SQLStatement* stmt){
 	}
 	return 0;
 }
+void ParseCommand(string command)
+{
+	hsql::SQLParserResult result;
+    hsql::SQLParser::parse(command, &result);
+    if(result.isValid()){
+        // printf("Parsed successfully!\n");
+        // printf("Number of statements: %lu\n", result.size());
+        for (auto i = 0u; i < result.size(); ++i) {
+            //hsql::printStatementInfo(result.getStatement(i));
+            executeCommand(result.getStatement(i));
+        }
+    }
+    else {
+        int ret = ParseDBCommand(command);
+        if(ret < 0)
+        {
+            fprintf(stderr, "Given string is not a valid SQL query.\n");
+            fprintf(stderr, "%s (L%d:%d)\n",
+                    result.errorMsg(),
+                    result.errorLine(),
+                    result.errorColumn());
+        }
+    }
+}
 void ParseInput(string filePath){
 	string command;
 	printf(">");
 	ifstream fin(filePath);
 	getline(fin,command);
 	while(command != "exit"){
-		hsql::SQLParserResult result;
-		hsql::SQLParser::parse(command, &result);		
-		if(result.isValid()){
-			printf("Parsed successfully!\n");
-			printf("Number of statements: %lu\n", result.size());
-
-			for (auto i = 0u; i < result.size(); ++i) {
-				// Print a statement summary.
-				//hsql::printStatementInfo(result.getStatement(i));
-				executeCommand(result.getStatement(i));
-			}			
-		} else {
-			int ret = ParseDBCommand(command);
-			if(ret < 0){
-				fprintf(stderr, "Given string is not a valid SQL query.\n");
-				fprintf(stderr, "%s (L%d:%d)\n",
-						result.errorMsg(),
-						result.errorLine(),
-						result.errorColumn());
-			}
-			//return;
-		}
-		printf((currentDB+'>').c_str());
+		// printf((currentDB+'>').c_str());
+		ParseCommand(command);
 		if(!getline(fin,command))
 			break;
 	}

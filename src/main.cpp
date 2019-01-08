@@ -24,10 +24,19 @@ int main(int argc, char* argv[])
 	string DBPath = "../TestDataSet/";
 	if(argc != 2)
 	{
-		ParseInput(DBPath+"default.sql");
-		printf("Usage: ./main test.sql\n");
+		printf("Usage:\n");
+		printf("    ./main test.sql (read from files)\n");
+		printf("    ./main (for interaction)\n");
 		printf("    Please put your test file under {REPO_DIR}/TestDataSet/\n");
-		printf("    Running default.sql by default\n");
+		string command;
+		printf("Please input your SQL command.\n");
+        getline(cin,command);
+        while(command != "exit")
+        {
+            // printf((currentDB+'>').c_str());
+            ParseCommand(command);
+			getline(cin,command);
+        }
 		return 1;
 	}
 	ParseInput(DBPath+argv[1]);
