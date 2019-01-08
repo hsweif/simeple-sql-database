@@ -698,10 +698,10 @@ int executeCommand(const hsql::SQLStatement* stmt){
 	}
 	return 0;
 }
-void ParseInput(){
+void ParseInput(string filePath){
 	string command;
 	printf(">");
-	ifstream fin("../testcase/test1.txt");
+	ifstream fin(filePath);
 	getline(fin,command);
 	while(command != "exit"){
 		hsql::SQLParserResult result;

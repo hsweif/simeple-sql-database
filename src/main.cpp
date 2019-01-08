@@ -181,7 +181,8 @@ int main() {
 	printf("It is on Unix now.\n");
 #endif
 	MyBitMap::initConst();
-	ParseInput();
+	// ParseInput("../testcase/test1.txt");
+	ParseInput("../testcase/test_update.txt");
 	/*
     int ret = SQLParserTest();
     printf("SQLTest result: %d\n", ret);
