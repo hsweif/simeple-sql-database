@@ -7,7 +7,7 @@
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include "CommandModule/dataBaseManager.h"
-#include "parser.h"
+#include "parser.hpp"
 #include <vector>
 #include <string>
 
@@ -22,6 +22,6 @@ int main()
 {
 	MyBitMap::initConst();
 	// ParseInput("../testcase/test_update.txt");
-	ParseInput("../testcase/customer.txt");
+	ParseInput("../testcase/customer.sql");
 	return 0;
 }

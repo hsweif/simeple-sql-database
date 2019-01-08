@@ -262,12 +262,14 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		rmg->closeFile(*handler);
 		//delete handler;
 	}
-	else if(stmt->isType(hsql::kStmtInsert)){
-		if(rmg == NULL){
+	else if(stmt->isType(hsql::kStmtInsert))
+	{
+		if(rmg == NULL)
+		{
 			printf("current path is not DBPath\n");
 			return -1;
 		}
-		RM_FileHandle *handler = new RM_FileHandle();
+		RM_FileHandle *handler = new RM_FileHandle(false);
         rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
 		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];
         vector<RM_node> items;
@@ -394,7 +396,6 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			}
 			updatePos.push_back(upPos);			
 		}*/	
-		//openScan
 		for(hsql::Expr *expr:*whereExprs){
 			int colPos;
 			int ret = handler->GetAttrIndex(expr->expr->name,colPos);
