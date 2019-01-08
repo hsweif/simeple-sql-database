@@ -26,13 +26,13 @@ private:
     bool *allowNull;
     int nullSectLength; // 记录NULL信息的区段占据了多少个uint
     int recordSize; // 一条record总共占多少uint
-    string GetSplitLine(int i);
 public:
     int itemNum;
     bool isInitialized; // 为真时表示在FileHandle的init前就已经设定好值了
 
     RecordHandler(int length);
     ~RecordHandler();
+    string GetSplitLine(int i);
     bool isValidChar(uint c);
     int PrintRecord(RM_Record &record);
     int PrintRecord(RM_Record &record, vector<int> colIndex);

@@ -655,18 +655,39 @@ void RM_FileHandle::PrintTitle()
 	int sz = title.size();
 	RM::ItemType *type = recordHandler->GetItemType();
 	int *length = recordHandler->GetItemLength();
-	string splitLine = "";
+	string splitLine = "+";
+	for(int i = 0; i < sz; i ++) {
+	    splitLine += recordHandler->GetSplitLine(i);
+    }
+    cout << splitLine << endl;
+	cout << "|";
 	for(int i = 0; i < sz; i ++) {
 	    int width = (type[i] == RM::CHAR && length[i] > ALIGN_WIDTH) ? length[i] : ALIGN_WIDTH;
-	    for(int k = 0; k < width; k ++) {
-	        splitLine += "-";
-        }
 		cout << setiosflags(ios::left) << setw(width) << title[i];
 		cout << "|";
-        splitLine += "+";
 	}
 	cout << endl;
 	cout << splitLine << endl;
+}
+
+void RM_FileHandle::PrintTitle(vector<int> colIndex)
+{
+    string splitLine = "+";
+    for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++) {
+        splitLine += recordHandler->GetSplitLine(*iter);
+    }
+    cout << splitLine << endl;
+    cout << "|";
+    RM::ItemType *type = recordHandler->GetItemType();
+    int *length = recordHandler->GetItemLength();
+    for(auto iter = colIndex.begin(); iter != colIndex.end(); iter ++) {
+        int i = *iter;
+        int width = (type[i] == RM::CHAR && length[i] > ALIGN_WIDTH) ? length[i] : ALIGN_WIDTH;
+        cout << setiosflags(ios::left) << setw(width) << title[i];
+        cout << "|";
+    }
+    cout << endl;
+    cout << splitLine << endl;
 }
 
 int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)
@@ -862,6 +883,32 @@ int RM_FileHandle::GetForeignKeyInfo(int pos, pair<string, int> &info)
 		}
 	}
 	return 0;
+}
+
+int RM_FileHandle::PrintChartInfo(string chartName)
+{
+    int width = 25;
+    stringstream ss;
+    string splitLine = "+";
+    for(int i = 0; i <  2*width; i ++) {
+        if(i != width-1) {
+            splitLine += "-";
+        }
+        else{
+            splitLine += "+";
+        }
+    }
+    splitLine += "+";
+    cout << splitLine << endl;
+    cout << setw(width) << left << "|Name " << "|" << right << setw(width) << chartName << "|" << endl;
+    cout << splitLine << endl;
+    cout << setw(width) << left << "|Record Number " << "|" << right << setw(width) << recordSum << "|" << endl;
+    cout << splitLine << endl;
+    cout << setw(width) << left << "|Page Number " << "|" << right << setw(width) << pageCnt << "|" << endl;
+    cout << splitLine << endl;
+    cout << setw(width) << left << "|Record Size(Byte) " << "|" << right << setw(width) << 4*recordSize << "|" << endl;
+    cout << splitLine << endl;
+    return 0;
 }
 
 
