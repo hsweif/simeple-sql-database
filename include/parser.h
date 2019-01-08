@@ -144,6 +144,27 @@ IM::CompOp transOp(hsql::OperatorType op){
 	}
 	return IM::CompOp::ERROR;
 }
+IM::CompOp reverseOp(IM::CompOp op){
+	if(op == IM::CompOp::EQ){
+		return IM::CompOp::EQ;
+	}
+	else if(op == IM::CompOp::NEQ){
+		return IM::CompOp::NEQ;
+	}
+	else if(op == IM::CompOp::GT){
+		return IM::CompOp::LS;
+	}
+	else if(op == IM::CompOp::LS){
+		return IM::CompOp::GT;
+	}
+	else if(op == IM::CompOp::LEQ){
+		return IM::CompOp::GEQ;
+	}
+	else if(op == IM::CompOp::GEQ){
+		return IM::CompOp::LEQ;
+	}
+	return IM::CompOp::ERROR;	
+}
 bool checkOp(hsql::OperatorType op){
 	if(op == hsql::OperatorType::kOpNot
 	||op == hsql::OperatorType::kOpIsNull
@@ -689,54 +710,130 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				cout<<(*whereExprs)[i]->opType<<endl;
 			}
 		}
-		if(whereAll){
-			if(selectAll){
-				printf("selectAll!!\n");
-				RM_FileScan* fileScan = new RM_FileScan;
-				RM_FileHandle *handler = new RM_FileHandle();
-				rmg->openFile(tables[0].c_str(),*handler);
-				fileScan->OpenScanAll(*handler);
-				RM_Record mRec;
-				while(fileScan->GetNextRec(*handler,mRec) != 1){
-					handler->recordHandler->PrintRecord(mRec);
+		if(tables.size() == 1){
+			if(whereAll){
+				if(selectAll){
+					printf("selectAll!!\n");
+					RM_FileScan* fileScan = new RM_FileScan;
+					RM_FileHandle *handler = new RM_FileHandle();
+					rmg->openFile(tables[0].c_str(),*handler);
+					fileScan->OpenScanAll(*handler);
+					RM_Record mRec;
+					while(fileScan->GetNextRec(*handler,mRec) != 1){
+						handler->recordHandler->PrintRecord(mRec);
+					}
+					fileScan->CloseScan();
 				}
-				fileScan->CloseScan();
-			}
-			else{//not select all
+				else{//not select all
 
+				}
 			}
-		}
-		else{
-			int whereSize = whereExprs->size();
-			RM_FileScan* fileScan = new RM_FileScan;
-			RM_FileHandle *handler = new RM_FileHandle();
-			rmg->openFile(tables[0].c_str(),*handler);
-			for(hsql::Expr *expr:*whereExprs){
-				int colPos;
-				int ret = handler->GetAttrIndex(expr->expr->name,colPos);
-				if(ret){
-					printf("attr not exist\n");
-					return -1;
-				}
-				printf("%s is col:%d\n", expr->expr->name,colPos);
-				if(expr->opType == hsql::OperatorType::kOpNot){
-					fileScan->OpenScan(*handler,colPos,false);
-				}
-				else if(expr->opType == hsql::OperatorType::kOpIsNull){
-					fileScan->OpenScan(*handler,colPos,true);
+			else{
+				if(selectAll){
+					int whereSize = whereExprs->size();
+					RM_FileScan* fileScan = new RM_FileScan;
+					RM_FileHandle *handler = new RM_FileHandle();
+					rmg->openFile(tables[0].c_str(),*handler);
+					for(hsql::Expr *expr:*whereExprs){
+						int colPos;
+						int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+						if(ret){
+							printf("attr not exist\n");
+							rmg->closeFile(*handler);
+							delete whereExprs;
+							return -1;
+						}
+						printf("%s is col:%d\n", expr->expr->name,colPos);
+						if(expr->opType == hsql::OperatorType::kOpNot){
+							fileScan->OpenScan(*handler,colPos,false);
+						}
+						else if(expr->opType == hsql::OperatorType::kOpIsNull){
+							fileScan->OpenScan(*handler,colPos,true);
+						}
+						else{
+							printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
+							fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
+						}
+					}
+					RM_Record nextRec;
+					while(!fileScan->GetNextRec(*handler, nextRec)){
+						handler->recordHandler->PrintRecord(nextRec);
+					}
+					fileScan->CloseScan();	
+					rmg->closeFile(*handler);
 				}
 				else{
-					printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
-					fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
+
+				}
+			}		
+		}
+		else{
+		    RM_FileHandle *mainHandler = new RM_FileHandle();
+		    RM_FileHandle *viceHandler = new RM_FileHandle();	
+		    rmg->openFile(tables[0].c_str(),*mainHandler);	
+		    rmg->openFile(tables[1].c_str(),*viceHandler);	
+			if(whereAll){
+				if(selectAll){
+
+				}
+				else{
+
 				}
 			}
-			RM_Record nextRec;
-			while(!fileScan->GetNextRec(*handler, nextRec)){
-				handler->recordHandler->PrintRecord(nextRec);
+			else{
+				if(selectAll){
+
+				}
+				else{//select * from test1,test2 where test1.x==test2.x
+					list<RM::ScanQuery> queryList;
+					std::vector<RM_Record> result;
+					viceHandler->GetAllRecord(result);
+					hsql::Expr* l;
+					hsql::Expr* r;
+					IM::CompOp compOp;
+					for(hsql::Expr *expr:*whereExprs){
+						l = expr->expr;
+						r = expr->expr2;
+						compOp = transOp(expr->opType);
+						int lPos;
+						int rPos;
+						//printf("%s %s\n", l->table,r->table);
+						if(tables[0].compare(l->table) == 0 && tables[1].compare(r->table) == 0){
+							mainHandler->GetAttrIndex((string)(l->name),lPos);
+							viceHandler->GetAttrIndex((string)(r->name),rPos);
+							RM::ScanQuery sQuery(lPos,compOp,rPos);
+							queryList.push_back(sQuery);
+						}
+						else{
+							printf("this is what we didn't consider...\n");
+							rmg->closeFile(*mainHandler);
+							rmg->closeFile(*viceHandler);
+							delete whereExprs;
+						}
+					}
+					RM::DualScan *dualScan = new RM::DualScan(mainHandler, viceHandler);
+					dualScan->OpenScan(queryList);
+					pair<RID, list<RID>> item;
+				    while(!dualScan->GetNextPair(item)) {
+				        RID mainID = item.first;
+				        list<RID> viceList = item.second;
+				        RM_Record mRecord, vRecord;
+				        mainHandler->GetRec(mainID, mRecord);
+				        printf("---------------------------\n");
+				        mainHandler->recordHandler->PrintRecord(mRecord);
+				        for(auto iter = viceList.begin(); iter != viceList.end(); iter ++) {
+				            RID vRid = *iter;
+				            viceHandler->GetRec(vRid, vRecord);
+				            viceHandler->recordHandler->PrintRecord(vRecord);
+				        }
+				    }
+				    delete dualScan;					
+				}
 			}
-			fileScan->CloseScan();	
-			rmg->closeFile(*handler);		
+			rmg->closeFile(*mainHandler);
+			rmg->closeFile(*viceHandler);
 		}
+
 		delete whereExprs;
 	}
 	return 0;
