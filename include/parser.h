@@ -705,57 +705,70 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		else{
 			int ret = getExpr(expr,whereExprs);
 			printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
-			int whereExprsize = whereExprs->size();
-			for(int i = 0;i < whereExprsize;i++){
-				cout<<(*whereExprs)[i]->opType<<endl;
-			}
 		}
 		if(tables.size() == 1){
 			if(whereAll){
+				RM_FileScan* fileScan = new RM_FileScan;
+				RM_FileHandle *handler = new RM_FileHandle();
+				rmg->openFile(tables[0].c_str(),*handler);
+				fileScan->OpenScanAll(*handler);
+				RM_Record mRec;
 				if(selectAll){
 					printf("selectAll!!\n");
-					RM_FileScan* fileScan = new RM_FileScan;
-					RM_FileHandle *handler = new RM_FileHandle();
-					rmg->openFile(tables[0].c_str(),*handler);
-					fileScan->OpenScanAll(*handler);
-					RM_Record mRec;
+					handler->PrintTitle();
 					while(fileScan->GetNextRec(*handler,mRec) != 1){
 						handler->recordHandler->PrintRecord(mRec);
 					}
-					fileScan->CloseScan();
 				}
 				else{//not select all
-
-				}
-			}
-			else{
-				if(selectAll){
-					int whereSize = whereExprs->size();
-					RM_FileScan* fileScan = new RM_FileScan;
-					RM_FileHandle *handler = new RM_FileHandle();
-					rmg->openFile(tables[0].c_str(),*handler);
-					for(hsql::Expr *expr:*whereExprs){
-						int colPos;
-						int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+					std::vector<int> selectColPos;
+					for(hsql::Expr* expr:selectList){
+						int pos;
+						int ret = handler->GetAttrIndex(expr->name,pos);
 						if(ret){
 							printf("attr not exist\n");
+							fileScan->CloseScan();
 							rmg->closeFile(*handler);
 							delete whereExprs;
-							return -1;
+							return -1;							
 						}
-						printf("%s is col:%d\n", expr->expr->name,colPos);
-						if(expr->opType == hsql::OperatorType::kOpNot){
-							fileScan->OpenScan(*handler,colPos,false);
-						}
-						else if(expr->opType == hsql::OperatorType::kOpIsNull){
-							fileScan->OpenScan(*handler,colPos,true);
-						}
-						else{
-							printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
-							fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
-						}
+						selectColPos.push_back(pos);
 					}
-					RM_Record nextRec;
+					while(fileScan->GetNextRec(*handler,mRec) != 1){
+						handler->recordHandler->PrintRecord(mRec,selectColPos);
+					}										
+				}
+				fileScan->CloseScan();
+			}
+			else{
+				int whereSize = whereExprs->size();
+				RM_FileScan* fileScan = new RM_FileScan;
+				RM_FileHandle *handler = new RM_FileHandle();
+				rmg->openFile(tables[0].c_str(),*handler);
+				for(hsql::Expr *expr:*whereExprs){
+					int colPos;
+					int ret = handler->GetAttrIndex(expr->expr->name,colPos);
+					if(ret){
+						printf("attr not exist\n");
+						rmg->closeFile(*handler);
+						delete whereExprs;
+						return -1;
+					}
+					printf("%s is col:%d\n", expr->expr->name,colPos);
+					if(expr->opType == hsql::OperatorType::kOpNot){
+						fileScan->OpenScan(*handler,colPos,false);
+					}
+					else if(expr->opType == hsql::OperatorType::kOpIsNull){
+						fileScan->OpenScan(*handler,colPos,true);
+					}
+					else{
+						printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
+						fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
+					}
+				}
+				RM_Record nextRec;
+				if(selectAll){
+					handler->PrintTitle();
 					while(!fileScan->GetNextRec(*handler, nextRec)){
 						handler->recordHandler->PrintRecord(nextRec);
 					}
@@ -763,57 +776,69 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					rmg->closeFile(*handler);
 				}
 				else{
-
+					std::vector<int> selectColPos;
+					for(hsql::Expr* expr:selectList){
+						int pos;
+						int ret = handler->GetAttrIndex(expr->name,pos);
+						if(ret){
+							printf("attr not exist\n");
+							fileScan->CloseScan();
+							rmg->closeFile(*handler);
+							delete whereExprs;
+							return -1;							
+						}
+						selectColPos.push_back(pos);
+					}
+					while(!fileScan->GetNextRec(*handler, nextRec)){
+						handler->recordHandler->PrintRecord(nextRec,selectColPos);
+					}
+					fileScan->CloseScan();	
+					rmg->closeFile(*handler);					
 				}
 			}		
 		}
-		else{
+		else{//multi table
 		    RM_FileHandle *mainHandler = new RM_FileHandle();
 		    RM_FileHandle *viceHandler = new RM_FileHandle();	
 		    rmg->openFile(tables[0].c_str(),*mainHandler);	
 		    rmg->openFile(tables[1].c_str(),*viceHandler);	
 			if(whereAll){
-				if(selectAll){
-
-				}
-				else{
-
-				}
+				printf("this is what we didn't consider\n");
+				rmg->closeFile(*mainHandler);
+				rmg->closeFile(*viceHandler);
+				delete whereExprs;
 			}
-			else{
-				if(selectAll){
-
-				}
-				else{//select * from test1,test2 where test1.x==test2.x
-					list<RM::ScanQuery> queryList;
-					std::vector<RM_Record> result;
-					viceHandler->GetAllRecord(result);
-					hsql::Expr* l;
-					hsql::Expr* r;
-					IM::CompOp compOp;
-					for(hsql::Expr *expr:*whereExprs){
-						l = expr->expr;
-						r = expr->expr2;
-						compOp = transOp(expr->opType);
-						int lPos;
-						int rPos;
-						//printf("%s %s\n", l->table,r->table);
-						if(tables[0].compare(l->table) == 0 && tables[1].compare(r->table) == 0){
-							mainHandler->GetAttrIndex((string)(l->name),lPos);
-							viceHandler->GetAttrIndex((string)(r->name),rPos);
-							RM::ScanQuery sQuery(lPos,compOp,rPos);
-							queryList.push_back(sQuery);
-						}
-						else{
-							printf("this is what we didn't consider...\n");
-							rmg->closeFile(*mainHandler);
-							rmg->closeFile(*viceHandler);
-							delete whereExprs;
-						}
+			else{//
+				list<RM::ScanQuery> queryList;
+				std::vector<RM_Record> result;
+				viceHandler->GetAllRecord(result);
+				hsql::Expr* l;
+				hsql::Expr* r;
+				IM::CompOp compOp;
+				for(hsql::Expr *expr:*whereExprs){
+					l = expr->expr;
+					r = expr->expr2;
+					compOp = transOp(expr->opType);
+					int lPos;
+					int rPos;
+					//printf("%s %s\n", l->table,r->table);
+					if(tables[0].compare(l->table) == 0 && tables[1].compare(r->table) == 0){
+						mainHandler->GetAttrIndex((string)(l->name),lPos);
+						viceHandler->GetAttrIndex((string)(r->name),rPos);
+						RM::ScanQuery sQuery(lPos,compOp,rPos);
+						queryList.push_back(sQuery);
 					}
-					RM::DualScan *dualScan = new RM::DualScan(mainHandler, viceHandler);
-					dualScan->OpenScan(queryList);
-					pair<RID, list<RID>> item;
+					else{
+						printf("this is what we didn't consider...\n");
+						rmg->closeFile(*mainHandler);
+						rmg->closeFile(*viceHandler);
+						delete whereExprs;
+					}
+				}
+				RM::DualScan *dualScan = new RM::DualScan(mainHandler, viceHandler);
+				dualScan->OpenScan(queryList);
+				pair<RID, list<RID>> item;
+				if(selectAll){
 				    while(!dualScan->GetNextPair(item)) {
 				        RID mainID = item.first;
 				        list<RID> viceList = item.second;
@@ -827,8 +852,55 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				            viceHandler->recordHandler->PrintRecord(vRecord);
 				        }
 				    }
-				    delete dualScan;					
 				}
+				else{
+					std::vector<int> colPosFromTable1;
+					std::vector<int> colPosFromTable2;
+					for(hsql::Expr* expr:selectList){
+						int pos;
+						int ret;
+						if(tables[0].compare(expr->table) == 0){
+							ret = mainHandler->GetAttrIndex(expr->name,pos);
+							if(ret){
+								printf("attr not exist\n");
+								dualScan->CloseScan();
+								rmg->closeFile(*mainHandler);
+								rmg->closeFile(*viceHandler);
+								delete dualScan;
+								delete whereExprs;
+								return -1;							
+							}
+							colPosFromTable1.push_back(pos);							
+						}
+						else if(tables[1].compare(expr->table) == 0){
+							ret = viceHandler->GetAttrIndex(expr->name,pos);
+							if(ret){
+								printf("attr not exist\n");
+								dualScan->CloseScan();
+								rmg->closeFile(*mainHandler);
+								rmg->closeFile(*viceHandler);
+								delete dualScan;
+								delete whereExprs;
+								return -1;							
+							}
+							colPosFromTable2.push_back(pos);	
+						}						
+					}					
+				    while(!dualScan->GetNextPair(item)) {
+				        RID mainID = item.first;
+				        list<RID> viceList = item.second;
+				        RM_Record mRecord, vRecord;
+				        mainHandler->GetRec(mainID, mRecord);
+				        printf("---------------------------\n");
+				        mainHandler->recordHandler->PrintRecord(mRecord,colPosFromTable1);
+				        for(auto iter = viceList.begin(); iter != viceList.end(); iter ++) {
+				            RID vRid = *iter;
+				            viceHandler->GetRec(vRid, vRecord);
+				            viceHandler->recordHandler->PrintRecord(vRecord,colPosFromTable2);
+				        }
+				    }
+				}
+			    delete dualScan;
 			}
 			rmg->closeFile(*mainHandler);
 			rmg->closeFile(*viceHandler);
