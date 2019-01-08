@@ -155,6 +155,11 @@ TEST(PipelineTest, Insert) {
     ASSERT_EQ(handler->recordHandler->SetColumn(2, testRecord, forTestStr), 0);
     ASSERT_EQ(handler->recordHandler->GetColumn(2, testRecord, testResult), 0);
     ASSERT_EQ(forTestStr == testResult, true);
+    testing::internal::CaptureStdout();
+    handler->recordHandler->PrintRecord(testRecord);
+    string output = testing::internal::GetCapturedStdout();
+    string expectedRecord = "14|7.8|alexf\n";
+    ASSERT_EQ(expectedRecord, output);
     for (int i = 10; i < 15; i++) {
         items.clear();
         string iStr;
