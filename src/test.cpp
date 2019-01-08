@@ -22,7 +22,7 @@ int current = 0;
 int tt = 0;
 unsigned char h[61];
 
-char dbName[20] = "NewTesting111";
+char dbName[20] = "UnitTestDatabase";
 char chartName1[10] = "chart1";
 char chartName2[10] = "chart2";
 
@@ -317,6 +317,7 @@ TEST(PipelineTest, NestSearch)
     delete fileScan;
 }
 
+/*
 TEST(PipelineTest, ChartConnect)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
@@ -324,6 +325,7 @@ TEST(PipelineTest, ChartConnect)
     RM_FileHandle *viceHandler = new RM_FileHandle(false);
     int colNum = 2;
     viceHandler->recordHandler = new RM::RecordHandler(colNum);
+    viceHandler->indexHandle = new IM::IndexHandle(colNum);
     viceHandler->recordHandler->SetItemAttribute(0, 1, RM::INT, false);
     viceHandler->recordHandler->SetItemAttribute(1, 12, RM::CHAR, false);
     int sz = viceHandler->recordHandler->GetRecordSize();
@@ -539,3 +541,4 @@ TEST(SQLParseeTest, InsertTest)
 {
     ASSERT_EQ(0, SQLParserTest("INSERT INTO test VALUES (1, 2, 3),(4, 5, 3);"));
 }
+ */
