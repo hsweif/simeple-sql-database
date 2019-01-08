@@ -32,8 +32,9 @@ struct UpdateExprPos
 	int r2Pos;
 	hsql::Expr* r;
 	hsql::OperatorType binaryOp;
-	UpdateExprPos(int lPos,int r1Pos,int r2Pos,hsql::OperatorType binaryOp,hsql::Expr* r):
-	lPos(lPos),r1Pos(r1Pos),r2Pos(r2Pos),binaryOp(binaryOp),r(r){
+	RM::ItemType lType;
+	UpdateExprPos(int lPos,int r1Pos,int r2Pos,hsql::OperatorType binaryOp,hsql::Expr* r,RM::ItemType lType):
+	lPos(lPos),r1Pos(r1Pos),r2Pos(r2Pos),binaryOp(binaryOp),r(r),lType(lType){
 		printf("%d %d %d\n", lPos,r1Pos,r2Pos);
 	};
 };
@@ -461,7 +462,8 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				}
 				binaryOp = update->value->opType;
 			}
-			UpdateExprPos exprPos(lPos,r1Pos,r2Pos,binaryOp,update->value);
+			RM::ItemType lType = (handler->recordHandler->GetItemType())[lPos];
+			UpdateExprPos exprPos(lPos,r1Pos,r2Pos,binaryOp,update->value,lType);
 			updatePoss.push_back(exprPos);
 		}
 		//do update
@@ -504,7 +506,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 						}
 					}
 				}
-				else{
+				else{//binary op
 					RM_node *r1;
 					RM_node *r2;
 					if(upExpr.r1Pos < 0){//x=4+z or x=4+3
@@ -555,7 +557,15 @@ int executeCommand(const hsql::SQLStatement* stmt){
 						handler->recordHandler->GetColumn(upExpr.r2Pos,nextRec,*r2);
 						cout<<"r2->type:"<<r2->type<<endl;
 					}
-					//if(checkExprLegal(r1,r2,))
+					if(checkExprLegal(r1,r2,upExpr.lType,upExpr.binaryOp) == RM::ItemType::ERROR){
+						printf("update expr type error\n");
+						fileScan->CloseScan();
+						rmg->closeFile(*handler);
+						delete whereExprs;
+						delete r1;		
+						delete r2;
+						return -1;						
+					}
 					switch(upExpr.binaryOp){
 						case hsql::OperatorType::kOpPlus:
 							printf("%d+%f\n",r1->num,r2->fNum);
@@ -586,10 +596,16 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			//handler->DeleteRec(delRid);
 		}
 		for(RM_Record rec:records){
-			RID id;
+/*			RID id;
+
 			rec.GetRid(id);
-			id.show();
-			handler->UpdateRec(rec);			
+			id.show();*/
+			handler->UpdateRec(rec);
+/*			handler->GetRec(id,rec);
+			RM_node node;
+			handler->recordHandler->GetColumn(0,rec,node);
+			printf("nodenum%d\n", node.num);
+			cout<<node.type<<endl;*/						
 		}
 		fileScan->CloseScan();
 		rmg->closeFile(*handler);

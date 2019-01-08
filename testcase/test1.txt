@@ -2,5 +2,5 @@ create database abc
 use database abc
 create table test1(x int,y char(20),z float)
 insert into test1 values (101,'asdsad',10.5),(202,'12345',9.5),(303,'12312',0.5),(300,'asd',0.5)
-update test1 set x=4+z where x<=300
+update test1 set x=4+y where x<=300
 select * from test1
