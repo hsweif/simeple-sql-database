@@ -75,6 +75,7 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
     {
         if(noScanBefore) {
             fileHandle.GetAllRid(scanResult);
+            noScanBefore = false;
         }
         curResult = scanResult->begin();
         while(curResult != scanResult->end())
@@ -99,8 +100,9 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
 int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, bool isNull)
 {
     SetFilehandler(fileHandle);
-    if(noScanBefore || !fileHandle.indexHandle->IsIndex(col)) {
+    if(noScanBefore) {
         fileHandle.GetAllRid(scanResult);
+        noScanBefore = false;
     }
     for(auto iter = scanResult->begin(); iter != scanResult->end(); iter++)
     {
