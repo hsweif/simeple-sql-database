@@ -308,7 +308,7 @@ int RecordHandler::SetColumn(int pos, RM_Record &record, RM_node &input){
         record.SetNull(pos);
     } 
     int l = itemLength[pos];
-    int offset = 0;
+    int offset = this->itemNum%32 ? this->itemNum/32+1 : this->itemNum/32;
     for(int i = 0; i < pos; i ++) {
         int tmp = 0;
         if(type[i] == RM::INT || type[i] == RM::FLOAT) {
@@ -328,29 +328,22 @@ int RecordHandler::SetColumn(int pos, RM_Record &record, RM_node &input){
     }
     else if(type[pos] == RM::CHAR)
     {
-        BufType ctx = input.getCtx();
-        // TODO already get input's ctx
-/*        string str = "";
-        int shift = 0, mask = 255, cnt = 0;
+        string cStr = input.str;
+        int cnt = 0, str_l = cStr.length();
         for(int k = 0; k < l; k ++)
         {
-            uint tmp = (uint)((ctx[cnt+offset] & (mask << shift)) >> shift);
-            uint tt = ctx[cnt+offset];
-            if(!isValidChar(tmp)) {
-                break;
+            uint sum = 0;
+            for(int shift = 0; shift < 32; shift += 8)
+            {
+                if(cnt < str_l)
+                {
+                    sum += (uint)cStr[cnt] << shift;
+                    cnt ++;
+                }
             }
-            char c = (char)tmp;
-            if(shift == 24) {
-                shift = 0;
-                cnt ++;
-            }
-            else {
-                shift += 8;
-            }
-            str += c;
+            record.SetRecord(offset, sum);
+            offset ++;
         }
-        result.setCtx(str);
-        result.length = (int)str.length();*/
     }
     return 0;    
 }

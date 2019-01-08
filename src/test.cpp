@@ -123,6 +123,7 @@ TEST(PipelineTest, Insert) {
     vector<RM_node> items;
     //10 with id and 5 with null value
     printf("-------------These will be inserted-------------\n");
+    RM_Record testRecord;
     for (int i = 0; i < 10; i++) {
         items.clear();
         string iStr;
@@ -137,13 +138,23 @@ TEST(PipelineTest, Insert) {
         items.push_back(test_f);
         items.push_back(person_a);
         RM_Record record;
-        if (handler->recordHandler->MakeRecord(record, items)) {
-            cout << "Error to make record." << endl;
-        }
+        ASSERT_EQ(handler->recordHandler->MakeRecord(record, items), 0);
         handler->recordHandler->PrintRecord(record);
         handler->InsertRec(record);
         orig.push_back(record);
+        testRecord = record;
     }
+    RM_node forTest(14), forTestStr("alexf"), forTestFloat(7.8f);
+    RM_node testResult;
+    ASSERT_EQ(handler->recordHandler->SetColumn(0, testRecord, forTest), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(0, testRecord, testResult), 0);
+    ASSERT_EQ(forTest == testResult, true);
+    ASSERT_EQ(handler->recordHandler->SetColumn(1, testRecord, forTestFloat), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(1, testRecord, testResult), 0);
+    ASSERT_EQ(forTestFloat == testResult, true);
+    ASSERT_EQ(handler->recordHandler->SetColumn(2, testRecord, forTestStr), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(2, testRecord, testResult), 0);
+    ASSERT_EQ(forTestStr == testResult, true);
     for (int i = 10; i < 15; i++) {
         items.clear();
         string iStr;

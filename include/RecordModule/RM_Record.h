@@ -43,6 +43,7 @@ struct RM_node
     void setCtx(string s);
     BufType getCtx();
     bool CmpCtx(IM::CompOp compOp, string value);
+    bool operator == (const RM_node &b);
 };
 
 class RM_Record {
