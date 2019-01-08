@@ -346,9 +346,11 @@ int RM_FileHandle::UpdateRec(RM_Record &rec) {
 		}
 		recordBitMap = new MyBitMap(recordMapSize << 5, recordUintMap);
 	}
-	BufType upBuf = rec.GetData();
-	for (int i = 0; i < recordSize; i++)
-		readBuf[recordMapSize + i + slot * recordSize] = upBuf[i];
+	BufType upBuf = rec.GetBuf();
+    // BufType upBuf = rec.GetData();
+	for (int i = 0; i < recordSize; i++) {
+        readBuf[recordMapSize + i + slot * recordSize] = upBuf[i];
+    }
 	if (recordBitMap->getBit(slot))//1
 	{
 		recordBitMap->setBit(slot, 0);

@@ -8,7 +8,7 @@ using namespace RM;
 
 ScanQuery::ScanQuery(int mCol, IM::CompOp cp, int vCol)
 {
-    queryType = RM::BASIC;  
+    queryType = RM::QueryType::DUAL;
     mainCol = mCol;
     compOp = cp;
     viceCol = vCol;

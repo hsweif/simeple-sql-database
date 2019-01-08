@@ -25,7 +25,6 @@ unsigned char h[61];
 char dbName[20] = "NewTesting111";
 char chartName1[10] = "chart1";
 char chartName2[10] = "chart2";
-vector<RM_Record> orig;
 
 int SQLParserTest(string query)
 {
@@ -141,25 +140,9 @@ TEST(PipelineTest, Insert) {
         ASSERT_EQ(handler->recordHandler->MakeRecord(record, items), 0);
         handler->recordHandler->PrintRecord(record);
         handler->InsertRec(record);
-        orig.push_back(record);
         testRecord = record;
     }
-    RM_node forTest(14), forTestStr("alexf"), forTestFloat(7.8f);
-    RM_node testResult;
-    ASSERT_EQ(handler->recordHandler->SetColumn(0, testRecord, forTest), 0);
-    ASSERT_EQ(handler->recordHandler->GetColumn(0, testRecord, testResult), 0);
-    ASSERT_EQ(forTest == testResult, true);
-    ASSERT_EQ(handler->recordHandler->SetColumn(1, testRecord, forTestFloat), 0);
-    ASSERT_EQ(handler->recordHandler->GetColumn(1, testRecord, testResult), 0);
-    ASSERT_EQ(forTestFloat == testResult, true);
-    ASSERT_EQ(handler->recordHandler->SetColumn(2, testRecord, forTestStr), 0);
-    ASSERT_EQ(handler->recordHandler->GetColumn(2, testRecord, testResult), 0);
-    ASSERT_EQ(forTestStr == testResult, true);
-    testing::internal::CaptureStdout();
-    handler->recordHandler->PrintRecord(testRecord);
-    string output = testing::internal::GetCapturedStdout();
-    string expectedRecord = "14|7.8|alexf\n";
-    ASSERT_EQ(expectedRecord, output);
+
     for (int i = 10; i < 15; i++) {
         items.clear();
         string iStr;
@@ -178,7 +161,6 @@ TEST(PipelineTest, Insert) {
         }
         handler->InsertRec(record);
         handler->recordHandler->PrintRecord(record);
-        orig.push_back(record);
     }
     rmg->closeFile(*handler);
 
@@ -344,48 +326,6 @@ TEST(PipelineTest, NestSearch)
     delete fileScan;
 }
 
-TEST(PipelineTest, PrintAllRecord)
-{
-    RM_Manager *rmg = new RM_Manager(dbName);
-    RM_FileHandle *handler = new RM_FileHandle();
-    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
-    ASSERT_EQ(test, "successfully opened");
-    printf("-------------Column Info--------------\n");
-    handler->PrintColumnInfo();
-    printf("-------------Below items should be equaled--------------\n");
-    handler->PrintTitle();
-    vector<RM_Record> result;
-    handler->GetAllRecord(result);
-    for(int i = 0; i < result.size(); i ++) {
-        printf("---------------------------\n");
-        ASSERT_EQ(0, handler->PrintAttribute("id", result[i]));
-        cout << "|";
-        ASSERT_EQ(0, handler->PrintAttribute("test_float", result[i]));
-        cout << "|";
-        ASSERT_EQ(0, handler->PrintAttribute("name", result[i]));
-        cout << endl;
-        handler->recordHandler->PrintRecord(result[i]);
-    }
-    ASSERT_EQ(result.size(), 15);
-    ASSERT_EQ(result.size(), orig.size());
-    rmg->closeFile(*handler);
-    delete handler;
-    delete rmg;
-}
-
-TEST(PipelineTest, DeleteRecord)
-{
-    RM_Manager *rmg = new RM_Manager(dbName);
-    RM_FileHandle *handler = new RM_FileHandle();
-    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
-    RID rid(1, 0);
-    handler->DeleteRec(rid);
-    vector<RM_Record> result;
-    handler->GetAllRecord(result);
-    ASSERT_EQ(result.size(), 14);
-    rmg->closeFile(*handler);
-}
-
 TEST(PipelineTest, ChartConnect)
 {
     RM_Manager *rmg = new RM_Manager(dbName);
@@ -471,6 +411,91 @@ TEST(PipelineTest, ChartConnect)
     rmg->closeFile(*mainHandler);
     rmg->closeFile(*viceHandler);
 }
+
+TEST(PipelineTest, UpdateRecord)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *handler = new RM_FileHandle();
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
+    RM_node forTest(233), forTestStr("alexf"), forTestFloat(7.8f);
+    RM_node testResult;
+    RM_Record testRecord;
+    RID rid(1,0);
+    ASSERT_EQ(handler->GetRec(rid, testRecord), 0);
+    ASSERT_EQ(handler->recordHandler->SetColumn(0, testRecord, forTest), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(0, testRecord, testResult), 0);
+    ASSERT_EQ(forTest == testResult, true);
+    ASSERT_EQ(handler->recordHandler->SetColumn(1, testRecord, forTestFloat), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(1, testRecord, testResult), 0);
+    ASSERT_EQ(forTestFloat == testResult, true);
+    ASSERT_EQ(handler->recordHandler->SetColumn(2, testRecord, forTestStr), 0);
+    ASSERT_EQ(handler->recordHandler->GetColumn(2, testRecord, testResult), 0);
+    ASSERT_EQ(forTestStr == testResult, true);
+    testing::internal::CaptureStdout();
+    handler->recordHandler->PrintRecord(testRecord);
+    string output = testing::internal::GetCapturedStdout();
+    string expectedRecord = "233|7.8|alexf\n";
+    ASSERT_EQ(handler->UpdateRec(testRecord), 0);
+    // ASSERT_EQ(handler->InsertRec(testRecord), 0);
+    ASSERT_EQ(expectedRecord, output);
+    rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+}
+
+TEST(PipelineTest, DeleteNullRecord)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *handler = new RM_FileHandle();
+    RM_FileScan *fileScan = new RM_FileScan;
+    ASSERT_EQ(rmg->openFile(chartName1, *handler), true);
+    RM_Record nextRec;
+    fileScan->OpenScan(*handler, 1, true);
+    while(fileScan->GetNextRec(*handler, nextRec) != 1) {
+        RID rid;
+        nextRec.GetRid(rid);
+        cout << "The rid to delete is" << rid << endl;
+        ASSERT_EQ(handler->DeleteRec(rid), 0);
+    }
+    vector<RM_Record> result;
+    handler->GetAllRecord(result);
+    ASSERT_EQ(result.size(), 10);
+    rmg->closeFile(*handler);
+    fileScan->CloseScan();
+    delete handler;
+    delete rmg;
+    delete fileScan;
+}
+
+TEST(PipelineTest, PrintAllRecord)
+{
+    RM_Manager *rmg = new RM_Manager(dbName);
+    RM_FileHandle *handler = new RM_FileHandle();
+    string test = rmg->openFile(chartName1, *handler) ? "successfully opened" : "fail to open";
+    ASSERT_EQ(test, "successfully opened");
+    printf("-------------Column Info--------------\n");
+    handler->PrintColumnInfo();
+    printf("-------------Below items should be equaled--------------\n");
+    handler->PrintTitle();
+    vector<RM_Record> result;
+    handler->GetAllRecord(result);
+    for(int i = 0; i < result.size(); i ++) {
+        printf("---------------------------\n");
+        ASSERT_EQ(0, handler->PrintAttribute("id", result[i]));
+        cout << "|";
+        ASSERT_EQ(0, handler->PrintAttribute("test_float", result[i]));
+        cout << "|";
+        ASSERT_EQ(0, handler->PrintAttribute("name", result[i]));
+        cout << endl;
+        handler->recordHandler->PrintRecord(result[i]);
+    }
+    ASSERT_EQ(result.size(), 10);
+    rmg->closeFile(*handler);
+    delete handler;
+    delete rmg;
+}
+
+
 
 
 TEST(PipelineTest, ForeignKey)

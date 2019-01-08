@@ -94,10 +94,7 @@ int IndexHandle::IndexAction(IM::IndexAction actionType, RM_Record &record, RM::
             record.GetRid(rid);
             RM_node result;
             recordHandler->GetColumn(i, record, result);
-            if(result.isNull) {
-                cout << "This column item is null, no need to insert." << endl;
-            }
-            else{
+            if(!result.isNull) {
                 if(result.type == RM::INT) {
                     int n = result.num;
                     std::stringstream ss;

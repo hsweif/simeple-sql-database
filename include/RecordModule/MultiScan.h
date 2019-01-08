@@ -13,7 +13,15 @@ using namespace std;
 namespace RM{
 
 enum QueryType{
-    BASIC
+    SINGLE, DUAL
+};
+
+enum ScanTarget{
+    BOTH, MAIN, VICE
+};
+
+enum ScanType{
+    RangeScan, NullScan
 };
 
 class ScanQuery
@@ -24,6 +32,19 @@ public:
     IM::CompOp compOp;
     int viceCol;
     ScanQuery(int mCol, IM::CompOp cp, int vCol);
+};
+
+class SingleScanQuery: ScanQuery
+{
+public:
+    RM::ScanType scanType;
+    RM::ScanTarget target;
+    int colIndex;
+    IM::CompOp compOp;
+    char *keyValue;
+    bool isNull;
+    SingleScanQuery(RM::ScanTarget scanTarget, int col, IM::CompOp cmpOp, char *value);
+    SingleScanQuery(RM::ScanTarget scanTarget, int col, bool isNull);
 };
 
 class DualScan {
