@@ -64,10 +64,31 @@ int showDB(char* dbName){
 	}	
 	struct dirent *entry;
 	int i = 0;
+	printf("DATABASE:%s\n",dbName);
+    while(entry=readdir(dir))
+    {
+    	if(strcmp(entry->d_name,".") != 0 && strcmp(entry->d_name,"..") != 0 && entry->d_type == 0){
+    		printf("	tablename%d=%s\n",i,entry->d_name);
+	    	i++;
+    	}
+    }
+    closeDB(dir);
+    return 0;
+}
+
+int showAllDB(){
+	DIR* dir = opendir("../database");
+	if(dir == NULL)
+	{
+		cout<<"showAllDB error"<<endl;
+		return -1;
+	}	
+	struct dirent *entry;
+	int i = 0;
     while(entry=readdir(dir))
     {
     	if(strcmp(entry->d_name,".") != 0 && strcmp(entry->d_name,"..") != 0){
-    		printf("tablename%d=%s\n",i,entry->d_name);
+    		showDB(entry->d_name);
 	    	i++;
     	}
     }

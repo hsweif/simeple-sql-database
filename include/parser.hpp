@@ -87,7 +87,9 @@ int ParseDBCommand(string command){
 	}
 	else if(commandWord[0] == "SHOW" && commandWord[1] == "DATABASE"){
 		char *dbName = (char*)commandWord[2].c_str();
-		showDB(dbName);		
+		if(commandWord[2] != "ALL")
+			showDB(dbName);
+		else showAllDB();		
 	}
 	else if(commandWord[0] == "DROP" && commandWord[1] == "TABLE"){
 		if(rmg == NULL)
@@ -252,10 +254,22 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			}
 			handler->SetMainKey(mainKeys);
 		}
+		if(((hsql::CreateStatement*)stmt)->foreignRelations != nullptr){
+			for(hsql::ForeignRelation* relation:*(((hsql::CreateStatement*)stmt)->foreignRelations)){
+				int pos;
+				int ret = handler->GetAttrIndex(relation->key,pos);
+				if(ret){
+					printf("attr doesn't exist\n");
+					return -1;
+				}
+				if(handler->AddForeignKey(rmg,relation->foreignTableName,relation->foreignKey,pos)){
+					printf("add foreignKey error\n");
+				}
+			}
+		}
 		rmg->openFile(((hsql::CreateStatement*)stmt)->tableName,*handler);
 		// InitIndex 要在openfile后面
 		handler->InitIndex(true);
-
 
 		//handler->PrintTitle();
 		rmg->closeFile(*handler);

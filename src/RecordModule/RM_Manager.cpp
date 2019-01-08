@@ -62,9 +62,9 @@ void RM_Manager::showFile(const char* name) {
     RM_FileHandle *handler = new RM_FileHandle();
     cout<<openFile(name,*handler)<<endl;
     printf("%s\n", name);
-    handler->PrintTitle();
+    handler->PrintColumnInfo();
     closeFile(*handler);
-    delete handler;
+    //delete handler;
 }
 
 void RM_Manager::showAllFile() {
@@ -78,7 +78,7 @@ void RM_Manager::showAllFile() {
     int i = 0;
     while (entry = readdir(dbDir))
     {
-        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && entry->d_type == 0) {
             showFile(entry->d_name);
             i++;
         }
