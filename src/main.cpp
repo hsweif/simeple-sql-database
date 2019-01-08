@@ -182,7 +182,7 @@ int main() {
 #endif
 	MyBitMap::initConst();
 	// ParseInput("../testcase/test1.txt");
-	ParseInput("../testcase/test_update.txt");
+	ParseInput("../testcase/test1.txt");
 	/*
     int ret = SQLParserTest();
     printf("SQLTest result: %d\n", ret);
