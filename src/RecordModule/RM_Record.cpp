@@ -56,6 +56,23 @@ RM_node::RM_node(string content)
     setCtx(content);
 }
 
+bool RM_node::operator == (const RM_node &b)
+{
+    if(this->type != b.type || this->length != b.length)   {
+        return false;
+    }
+    if(this->type == RM::ItemType::CHAR && this->str != b.str) {
+        return false;
+    }
+    else if(this->type == RM::ItemType::FLOAT && this->fNum != b.fNum) {
+        return false;
+    }
+    else if(this->type == RM::ItemType::INT && this->num != b.num) {
+        return false;
+    }
+    return true;
+}
+
 void RM_node::setCtx(int n)
 {
     type = RM::INT;
