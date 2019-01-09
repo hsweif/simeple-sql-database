@@ -54,8 +54,10 @@ int DualScan::OpenScan(list<ScanQuery> queryList)
             }
         }
     }
+    int mainResultNum = mainScan->ResultNum();
     while(mainScan->GetNextRec(*mainHandler, rec) != 1)
     {
+        printf("%8d / %8d\r", cnt, mainResultNum);
         cnt ++;
         RID mainRid;
         rec.GetRid(mainRid);

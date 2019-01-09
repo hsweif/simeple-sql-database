@@ -35,7 +35,7 @@ struct UpdateExprPos
 	RM::ItemType lType;
 	UpdateExprPos(int lPos,int r1Pos,int r2Pos,hsql::OperatorType binaryOp,hsql::Expr* r,RM::ItemType lType):
 	lPos(lPos),r1Pos(r1Pos),r2Pos(r2Pos),binaryOp(binaryOp),r(r),lType(lType){
-		printf("%d %d %d\n", lPos,r1Pos,r2Pos);
+		// printf("%d %d %d\n", lPos,r1Pos,r2Pos);
 	};
 };
 void toUpper(string &s){
@@ -109,19 +109,19 @@ int ParseDBCommand(string command){
 }
 RM::ItemType transType(hsql::DataType type){
 	if(type == hsql::DataType::INT){
-		printf("intType\n");
+		// printf("intType\n");
 		return RM::ItemType::INT;
 	}
 	else if(type == hsql::DataType::FLOAT){
-		printf("floatType\n");
+		// printf("floatType\n");
 		return RM::ItemType::FLOAT;
 	}
 	else if(type == hsql::DataType::CHAR){
-		printf("charType\n");
+		// printf("charType\n");
 		return RM::ItemType::CHAR;
 	}
 	else {
-		printf("errorType\n");
+		// printf("errorType\n");
 		return RM::ItemType::ERROR;
 	}
 }
@@ -262,7 +262,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					printf("attr doesn't exist\n");
 					return -1;
 				}
-				printf("foreignKey:%s %s %s\n", relation->key,relation->foreignTableName,relation->foreignKey);
+				// printf("foreignKey:%s %s %s\n", relation->key,relation->foreignTableName,relation->foreignKey);
 				if(handler->AddForeignKey(rmg,relation->foreignTableName,relation->foreignKey,pos)){
 					printf("add foreignKey error\n");
 				}
@@ -324,7 +324,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
             if(handler->recordHandler->MakeRecord(record, items)) {
 				continue;
             }
-			printf("%d / %d\r", cnt, sz);
+			printf("%8d / %8d\r", cnt, sz);
             if(handler->InsertRec(record) == 0)	{
             	cnt ++;
 			}
@@ -332,6 +332,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				printf("Fail to insert\n");
 			}
 		}
+		printf("\n");
 		rmg->closeFile(*handler);
 		delete handler;
 	}
@@ -346,7 +347,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		}
 		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
 		int ret = getExpr(expr,whereExprs);
-		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+		// printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
 		int whereExprsize = whereExprs->size();
 		RM_FileScan* fileScan = new RM_FileScan;
 		RM_FileHandle *handler = new RM_FileHandle();
@@ -372,7 +373,6 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				fileScan->OpenScan(*handler,colPos,true);
 			}
 			else{
-				printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
 				fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
 			}
 		}
@@ -423,7 +423,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
 		if(!whereAll){
 			int ret = getExpr(expr,whereExprs);
-			printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+			// printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
 			int whereExprsize = whereExprs->size();
 			for(hsql::Expr *expr:*whereExprs){
 				int colPos;
@@ -446,7 +446,6 @@ int executeCommand(const hsql::SQLStatement* stmt){
 					fileScan->OpenScan(*handler,colPos,true);
 				}
 				else{
-					printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
 					fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
 				}
 			}			
@@ -460,7 +459,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		for(hsql::UpdateClause* update:updates){
 			int lPos,r1Pos,r2Pos;
 			hsql::OperatorType binaryOp;
-			printf("update:%s\n",update->column);
+			// printf("update:%s\n",update->column);
 			int ret = handler->GetAttrIndex(update->column,lPos);
 			if(ret){
 				printf("attr not exist\n");
@@ -531,7 +530,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		std::vector<RM_Record> records;
 		int updateSize = updatePoss.size();
 		while(!fileScan->GetNextRec(*handler, nextRec)){
-			printf("update:\n");
+			// printf("update:\n");
 			for(UpdateExprPos upExpr:updatePoss){
 				if(upExpr.binaryOp == hsql::OperatorType::kOpNone){
 					if(upExpr.r->isType(hsql::ExprType::kExprColumnRef)){//x=z
@@ -743,7 +742,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			whereAll = true;
 		else{
 			int ret = getExpr(expr,whereExprs);
-			printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+			// printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
 		}
 		if(tables.size() == 1){
 			if(whereAll){
@@ -809,7 +808,6 @@ int executeCommand(const hsql::SQLStatement* stmt){
 						fileScan->OpenScan(*handler,colPos,true);
 					}
 					else{
-						printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
 						fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
 					}
 				}
