@@ -55,7 +55,6 @@ public:
     {
         queryType = SINGLE;
         scanType = NullScan;
-        compOp = cmpOp;
         this->isNull = isNull;
         target = scanTarget;
         if(target == MAIN) {
