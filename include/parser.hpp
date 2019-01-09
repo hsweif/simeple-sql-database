@@ -878,12 +878,39 @@ int executeCommand(const hsql::SQLStatement* stmt){
 						queryList.push_back(sQuery);
 					}
 					else{
-						printf("this is what we didn't consider...\n");
-						rmg->closeFile(*mainHandler);
-						rmg->closeFile(*viceHandler);
-						delete whereExprs;
+						if(tables[0].compare(l->table) == 0){
+							mainHandler->GetAttrIndex((string)(l->name),lPos);
+							if(expr->opType == hsql::OperatorType::kOpNot){
+								RM::ScanQuery sQuery(RM::ScanTarget::MAIN,lPos,false);
+								queryList.push_back(sQuery);
+							}
+							else if(expr->opType == hsql::OperatorType::kOpIsNull){
+								RM::ScanQuery sQuery(RM::ScanTarget::MAIN,lPos,true);
+								queryList.push_back(sQuery);
+							}
+							else{
+								RM::ScanQuery sQuery(RM::ScanTarget::MAIN,compOp,(char*)(r->strName.c_str()));
+								queryList.push_back(sQuery);
+							}							
+						}
+						else if(tables[1].compare(l->table) == 0){
+							viceHandler->GetAttrIndex((string)(l->name),lPos);
+							if(expr->opType == hsql::OperatorType::kOpNot){
+								RM::ScanQuery sQuery(RM::ScanTarget::VICE,lPos,false);
+								queryList.push_back(sQuery);
+							}
+							else if(expr->opType == hsql::OperatorType::kOpIsNull){
+								RM::ScanQuery sQuery(RM::ScanTarget::VICE,lPos,true);
+								queryList.push_back(sQuery);
+							}
+							else{
+								RM::ScanQuery sQuery(RM::ScanTarget::VICE,compOp,(char*)(r->strName.c_str()));
+								queryList.push_back(sQuery);
+							}
+						}
 					}
 				}
+				printf("queryList size:%d\n",queryList.size());
 				RM::DualScan *dualScan = new RM::DualScan(mainHandler, viceHandler);
 				dualScan->OpenScan(queryList);
 				pair<RID, list<RID>> item;
