@@ -6,7 +6,8 @@
 #include "../bufmanager/BufPageManager.h"
 #include "../utils/pagedef.h"
 #include "../utils/MyBitMap.h"
-#include "../IndexModule/IndexHandle.h"
+#include "IndexModule/IndexManager.h"
+#include "IndexModule/IndexHandle.h"
 #include "RecordHandler.h"
 #include "RM_Manager.h"
 #include <iostream>
@@ -55,6 +56,7 @@ private:
 	int CheckForMainKey(RM_Record &pData);
 	int CheckForForeignKey(RM_Record &rec, IM::IndexAction action);
 	map<string, int> colNameMap;
+	string tableName;
 	vector< pair<int, pair<string, int>> > foreignKey;
 
 public:
@@ -68,7 +70,7 @@ public:
 	int updateHead();
 	// RM_FileHandle(BufPageManager* bufpm, int fd, int rcz);
     int GetRec(const RID &rid, RM_Record &rec);
-    int init(int _fileId, BufPageManager* _bufpm);
+    int init(int _fileId, BufPageManager* _bufpm, string tableName);
     int InsertRec(RM_Record& pData);       // Insert a new record,
     int InsertRec(vector<string> attrNames, vector<RM_node> nodes);
     int DeleteRec(const RID &rid);                    // Delete a record

@@ -27,9 +27,10 @@ RM_FileHandle::~RM_FileHandle()
 	}
 }
 
-int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
+int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, string tableName)
 {
 	// this->indexPath = string(indexName);
+	this->tableName = tableName;
 	fileId = _fileId;
 	mBufpm = _bufpm;
 	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
@@ -45,7 +46,11 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	recordHandler->SetRecordSize(recordSize);
 
 	if(isInitialized) {
-	    this->indexHandle = new IM::IndexHandle(colNum);
+		this->indexHandle = new IM::IndexHandle(colNum);
+		if(IM::IndexManager::GetIndexHandler(tableName, this->indexHandle)){
+			// IM::IndexManager::SetIndexHandler(tableName, this->indexHandle);
+		}
+	    // this->indexHandle = new IM::IndexHandle(colNum);
     }
 
 	vector<string> tmpTitle;
@@ -190,6 +195,8 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 		recordMapSize = recordPP/32+1;
 	}
 	recordUintMap = new uint[recordMapSize];
+
+	// IM::IndexManager::SetIndexHandler(tableName, this->indexHandle);
 
 	isInitialized = true;
 	return 0;
@@ -477,7 +484,7 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 	int dataSize = pData.BufSize();
 	if(dataSize != this->recordSize)
 	{
-		printf("data size error: %d/ %d\n", dataSize, this->recordSize);
+		printf("data size error: %d''\n", dataSize, this->recordSize);
 		return 1;
 	}
 
@@ -645,8 +652,12 @@ int RM_FileHandle::InitIndex(bool forceEmpty)
 		return 1;
 	}
 	this->indexHandle->SetIndexHandle(title, this->indexPath);
-	for(int i = 0; i < title.size(); i ++) {
-		this->indexHandle->CreateIndex((char*)title[i].data(), i, forceEmpty);
+
+	if(IM::IndexManager::GetIndexHandler(tableName, this->indexHandle)) {
+		for (int i = 0; i < title.size(); i++) {
+			this->indexHandle->CreateIndex((char *) title[i].data(), i, forceEmpty);
+		}
+		IM::IndexManager::SetIndexHandler(this->tableName, this->indexHandle);
 	}
 	return 0;
 }

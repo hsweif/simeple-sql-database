@@ -7,12 +7,12 @@
 #include <algorithm>
 #include <iterator>
 #include <string>
-#include<string.h>
+#include <string.h>
 #include "CommandModule/dataBaseManager.h"
 #include "RecordModule/RM_Manager.h"
 #include "RecordModule/RM_FileHandle.h"
 #include "RecordModule/RM_FileScan.h"
-#include "IndexModule/IndexHandle.h"
+#include "IndexModule/IndexManager.h"
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include <fstream>
@@ -229,7 +229,15 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		int colNum = col.size();
 		RM_FileHandle *handler = new RM_FileHandle(false);
 		handler->recordHandler = new RM::RecordHandler(colNum);
+
+		string tableName(((hsql::CreateStatement*)stmt)->tableName);
+
 		handler->indexHandle = new IM::IndexHandle(colNum);
+		if(IM::IndexManager::GetIndexHandler(tableName, handler->indexHandle)){
+			// IM::IndexManager::SetIndexHandler(tableName, handler->indexHandle);
+		}
+		// handler->indexHandle = new IM::IndexHandle(colNum);
+
 		RM::ItemType temp;
 		int ret, l;
 		for(int i = 0;i < colNum;i++){
@@ -289,6 +297,8 @@ int executeCommand(const hsql::SQLStatement* stmt){
         vector<RM_node> items;
         int cnt = 0;
         int sz = values.size();
+        string tableName(((hsql::InsertStatement*)stmt)->tableName);
+        cout << "Inserting to " << tableName << endl;
 		for(hsql::InsertValue* val:values){
 			items.clear();
 			for(hsql::Expr* expr:val->values[0]){
@@ -320,7 +330,6 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				}
 			}
             RM_Record record;
-            // printf("colNum:%d\n",items.size());
             if(handler->recordHandler->MakeRecord(record, items)) {
 				continue;
             }

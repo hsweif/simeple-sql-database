@@ -40,6 +40,7 @@ bplus_tree::bplus_tree(const char *p, bool force_empty)
     memset(path,'0',strlen(path));
     strcpy(path, p);
 
+    cout << "Once IO" << endl;
     if (!force_empty) {
         // read tree from file
         if (map(&meta, OFFSET_META) != 0) {

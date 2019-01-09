@@ -3,7 +3,7 @@
 #include "RecordModule/RecordHandler.h"
 #include "RecordModule/RM_FileScan.h"
 #include "RecordModule/RM_Record.h"
-#include "IndexModule/IndexHandle.h"
+#include "IndexModule/IndexManager.h"
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include "CommandModule/dataBaseManager.h"
