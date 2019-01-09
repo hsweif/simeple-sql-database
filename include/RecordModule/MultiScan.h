@@ -66,12 +66,6 @@ public:
     }
 };
 
-class SingleScanQuery: ScanQuery
-{
-public:
-
-};
-
 class DualScan {
 private:
     RM_FileHandle *mainHandler;

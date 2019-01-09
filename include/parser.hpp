@@ -887,7 +887,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 								queryList.push_back(sQuery);
 							}
 							else{
-								RM::ScanQuery sQuery(RM::ScanTarget::MAIN,compOp,(char*)(r->strName.c_str()));
+								RM::ScanQuery sQuery(RM::ScanTarget::MAIN, lPos, compOp,(char*)(r->strName.c_str()));
 								queryList.push_back(sQuery);
 							}							
 						}
@@ -902,7 +902,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 								queryList.push_back(sQuery);
 							}
 							else{
-								RM::ScanQuery sQuery(RM::ScanTarget::VICE,compOp,(char*)(r->strName.c_str()));
+								RM::ScanQuery sQuery(RM::ScanTarget::VICE, lPos, compOp,(char*)(r->strName.c_str()));
 								queryList.push_back(sQuery);
 							}
 						}
