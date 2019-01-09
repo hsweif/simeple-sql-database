@@ -17,6 +17,7 @@
 #include "RM_FileHandle.h"
 #include "RM_PageHead.h"
 #include <sys/stat.h>
+#include <cstdio>
 
 using namespace std;
 
@@ -29,6 +30,7 @@ private:
     BufPageManager *bufPageManager;
     int fileID;
     static int RID;
+    char *dbName;
 public:
     RM_Manager(char *dbName);
     int createFile(const char* name, int recordSize, int cNum);

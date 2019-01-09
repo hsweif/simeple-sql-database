@@ -91,7 +91,7 @@ int ParseDBCommand(string command){
 			showDB(dbName);
 		else showAllDB();		
 	}
-	else if(commandWord[0] == "DROP" && commandWord[1] == "TABLE"){
+	else if(commandWord[0] == "DELETE" && commandWord[1] == "TABLE"){
 		if(rmg == NULL)
 			return -1;
 		rmg->deleteFile(commandWord[2].c_str());
@@ -287,6 +287,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
         rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
 		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];
         vector<RM_node> items;
+        int cnt = 0;
 		for(hsql::InsertValue* val:values){
 			items.clear();
 			for(hsql::Expr* expr:val->values[0]){
@@ -324,10 +325,14 @@ int executeCommand(const hsql::SQLStatement* stmt){
             }
 			handler->recordHandler->PrintRecord(record);
             if(handler->InsertRec(record) == 0)	{
+            	cnt ++;
 				printf("insert success\n");
 			}
 			else{
 				printf("Fail to insert\n");
+			}
+			if(cnt == 127) {
+				printf("Debug.\n");
 			}
 		}
 		rmg->closeFile(*handler);

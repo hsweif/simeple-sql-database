@@ -12,6 +12,8 @@ RM_Manager::RM_Manager(char *dbName) {
     this->fileManager = new FileManager();
     this->bufPageManager = new BufPageManager(fileManager);
     this->fileID = -1;
+    this->dbName = new char[strlen(dbName)];
+    strcpy(this->dbName, dbName);
 }
 
 int RM_Manager::createFile(const char* name, int recordSize, int cNum) {
@@ -38,7 +40,7 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     string idx(fileName);
     fileHandle.indexPath = idx;
     RM_FileHandle::CreateDir(idx);
-    fileHandle.relatedRManager = this;
+    fileHandle.relatedRManager = new RM_Manager(this->dbName);
     fileHandle.init(this->fileID,this->bufPageManager);
     return result;
 }
@@ -50,10 +52,17 @@ int RM_Manager::closeFile(RM_FileHandle &fileHandle) {
 }
 
 int RM_Manager::deleteFile(const char* name) {
-    // TODO: Delete file
     char fileName[50];
     strcpy(fileName, this->dataPath);
     strcat(fileName, name);
+    string rmCommand = "rm ";
+    rmCommand += fileName;
+    string rmDirCommand = "rm -r ";
+    rmDirCommand += fileName;
+    rmDirCommand += "_index/";
+    system(rmCommand.c_str());
+    system(rmDirCommand.c_str());
+    printf("Successfully drop the table\n");
     return 0;
 }
 

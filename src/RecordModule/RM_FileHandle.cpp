@@ -171,9 +171,10 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 
 	// Below is for mapping
 	offset += colNum;
-	pageUintMap = new uint[PAGE_INT_NUM - offset];
-    // FIXME
-	for (int i = 0; i < (PAGE_INT_NUM - offset) >> 5; i++) {
+	// FIXME
+	int mpsz = ((PAGE_INT_NUM - offset) >> 5);
+	pageUintMap = new uint[mpsz];
+	for (int i = 0; i < mpsz; i++) {
 		pageUintMap[i] = firstPage[i + offset];
 	}
 	// pageBitMap = new MyBitMap((PAGE_INT_NUM - offset) << 5,pageUintMap);
@@ -383,11 +384,9 @@ int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
 	    int colIndex = iter->first;
 	    bool isNull;
 	    RM_FileHandle *handler = new RM_FileHandle();
-
 	    string chartStr = iter->second.first;
         int l = chartStr.length();
-		char chartName[l];
-		memset(chartName, 0, sizeof(chartName));
+		char *chartName = new char[l];
 		strcpy(chartName, chartStr.c_str());
 	    if(!relatedRManager->openFile(chartName, *handler)) {
 			return 1;
@@ -396,8 +395,7 @@ int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
 		string cStr;
 	    recordHandler->GetColumnStr(rec, colIndex, cStr, isNull);
         l = cStr.length();
-        char colKey[l];
-        memset(colKey, 0, sizeof(colKey));
+        char *colKey = new char[l];
         strcpy(colKey, cStr.c_str());
 	    if(isNull) {
 	    	return 1;
@@ -422,6 +420,9 @@ int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
         		return 1;
 			}
         }
+        delete [] colKey;
+        delete [] chartName;
+        relatedRManager->closeFile(*handler);
 	}
 	return 0;
 }

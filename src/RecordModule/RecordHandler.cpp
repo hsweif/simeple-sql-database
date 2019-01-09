@@ -154,7 +154,6 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
                 float f;
                 ss << items[i].num;
                 ss >> f;
-                printf("Float num%f\n", f);
                 items[i].type = RM::FLOAT;
                 items[i].fNum = f;
             }
