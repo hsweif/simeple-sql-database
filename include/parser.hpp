@@ -393,15 +393,16 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			printf("current path is not DBPath\n");
 			return -1;
 		}	
+		printf("this is UpdateStatement\n");
 		string tableName = (string)(((hsql::UpdateStatement*)stmt)->table->name);
 		cout<<"tableName:"<<tableName<<endl;
 		std::vector<hsql::UpdateClause*> updates = ((hsql::UpdateStatement*)stmt)->updates[0];
 		//get whereclause
 		hsql::Expr *expr = ((hsql::UpdateStatement*)stmt)->where;
-		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
-		int ret = getExpr(expr,whereExprs);
-		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
-		int whereExprsize = whereExprs->size();
+		bool whereAll = false;
+		if(expr == nullptr)
+			whereAll = true;
+
 		RM_FileScan* fileScan = new RM_FileScan;
 		RM_FileHandle *handler = new RM_FileHandle();	
 		rmg->openFile(((hsql::UpdateStatement*)stmt)->table->name,*handler);
@@ -416,30 +417,39 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			}
 			updatePos.push_back(upPos);			
 		}*/	
-		for(hsql::Expr *expr:*whereExprs){
-			int colPos;
-			int ret;
-			if(expr->opType != hsql::OperatorType::kOpNot) {
-				ret = handler->GetAttrIndex(expr->expr->name,colPos);
-			}
-			else {
-				ret = handler->GetAttrIndex(expr->expr->expr->name,colPos);
-			}
-			if(ret){
-				printf("attr not exist\n");
-				return -1;
-			}
-			printf("%s is col:%d\n", expr->expr->name,colPos);
-			if(expr->opType == hsql::OperatorType::kOpNot){
-				fileScan->OpenScan(*handler,colPos,false);
-			}
-			else if(expr->opType == hsql::OperatorType::kOpIsNull){
-				fileScan->OpenScan(*handler,colPos,true);
-			}
-			else{
-				printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
-				fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
-			}
+		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
+		if(!whereAll){
+			int ret = getExpr(expr,whereExprs);
+			printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+			int whereExprsize = whereExprs->size();
+			for(hsql::Expr *expr:*whereExprs){
+				int colPos;
+				int ret;
+				if(expr->opType != hsql::OperatorType::kOpNot) {
+					ret = handler->GetAttrIndex(expr->expr->name,colPos);
+				}
+				else {
+					ret = handler->GetAttrIndex(expr->expr->expr->name,colPos);
+				}
+				if(ret){
+					printf("attr not exist\n");
+					return -1;
+				}
+				printf("%s is col:%d\n", expr->expr->name,colPos);
+				if(expr->opType == hsql::OperatorType::kOpNot){
+					fileScan->OpenScan(*handler,colPos,false);
+				}
+				else if(expr->opType == hsql::OperatorType::kOpIsNull){
+					fileScan->OpenScan(*handler,colPos,true);
+				}
+				else{
+					printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
+					fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
+				}
+			}			
+		}
+		else{
+			fileScan->OpenScanAll(*handler);			
 		}
 		//get updateExprs
 		std::vector<UpdateExprPos> updatePoss;
