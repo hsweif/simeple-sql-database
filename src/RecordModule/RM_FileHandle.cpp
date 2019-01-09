@@ -384,28 +384,21 @@ int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
 	    bool isNull;
 	    RM_FileHandle *handler = new RM_FileHandle();
 
-	    char *chartName;
 	    string chartStr = iter->second.first;
         int l = chartStr.length();
-        chartName = new char[l];
-        for(int i = 0; i < l; i ++) {
-            chartName[i] = chartStr[i];
-        }
-
+		char chartName[l];
+		memset(chartName, 0, sizeof(chartName));
+		strcpy(chartName, chartStr.c_str());
 	    if(!relatedRManager->openFile(chartName, *handler)) {
 			return 1;
 		}
 
 		string cStr;
 	    recordHandler->GetColumnStr(rec, colIndex, cStr, isNull);
-		char *colKey;
-
         l = cStr.length();
-        colKey = new char[l];
-        for(int i = 0; i < l; i ++) {
-            colKey[i] = cStr[i];
-        }
-
+        char colKey[l];
+        memset(colKey, 0, sizeof(colKey));
+        strcpy(colKey, cStr.c_str());
 	    if(isNull) {
 	    	return 1;
 		}
@@ -429,8 +422,6 @@ int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
         		return 1;
 			}
         }
-        delete[] chartName;
-        delete[] colKey;
 	}
 	return 0;
 }
