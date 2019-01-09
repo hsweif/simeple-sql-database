@@ -1,5 +1,7 @@
 #include "RecordModule/RM_FileHandle.h"
 #include <iostream>
+#define MAP_SIZE 1000
+
 using namespace std;
 BufType reset;
 RM_FileHandle::RM_FileHandle(bool _init) {
@@ -172,13 +174,15 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	// Below is for mapping
 	offset += colNum;
 	// FIXME
-	int mpsz = ((PAGE_INT_NUM - offset) >> 5);
+	// int mpsz = ((PAGE_INT_NUM - offset) >> 5);
+	int mpsz = MAP_SIZE;
 	pageUintMap = new uint[mpsz];
 	for (int i = 0; i < mpsz; i++) {
 		pageUintMap[i] = firstPage[i + offset];
 	}
 	// pageBitMap = new MyBitMap((PAGE_INT_NUM - offset) << 5,pageUintMap);
-    pageBitMap = new MyBitMap(PAGE_INT_NUM - offset, pageUintMap);
+    // pageBitMap = new MyBitMap(PAGE_INT_NUM - offset, pageUintMap);
+	pageBitMap = new MyBitMap(mpsz << 5, pageUintMap);
 	if(recordPP%32 == 0) {
 		recordMapSize = recordPP/32;
 	}
