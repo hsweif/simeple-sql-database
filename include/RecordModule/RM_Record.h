@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <sstream>
 #include <config.h>
+#include <algorithm>
 
 using namespace std;
 

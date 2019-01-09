@@ -741,9 +741,9 @@ int RM_FileHandle::GetAllRid(list<RID> *result)
         if(this->GetRec(rid, record) == 0)
         {
             result->push_back(rid);
-            slot ++;
             cnt ++;
         }
+        slot ++;
     }
 
     return 0;
