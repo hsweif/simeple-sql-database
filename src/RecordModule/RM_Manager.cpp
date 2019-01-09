@@ -76,6 +76,19 @@ void RM_Manager::showAllFile() {
     }
     struct dirent *entry;
     int i = 0;
+#ifdef __DARWIN_UNIX03
+    struct stat st_buf;
+    while (entry = readdir(dbDir))
+    {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, ".." ) != 0) {
+            int status = stat(entry->d_name, &st_buf);
+            if (S_ISREG (st_buf.st_mode)) {
+                showFile(entry->d_name);
+                i++;
+            }
+        }
+    }
+#else
     while (entry = readdir(dbDir))
     {
         if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && entry->d_type == 0) {
@@ -84,5 +97,6 @@ void RM_Manager::showAllFile() {
         }
 
     }
+#endif
     closedir(dbDir);
 }

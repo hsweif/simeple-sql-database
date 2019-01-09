@@ -31,6 +31,7 @@ namespace RM{
         u.i = i;
         return u.f;
     }
+
 }
 
 RM_node::RM_node()
