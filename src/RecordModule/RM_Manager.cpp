@@ -81,7 +81,13 @@ void RM_Manager::showAllFile() {
     while (entry = readdir(dbDir))
     {
         if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, ".." ) != 0) {
-            int status = stat(entry->d_name, &st_buf);
+            int l = strlen(this->dataPath) + strlen(entry->d_name);
+            int cnt = 0;
+            char filePath[l];
+            memset(filePath, 0, sizeof(filePath));
+            strcpy(filePath, this->dataPath);
+            strcat(filePath, entry->d_name);
+            int status = stat(filePath, &st_buf);
             if (S_ISREG (st_buf.st_mode)) {
                 showFile(entry->d_name);
                 i++;

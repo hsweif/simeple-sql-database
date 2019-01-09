@@ -65,6 +65,29 @@ int showDB(char* dbName){
 	struct dirent *entry;
 	int i = 0;
 	printf("DATABASE:%s\n",dbName);
+
+#ifdef __DARWIN_UNIX03
+    struct stat st_buf;
+    while (entry = readdir(dir))
+    {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, ".." ) != 0) {
+        	string path = "../database/";
+        	path += dbName;
+			path += "/";
+            int l = path.length() + strlen(entry->d_name);
+            int cnt = 0;
+            char filePath[l];
+            memset(filePath, 0, sizeof(filePath));
+            strcpy(filePath, path.c_str());
+            strcat(filePath, entry->d_name);
+            int status = stat(filePath, &st_buf);
+            if (S_ISREG (st_buf.st_mode)) {
+				printf("	tablename%d=%s\n",i,entry->d_name);
+				i++;
+			}
+        }
+    }
+#else
     while(entry=readdir(dir))
     {
     	if(strcmp(entry->d_name,".") != 0 && strcmp(entry->d_name,"..") != 0 && entry->d_type == 0){
@@ -72,6 +95,7 @@ int showDB(char* dbName){
 	    	i++;
     	}
     }
+#endif
     closeDB(dir);
     return 0;
 }
