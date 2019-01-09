@@ -149,8 +149,19 @@ int RecordHandler::MakeRecord(RM_Record &record, vector<RM_node> &items)
 
     for(int i = 0; i < this->itemNum; i ++) {
         if(items[i].type != type[i]) {
-            cout << "Record's attribute type is invalid." << endl;
-            return 1;
+            if(items[i].type == RM::INT && type[i] == RM::FLOAT) {
+                stringstream ss;
+                float f;
+                ss << items[i].num;
+                ss >> f;
+                printf("Float num%f\n", f);
+                items[i].type = RM::FLOAT;
+                items[i].fNum = f;
+            }
+            else{
+                cout << "Record's attribute type is invalid." << endl;
+                return 1;
+            }
         }
         if(items[i].type == RM::ItemType::CHAR && !items[i].isNull)
         {

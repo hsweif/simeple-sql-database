@@ -320,7 +320,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
             RM_Record record;
             // printf("colNum:%d\n",items.size());
             if(handler->recordHandler->MakeRecord(record, items)) {
-                cout << "Error to make record." << endl;
+				continue;
             }
 			handler->recordHandler->PrintRecord(record);
             if(handler->InsertRec(record) == 0)	{
@@ -389,6 +389,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		delete whereExprs;
 	}
 	else if(stmt->isType(hsql::kStmtUpdate)){
+		printf("Update test.\n");
 		if(rmg == NULL){
 			printf("current path is not DBPath\n");
 			return -1;

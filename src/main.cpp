@@ -30,11 +30,13 @@ int main(int argc, char* argv[])
 		printf("    Please put your test file under {REPO_DIR}/TestDataSet/\n");
 		string command;
 		printf("Please input your SQL command.\n");
+		printf(">>>>> ");
         getline(cin,command);
         while(command != "exit")
         {
             // printf((currentDB+'>').c_str());
             ParseCommand(command);
+            printf(">>>>> ");
 			getline(cin,command);
         }
 		return 1;
