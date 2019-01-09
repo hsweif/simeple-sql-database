@@ -288,6 +288,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];
         vector<RM_node> items;
         int cnt = 0;
+        int sz = values.size();
 		for(hsql::InsertValue* val:values){
 			items.clear();
 			for(hsql::Expr* expr:val->values[0]){
@@ -323,16 +324,12 @@ int executeCommand(const hsql::SQLStatement* stmt){
             if(handler->recordHandler->MakeRecord(record, items)) {
 				continue;
             }
-			handler->recordHandler->PrintRecord(record);
+			printf("%d / %d\r", cnt, sz);
             if(handler->InsertRec(record) == 0)	{
             	cnt ++;
-				printf("insert success\n");
 			}
 			else{
 				printf("Fail to insert\n");
-			}
-			if(cnt == 127) {
-				printf("Debug.\n");
 			}
 		}
 		rmg->closeFile(*handler);

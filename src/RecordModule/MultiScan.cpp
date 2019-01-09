@@ -12,6 +12,7 @@ ScanQuery::ScanQuery(int mCol, IM::CompOp cp, int vCol)
     mainCol = mCol;
     compOp = cp;
     viceCol = vCol;
+    target = RM::BOTH;
 }
 
 DualScan::~DualScan() {}
@@ -41,6 +42,18 @@ int DualScan::OpenScan(list<ScanQuery> queryList)
     scanResult = new list<pair<RID, list<RID>>>;
     mainScan->OpenScanAll(*mainHandler);
     int cnt = 0;
+    for(auto iter = queryList.begin(); iter != queryList.end(); iter ++)
+    {
+        if(iter->queryType == QueryType::SINGLE && iter->target == ScanTarget::MAIN)
+        {
+            if(iter->scanType == RM::RangeScan) {
+                mainScan->OpenScan(*mainHandler, iter->mainCol, iter->compOp, iter->keyValue);
+            }
+            else if(iter->scanType == RM::NullScan) {
+                mainScan->OpenScan(*mainHandler, iter->mainCol, iter->isNull);
+            }
+        }
+    }
     while(mainScan->GetNextRec(*mainHandler, rec) != 1)
     {
         cnt ++;
@@ -48,16 +61,34 @@ int DualScan::OpenScan(list<ScanQuery> queryList)
         rec.GetRid(mainRid);
         for(auto iter = queryList.begin(); iter != queryList.end(); iter ++)
         {
-            int mCol = iter->mainCol, vCol = iter->viceCol;
-            IM::CompOp compOp = iter->compOp;
-            string colStr;
-            bool isNull;
-            if(mainHandler->recordHandler->GetColumnStr(rec, mCol, colStr, isNull)){
-                return 1;
+            if(iter->queryType == QueryType::SINGLE)
+            {
+                if(iter->target == ScanTarget::MAIN) {
+                    continue;
+                }
+                else if(iter->target == ScanTarget::VICE) {
+                    if(iter->scanType == RM::RangeScan) {
+                        viceScan->OpenScan(*viceHandler, iter->viceCol, iter->compOp, iter->keyValue);
+                    }
+                    else if(iter->scanType == RM::NullScan) {
+                        viceScan->OpenScan(*viceHandler, iter->viceCol, iter->isNull);
+                    }
+                }
             }
-            char *cStr = (char*)colStr.c_str();
-            // FIXME: Bug may occur, be aware
-            viceScan->OpenScan(*viceHandler, vCol, compOp, cStr);
+            else
+            {
+                int mCol = iter->mainCol, vCol = iter->viceCol;
+                IM::CompOp compOp = iter->compOp;
+                string colStr;
+                bool isNull;
+                if(mainHandler->recordHandler->GetColumnStr(rec, mCol, colStr, isNull)){
+                    return 1;
+                }
+                char *cStr = (char*)colStr.c_str();
+                // FIXME: Bug may occur, be aware
+                viceScan->OpenScan(*viceHandler, vCol, compOp, cStr);
+            }
+
         }
         RM_Record vRecord;
         RID vRid;

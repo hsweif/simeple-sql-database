@@ -181,8 +181,7 @@ bool IndexHandle::Existed(int pos, char *key)
             RID *tmp = new RID;
             vector<RID> result;
             int ret = bpTree->search(keyValue, tmp);
-            if(ret != -1) {
-                // FIXME
+            if(ret == 0) {
                 return true;
             } else{
                 return false;
@@ -192,7 +191,7 @@ bool IndexHandle::Existed(int pos, char *key)
             iter ++;
         }
     }
-    return true;
+    return false;
 }
 
 }

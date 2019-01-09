@@ -8,7 +8,6 @@ RM_Manager::RM_Manager(char *dbName) {
     strcat(path, dbName);
     strcat(path, "/");
     strcpy(this->dataPath, path);
-    printf("%s\n", this->dataPath);
     this->fileManager = new FileManager();
     this->bufPageManager = new BufPageManager(fileManager);
     this->fileID = -1;
