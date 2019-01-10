@@ -82,7 +82,7 @@ public:
     {
         int cnt = 0;
         for(auto iter = scanResult->begin(); iter != scanResult->end(); iter ++) {
-            cnt += iter->second->size();
+            cnt += iter->second.size();
         }
         return cnt;
     }
