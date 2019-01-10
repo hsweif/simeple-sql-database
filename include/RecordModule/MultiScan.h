@@ -78,7 +78,14 @@ public:
     ~DualScan();
     int OpenScan(list<ScanQuery> queryList);
     int CloseScan();
-    int ResultNum(){return scanResult->size();}
+    int ResultNum()
+    {
+        int cnt = 0;
+        for(auto iter = scanResult->begin(); iter != scanResult->end(); iter ++) {
+            cnt += iter->second->size();
+        }
+        return cnt;
+    }
     int GetNextPair(pair<RID, list<RID>> &item);
 };
 
