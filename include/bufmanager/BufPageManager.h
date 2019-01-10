@@ -172,5 +172,12 @@ public:
 			addr[i] = NULL;
 		}
 	}
+	~BufPageManager(){
+		// delete hash;
+		delete replace;
+		delete dirty;
+		// delete fileManager;
+	}
+
 };
 #endif

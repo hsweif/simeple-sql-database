@@ -8,6 +8,11 @@ private:
 		int prev;
 		BufType ctx; // Node context
 		uint type; // How to decode ctx
+		~ListNode(){
+			if(ctx != nullptr) {
+				delete ctx;
+			}
+		}
 	};
 	int cap;
 	int LIST_NUM;
@@ -63,6 +68,8 @@ public:
 			a[i].next = i;
 			a[i].prev = i;
 		}
+	}
+	~MyLinkList(){
 	}
 };
 #endif

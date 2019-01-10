@@ -51,5 +51,8 @@ public:
 			list->insert(0, i);
 		}
 	}
+	~FindReplace(){
+		delete list;
+	}
 };
 #endif

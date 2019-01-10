@@ -231,9 +231,16 @@ public:
 		init();
 	}
 	MyBitMap(int cap, uint* da) {
-		data = da;
+		// data = da;
 		size = (cap >> BIAS);
+		data = new uint[size];
+		for (int i = 0; i < size; ++i) {
+			data[i] = da[i];
+		}
 		init();
+	}
+	~MyBitMap(){
+		delete data;
 	}
 	void reLoad(uint* da) {
 		data = da;

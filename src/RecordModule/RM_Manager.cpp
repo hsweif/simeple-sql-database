@@ -19,6 +19,9 @@ RM_Manager::~RM_Manager()
 {
     delete dataPath;
     delete dbName;
+    // FIXME
+    delete fileManager;
+    delete bufPageManager;
 }
 
 /*

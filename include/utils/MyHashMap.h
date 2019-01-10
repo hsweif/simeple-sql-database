@@ -104,5 +104,9 @@ public:
 		}
 		list = new MyLinkList(CAP_, MOD_);
 	}
+	~MyHashMap(){
+		delete a;
+		delete list;
+	}
 };
 #endif

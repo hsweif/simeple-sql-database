@@ -67,7 +67,8 @@ int bplus_tree::search(const key_t& key, value_t *value) const
     if (record != leaf.children + leaf.n) {
         // always return the lower bound
         *value = record->value;
-        return keycmp(record->key, key);
+        int ret = keycmp(record->key, key);
+        return ret;
     } else {
         return -1;
     }
@@ -122,7 +123,8 @@ int bplus_tree::search_range(key_t *left, const key_t &right,
             *next = false;
         }
     }
-
+    delete b;
+    delete e;
     return i;
 }
 

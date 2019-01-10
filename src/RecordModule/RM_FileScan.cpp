@@ -151,6 +151,8 @@ int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
 int RM_FileScan::CloseScan()
 {
     scanResult->clear();
+    delete scanResult;
+    this->scanResult = new list<RID>();
     noScanBefore = true;
     fileHandler = nullptr;
 }

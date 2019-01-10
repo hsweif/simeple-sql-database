@@ -57,6 +57,7 @@ private:
 	int CheckForForeignKey(RM_Record &rec, IM::IndexAction action);
 	map<string, int> colNameMap;
 	string tableName;
+	BufType reset;
 	vector< pair<int, pair<string, int>> > foreignKey;
 
 public:

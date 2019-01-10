@@ -144,15 +144,14 @@ int IndexHandle::SearchRange(list<RID> &result, char *leftValue, char *rightValu
     {
         if(i == col && isIndex[i])
         {
-            bpt::bplus_tree *indexTree = iter->bpTree;
             if(comOP == IM::LS || comOP == IM::LEQ) {
-                resultNum = indexTree->search_range(&left, right, searched, MAX_RESULT);
+                resultNum = iter->bpTree->search_range(&left, right, searched, MAX_RESULT);
             }
             else if(comOP == IM::GT || comOP == IM::GEQ) {
-                resultNum = indexTree->search_range(&right, left, searched, MAX_RESULT);
+                resultNum = iter->bpTree->search_range(&right, left, searched, MAX_RESULT);
             }
             else if(comOP == IM::EQ) {
-                resultNum = indexTree->search_range(&right, right, searched, MAX_RESULT);
+                resultNum = iter->bpTree->search_range(&right, right, searched, MAX_RESULT);
             }
             break;
         }
@@ -164,6 +163,7 @@ int IndexHandle::SearchRange(list<RID> &result, char *leftValue, char *rightValu
     for(int i = 0; i < resultNum; i ++) {
         result.push_back(searched[i]);
     }
+    delete [] searched;
     return 0;
 }
 
@@ -179,10 +179,10 @@ bool IndexHandle::Existed(int pos, char *key)
         if(i == pos)
         {
             bpt::key_t keyValue(key);
-            bpt::bplus_tree *bpTree = iter->bpTree;
             RID *tmp = new RID;
             vector<RID> result;
-            int ret = bpTree->search(keyValue, tmp);
+            int ret = iter->bpTree->search(keyValue, tmp);
+            delete tmp;
             if(ret == 0) {
                 return true;
             } else{
