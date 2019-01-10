@@ -36,6 +36,13 @@ struct RM_node
 
     BufType ctx; //Context of the node
     RM_node();
+    ~RM_node() {
+    	// if(ctx != nullptr)	{
+    	// 	if(type == RM::CHAR) {
+    	// 		delete [] ctx;
+		// 	}
+		// }
+	}
     RM_node(int content);
 	RM_node(float content);
 	RM_node(string content);
@@ -56,7 +63,7 @@ private:
 	int colNum;
 public:
 	RM_Record();
-	~RM_Record (){};
+	~RM_Record (){ }//if(mData != NULL) delete [] mData;};
 	int SetRecord	(BufType pData, int size, int cNum);
 	void SetRecord   (int offset,uint data);
 	BufType GetData () const; // 返回不包括NULL位图的内容

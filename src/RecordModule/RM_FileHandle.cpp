@@ -20,8 +20,8 @@ RM_FileHandle::RM_FileHandle(bool _init) {
 RM_FileHandle::~RM_FileHandle()
 {
 	// AWARE
-    if(pageUintMap != nullptr) { delete pageUintMap; }
-    if(recordUintMap != nullptr) { delete recordUintMap; }
+    if(pageUintMap != nullptr) { delete [] pageUintMap; }
+    if(recordUintMap != nullptr) { delete [] recordUintMap; }
     if(recordHandler != nullptr) { delete recordHandler; }
     if(pageBitMap != nullptr) {delete pageBitMap;}
     if(recordBitMap != nullptr) {delete recordBitMap;}
@@ -310,6 +310,7 @@ int RM_FileHandle::updateHead() {
 	}
 
 	this->mBufpm->markDirty(firstPageBufIndex);
+
 	return 0;
 }
 
@@ -332,6 +333,7 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 	rec.SetRecord(pData, recordSize, colNum);
 	RID nRid = rid;
 	rec.SetRID(nRid);
+	delete [] pData;
 	return 0;
 }
 
@@ -565,7 +567,6 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 	bufLastIndex = bufIndex;
 	// TODO: support different key value
 	this->indexHandle->IndexAction(IM::INSERT, pData, recordHandler);
-	delete [] bufData;
 	return 0;
 }
 

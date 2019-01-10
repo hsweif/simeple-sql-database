@@ -108,6 +108,7 @@ int DualScan::OpenScan(list<ScanQuery> queryList)
         }
         viceScan->CloseScan();
     }
+    mainScan->CloseScan();
     curResult = scanResult->begin();
     int sz = scanResult->size();
     delete mainScan;

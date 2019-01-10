@@ -37,22 +37,26 @@ namespace RM{
 RM_node::RM_node()
 {
     isNull = true;
+    ctx = nullptr;
 }
 
 RM_node::RM_node(int content)
 {
+    ctx = nullptr;
     isNull = false;
     setCtx(content);
 }
 
 RM_node::RM_node(float content)
 {
+    ctx = nullptr;
     isNull = false;
     setCtx(content);
 }
 
 RM_node::RM_node(string content)
 {
+    ctx = nullptr;
     isNull = false;
     setCtx(content);
 }

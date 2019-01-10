@@ -154,5 +154,8 @@ int RM_FileScan::CloseScan()
     delete scanResult;
     this->scanResult = new list<RID>();
     noScanBefore = true;
-    fileHandler = nullptr;
+    if(fileHandler != nullptr) {
+        delete fileHandler;
+        fileHandler = nullptr;
+    }
 }

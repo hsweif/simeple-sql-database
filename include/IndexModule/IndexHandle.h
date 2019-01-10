@@ -38,6 +38,10 @@ struct node
         item = s;
         bpTree = bt;
     }
+    ~node()
+    {
+        delete bpTree;
+    }
 };
 
 static class IndexManager;
