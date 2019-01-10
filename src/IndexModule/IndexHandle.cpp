@@ -136,6 +136,7 @@ int IndexHandle::SearchRange(list<RID> &result, char *leftValue, char *rightValu
     // TODO: Undone.
     RID *searched = new RID[MAX_RESULT];
     result.clear();
+    list<RID>().swap(result);
     bpt::key_t left(leftValue);
     bpt::key_t right(rightValue);
     int resultNum = 0;

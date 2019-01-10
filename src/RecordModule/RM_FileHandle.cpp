@@ -110,6 +110,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, string tableName)
 	if(isInitialized)
 	{
         mainKey.clear();
+        vector<uint>().swap(mainKey);
         for(int i = 0; i < mainKeyCnt; i++){
             uint pos = (uint)firstPage[offset];
             mainKey.push_back(pos);
@@ -129,6 +130,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, string tableName)
 	offset ++;
 	if(isInitialized){
 		foreignKey.clear();
+		vector< pair<int, pair<string, int>> >().swap(foreignKey);
 		for(int i = 0; i < foreignKeyNum; i ++)
 		{
 			int colIndex = (int)firstPage[offset];
@@ -334,6 +336,7 @@ int RM_FileHandle::GetRec(const RID &rid, RM_Record &rec)
 int RM_FileHandle::SetMainKey(std::vector<int> mainKeys)
 {
 	mainKey.clear();
+	vector<uint>().swap(mainKey);
 	for(int key: mainKeys){
 		if(key < 0 || key > colNum) {
 			return 1;
@@ -711,6 +714,7 @@ int RM_FileHandle::GetAllRecord(vector<RM_Record> &result)
     int cnt = 0;
 
     result.clear();
+    vector<RM_Record>().swap(result);
 
     while(cnt < sum)
     {
@@ -740,6 +744,7 @@ int RM_FileHandle::GetAllRid(list<RID> *result)
     int cnt = 0;
 
     result->clear();
+    list<RID>().swap(*result);
 
     while(cnt < sum)
     {

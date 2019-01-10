@@ -23,7 +23,7 @@ int RM_FileScan::SetFilehandler(RM_FileHandle &fileHandle)
 
 int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, char *value)
 {
-    SetFilehandler(fileHandle);
+    // SetFilehandler(fileHandle);
     if(noScanBefore && fileHandle.indexHandle->IsIndex(col))
     {
         if(comOp == IM::LS || comOp == IM::LEQ)
@@ -99,7 +99,7 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, IM::CompOp comOp, 
 
 int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, bool isNull)
 {
-    SetFilehandler(fileHandle);
+    // SetFilehandler(fileHandle);
     if(noScanBefore) {
         fileHandle.GetAllRid(scanResult);
         noScanBefore = false;
@@ -124,7 +124,7 @@ int RM_FileScan::OpenScan(RM_FileHandle &fileHandle, int col, bool isNull)
 
 int RM_FileScan::OpenScanAll(RM_FileHandle &fileHandle)
 {
-    SetFilehandler(fileHandle);
+    // SetFilehandler(fileHandle);
     if(noScanBefore) {
         fileHandle.GetAllRid(scanResult);
     }
@@ -133,7 +133,7 @@ int RM_FileScan::OpenScanAll(RM_FileHandle &fileHandle)
 
 int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
 {
-    SetFilehandler(fileHandle);
+    // SetFilehandler(fileHandle);
     RM_Record nRec;
     if(curResult != scanResult->end() && !scanResult->empty()) {
         if(fileHandle.GetRec(*curResult, nRec)) {
@@ -151,6 +151,10 @@ int RM_FileScan::GetNextRec(RM_FileHandle &fileHandle, RM_Record &rec)
 int RM_FileScan::CloseScan()
 {
     scanResult->clear();
+    list<RID>().swap(*scanResult);
     noScanBefore = true;
+    if(fileHandler != nullptr) {
+        delete fileHandler;
+    }
     fileHandler = nullptr;
 }

@@ -301,6 +301,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
         cout << "Inserting to " << tableName << endl;
 		for(hsql::InsertValue* val:values){
 			items.clear();
+			vector<RM_node>().swap(items);
 			for(hsql::Expr* expr:val->values[0]){
 				if(!expr->isLiteral()){
 					printf("wrong type\n");
