@@ -18,6 +18,9 @@
 #include "RM_PageHead.h"
 #include <sys/stat.h>
 #include <cstdio>
+#include <vector>
+#include <list>
+#include <map>
 
 using namespace std;
 
@@ -33,6 +36,7 @@ private:
     char *dbName;
 public:
     RM_Manager(char *dbName);
+    ~RM_Manager();
     int createFile(const char* name, int recordSize, int cNum);
     bool openFile(const char* name, RM_FileHandle &fileHandle);
     int closeFile(RM_FileHandle &fileHandle);

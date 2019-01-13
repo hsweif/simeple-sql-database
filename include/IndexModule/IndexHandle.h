@@ -8,6 +8,7 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <errno.h>
+#include <map>
 
 #include "../RecordModule/RM_Record.h"
 #include "../RecordModule/RecordHandler.h"
@@ -39,6 +40,8 @@ struct node
     }
 };
 
+static class IndexManager;
+
 class IndexHandle
 {
 private:
@@ -48,6 +51,7 @@ private:
     int colNum;
     string indexPath;
     vector<bool> isIndex;
+    static map<string, IndexHandle*> indexHandlers;
 public:
     IndexHandle(int cNum);
     int SetIndexHandle(vector<string> tt, string idxPath);

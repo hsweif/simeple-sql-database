@@ -3,7 +3,7 @@
 using namespace std;
 RM_Manager::RM_Manager(char *dbName) {
     //从cmake-build-debug算起
-    dataPath = new char[50];
+    dataPath = new char[100];
     char path[50] = "../database/";
     strcat(path, dbName);
     strcat(path, "/");
@@ -14,6 +14,26 @@ RM_Manager::RM_Manager(char *dbName) {
     this->dbName = new char[strlen(dbName)];
     strcpy(this->dbName, dbName);
 }
+
+RM_Manager::~RM_Manager()
+{
+    delete dataPath;
+    delete dbName;
+}
+
+/*
+static int RM_Manager::GetIndex(string tableName, IM::IndexHandle *indexHandler)
+{
+    auto iter = indexHandlers->find(tableName);
+    if(iter == indexHandlers->end()) {
+        return 1;
+    }
+    else{
+        indexHandler = iter->second;
+    }
+    return 0;
+}
+*/
 
 int RM_Manager::createFile(const char* name, int recordSize, int cNum) {
     FileManager *fm = this->fileManager;
@@ -34,13 +54,14 @@ bool RM_Manager::openFile(const char* name, RM_FileHandle &fileHandle) {
     char dirSym[10] = "_index/";
     strcpy(fileName, this->dataPath);
     strcat(fileName, name);
+    string chartName(name);
     bool result = this->fileManager->openFile(fileName, this->fileID);
     strcat(fileName, dirSym);
     string idx(fileName);
     fileHandle.indexPath = idx;
     RM_FileHandle::CreateDir(idx);
     fileHandle.relatedRManager = new RM_Manager(this->dbName);
-    fileHandle.init(this->fileID,this->bufPageManager);
+    fileHandle.init(this->fileID,this->bufPageManager, chartName);
     return result;
 }
 

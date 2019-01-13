@@ -1,6 +1,6 @@
 CREATE DATABASE selectDB
 USE DATABASE selectDB
-create table school (id INT,name CHAR(10))
+create table school (id INT,name CHAR(10), primary key(id))
 create table price (id INT,value INT)
 insert into school values (1,'qinghua'),(2,'beida'),(3,'fudan')
 insert into price values (1,233),(2,666)
