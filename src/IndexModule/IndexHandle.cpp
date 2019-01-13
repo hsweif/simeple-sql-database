@@ -3,6 +3,8 @@
 
 namespace IM{
 
+
+
 IndexHandle::IndexHandle(int cNum)
 {
     indexNum = 0;
@@ -168,7 +170,8 @@ int IndexHandle::SearchRange(list<RID> &result, char *leftValue, char *rightValu
 bool IndexHandle::Existed(int pos, char *key)
 {
     if(!isIndex[pos]) {
-        return true;
+        cout << pos << "is not index" << endl;
+        return false;
     }
     auto iter = index.begin();
     for(int i = 0; i < colNum; i ++)
@@ -180,7 +183,7 @@ bool IndexHandle::Existed(int pos, char *key)
             RID *tmp = new RID;
             vector<RID> result;
             int ret = bpTree->search(keyValue, tmp);
-            if(ret != -1) {
+            if(ret == 0) {
                 return true;
             } else{
                 return false;
@@ -190,7 +193,7 @@ bool IndexHandle::Existed(int pos, char *key)
             iter ++;
         }
     }
-    return true;
+    return false;
 }
 
 }

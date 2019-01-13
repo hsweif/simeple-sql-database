@@ -1,5 +1,7 @@
 #include "RecordModule/RM_FileHandle.h"
 #include <iostream>
+#define MAP_SIZE 1000
+
 using namespace std;
 BufType reset;
 RM_FileHandle::RM_FileHandle(bool _init) {
@@ -25,9 +27,10 @@ RM_FileHandle::~RM_FileHandle()
 	}
 }
 
-int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
+int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm, string tableName)
 {
 	// this->indexPath = string(indexName);
+	this->tableName = tableName;
 	fileId = _fileId;
 	mBufpm = _bufpm;
 	BufType firstPage = mBufpm->getPage(fileId, 0, firstPageBufIndex);
@@ -43,7 +46,11 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	recordHandler->SetRecordSize(recordSize);
 
 	if(isInitialized) {
-	    this->indexHandle = new IM::IndexHandle(colNum);
+		this->indexHandle = new IM::IndexHandle(colNum);
+		if(IM::IndexManager::GetIndexHandler(tableName, this->indexHandle)){
+			// IM::IndexManager::SetIndexHandler(tableName, this->indexHandle);
+		}
+	    // this->indexHandle = new IM::IndexHandle(colNum);
     }
 
 	vector<string> tmpTitle;
@@ -78,9 +85,7 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	}
 	if(!recordHandler->isInitialized) {
 		this->SetTitle(tmpTitle);
-	    InitIndex(false);
 	}
-
 	// TODO: Add support for null key
 	int nullSectLength = ((colNum % 32) == 0) ? colNum/32 : colNum/32 + 1;
 	int offset = HEAD_OFFSET + colNum + (RM::TITLE_LENGTH/4)*colNum;
@@ -106,9 +111,12 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 	{
         mainKey.clear();
         for(int i = 0; i < mainKeyCnt; i++){
-            mainKey.push_back((uint)firstPage[offset]);
+            uint pos = (uint)firstPage[offset];
+            mainKey.push_back(pos);
+            indexHandle->SetIndex(pos, true);
             offset++;
         }
+        InitIndex(false);
 	}
 	else{
 	    offset += mainKeyCnt;
@@ -170,13 +178,16 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 
 	// Below is for mapping
 	offset += colNum;
-	pageUintMap = new uint[PAGE_INT_NUM - offset];
-    // FIXME
-	for (int i = 0; i < (PAGE_INT_NUM - offset) >> 5; i++) {
+	// FIXME
+	// int mpsz = ((PAGE_INT_NUM - offset) >> 5);
+	int mpsz = MAP_SIZE;
+	pageUintMap = new uint[mpsz];
+	for (int i = 0; i < mpsz; i++) {
 		pageUintMap[i] = firstPage[i + offset];
 	}
 	// pageBitMap = new MyBitMap((PAGE_INT_NUM - offset) << 5,pageUintMap);
-    pageBitMap = new MyBitMap(PAGE_INT_NUM - offset, pageUintMap);
+    // pageBitMap = new MyBitMap(PAGE_INT_NUM - offset, pageUintMap);
+	pageBitMap = new MyBitMap(mpsz << 5, pageUintMap);
 	if(recordPP%32 == 0) {
 		recordMapSize = recordPP/32;
 	}
@@ -184,6 +195,8 @@ int RM_FileHandle::init(int _fileId, BufPageManager *_bufpm)
 		recordMapSize = recordPP/32+1;
 	}
 	recordUintMap = new uint[recordMapSize];
+
+	// IM::IndexManager::SetIndexHandler(tableName, this->indexHandle);
 
 	isInitialized = true;
 	return 0;
@@ -235,7 +248,7 @@ int RM_FileHandle::updateHead() {
 	offset += nullSectLength;
 	readBuf[offset] = mainKeyCnt;
 	offset ++;
-	for(int i = 0;i<mainKey.size();i++){
+	for(int i = 0;i<mainKeyCnt;i++){
 		readBuf[offset] = mainKey[i];	
 		offset++;
 	}
@@ -382,29 +395,19 @@ int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
 	    int colIndex = iter->first;
 	    bool isNull;
 	    RM_FileHandle *handler = new RM_FileHandle();
-
-	    char *chartName;
 	    string chartStr = iter->second.first;
         int l = chartStr.length();
-        chartName = new char[l];
-        for(int i = 0; i < l; i ++) {
-            chartName[i] = chartStr[i];
-        }
-
+		char *chartName = new char[l];
+		strcpy(chartName, chartStr.c_str());
 	    if(!relatedRManager->openFile(chartName, *handler)) {
 			return 1;
 		}
 
 		string cStr;
 	    recordHandler->GetColumnStr(rec, colIndex, cStr, isNull);
-		char *colKey;
-
         l = cStr.length();
-        colKey = new char[l];
-        for(int i = 0; i < l; i ++) {
-            colKey[i] = cStr[i];
-        }
-
+        char *colKey = new char[l];
+        strcpy(colKey, cStr.c_str());
 	    if(isNull) {
 	    	return 1;
 		}
@@ -428,8 +431,9 @@ int RM_FileHandle::CheckForForeignKey(RM_Record &rec, IM::IndexAction action)
         		return 1;
 			}
         }
-        delete[] chartName;
-        delete[] colKey;
+        delete [] colKey;
+        delete [] chartName;
+        relatedRManager->closeFile(*handler);
 	}
 	return 0;
 }
@@ -480,14 +484,14 @@ int RM_FileHandle::InsertRec(RM_Record& pData){
 	int dataSize = pData.BufSize();
 	if(dataSize != this->recordSize)
 	{
-		printf("data size error: %d/ %d\n", dataSize, this->recordSize);
+		printf("data size error: %d''\n", dataSize, this->recordSize);
 		return 1;
 	}
 
-	// if(CheckForMainKey(pData)) {
-	// 	printf("Item with same main key already existed\n");
-	// 	return 1;
-	// }
+	if(CheckForMainKey(pData)) {
+		printf("Item with same main key already existed\n");
+		return 1;
+	}
 
 	if(CheckForForeignKey(pData, IM::IndexAction::INSERT)) {
         return 1;
@@ -648,8 +652,12 @@ int RM_FileHandle::InitIndex(bool forceEmpty)
 		return 1;
 	}
 	this->indexHandle->SetIndexHandle(title, this->indexPath);
-	for(int i = 0; i < title.size(); i ++) {
-		this->indexHandle->CreateIndex((char*)title[i].data(), i, forceEmpty);
+
+	if(IM::IndexManager::GetIndexHandler(tableName, this->indexHandle)) {
+		for (int i = 0; i < title.size(); i++) {
+			this->indexHandle->CreateIndex((char *) title[i].data(), i, forceEmpty);
+		}
+		IM::IndexManager::SetIndexHandler(this->tableName, this->indexHandle);
 	}
 	return 0;
 }
@@ -744,9 +752,9 @@ int RM_FileHandle::GetAllRid(list<RID> *result)
         if(this->GetRec(rid, record) == 0)
         {
             result->push_back(rid);
-            slot ++;
             cnt ++;
         }
+        slot ++;
     }
 
     return 0;

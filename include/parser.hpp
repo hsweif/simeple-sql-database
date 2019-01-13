@@ -7,12 +7,12 @@
 #include <algorithm>
 #include <iterator>
 #include <string>
-#include<string.h>
+#include <string.h>
 #include "CommandModule/dataBaseManager.h"
 #include "RecordModule/RM_Manager.h"
 #include "RecordModule/RM_FileHandle.h"
 #include "RecordModule/RM_FileScan.h"
-#include "IndexModule/IndexHandle.h"
+#include "IndexModule/IndexManager.h"
 #include "utils/MyBitMap.h"
 #include "IndexModule/bpt.h"
 #include <fstream>
@@ -35,7 +35,7 @@ struct UpdateExprPos
 	RM::ItemType lType;
 	UpdateExprPos(int lPos,int r1Pos,int r2Pos,hsql::OperatorType binaryOp,hsql::Expr* r,RM::ItemType lType):
 	lPos(lPos),r1Pos(r1Pos),r2Pos(r2Pos),binaryOp(binaryOp),r(r),lType(lType){
-		printf("%d %d %d\n", lPos,r1Pos,r2Pos);
+		// printf("%d %d %d\n", lPos,r1Pos,r2Pos);
 	};
 };
 void toUpper(string &s){
@@ -87,9 +87,11 @@ int ParseDBCommand(string command){
 	}
 	else if(commandWord[0] == "SHOW" && commandWord[1] == "DATABASE"){
 		char *dbName = (char*)commandWord[2].c_str();
-		showDB(dbName);		
+		if(commandWord[2] != "ALL")
+			showDB(dbName);
+		else showAllDB();		
 	}
-	else if(commandWord[0] == "DROP" && commandWord[1] == "TABLE"){
+	else if(commandWord[0] == "DELETE" && commandWord[1] == "TABLE"){
 		if(rmg == NULL)
 			return -1;
 		rmg->deleteFile(commandWord[2].c_str());
@@ -107,19 +109,19 @@ int ParseDBCommand(string command){
 }
 RM::ItemType transType(hsql::DataType type){
 	if(type == hsql::DataType::INT){
-		printf("intType\n");
+		// printf("intType\n");
 		return RM::ItemType::INT;
 	}
 	else if(type == hsql::DataType::FLOAT){
-		printf("floatType\n");
+		// printf("floatType\n");
 		return RM::ItemType::FLOAT;
 	}
 	else if(type == hsql::DataType::CHAR){
-		printf("charType\n");
+		// printf("charType\n");
 		return RM::ItemType::CHAR;
 	}
 	else {
-		printf("errorType\n");
+		// printf("errorType\n");
 		return RM::ItemType::ERROR;
 	}
 }
@@ -225,9 +227,17 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		vector<string> title;
 		std::vector<hsql::ColumnDefinition*> col = ((hsql::CreateStatement*)stmt)->columns[0];	
 		int colNum = col.size();
-		RM_FileHandle *handler = new RM_FileHandle();
+		RM_FileHandle *handler = new RM_FileHandle(false);
 		handler->recordHandler = new RM::RecordHandler(colNum);
+
+		string tableName(((hsql::CreateStatement*)stmt)->tableName);
+
 		handler->indexHandle = new IM::IndexHandle(colNum);
+		if(IM::IndexManager::GetIndexHandler(tableName, handler->indexHandle)){
+			// IM::IndexManager::SetIndexHandler(tableName, handler->indexHandle);
+		}
+		// handler->indexHandle = new IM::IndexHandle(colNum);
+
 		RM::ItemType temp;
 		int ret, l;
 		for(int i = 0;i < colNum;i++){
@@ -244,7 +254,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			for(char *key:*(((hsql::CreateStatement*)stmt)->primaryKeys)){
 				printf("primaryKey:%s\n", key);
 				for(int i=0;i<colNum;i++)
-					if(title[i].compare(key)){
+					if(title[i].compare(key) == 0){
 						mainKeys.push_back(i);
 						//handler->SetMainKey(i);
 						break;						
@@ -252,10 +262,23 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			}
 			handler->SetMainKey(mainKeys);
 		}
+		if(((hsql::CreateStatement*)stmt)->foreignRelations != nullptr){
+			for(hsql::ForeignRelation* relation:*(((hsql::CreateStatement*)stmt)->foreignRelations)){
+				int pos;
+				int ret = handler->GetAttrIndex(relation->key,pos);
+				if(ret){
+					printf("attr doesn't exist\n");
+					return -1;
+				}
+				// printf("foreignKey:%s %s %s\n", relation->key,relation->foreignTableName,relation->foreignKey);
+				if(handler->AddForeignKey(rmg,relation->foreignTableName,relation->foreignKey,pos)){
+					printf("add foreignKey error\n");
+				}
+			}
+		}
 		rmg->openFile(((hsql::CreateStatement*)stmt)->tableName,*handler);
 		// InitIndex 要在openfile后面
 		handler->InitIndex(true);
-
 
 		//handler->PrintTitle();
 		rmg->closeFile(*handler);
@@ -272,6 +295,10 @@ int executeCommand(const hsql::SQLStatement* stmt){
         rmg->openFile(((hsql::InsertStatement*)stmt)->tableName,*handler);
 		std::vector<hsql::InsertValue*> values = ((hsql::InsertStatement*)stmt)->values[0];
         vector<RM_node> items;
+        int cnt = 0;
+        int sz = values.size();
+        string tableName(((hsql::InsertStatement*)stmt)->tableName);
+        cout << "Inserting to " << tableName << endl;
 		for(hsql::InsertValue* val:values){
 			items.clear();
 			for(hsql::Expr* expr:val->values[0]){
@@ -303,18 +330,18 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				}
 			}
             RM_Record record;
-            // printf("colNum:%d\n",items.size());
             if(handler->recordHandler->MakeRecord(record, items)) {
-                cout << "Error to make record." << endl;
+				continue;
             }
-			handler->recordHandler->PrintRecord(record);
+			printf("%8d / %8d\r", cnt, sz);
             if(handler->InsertRec(record) == 0)	{
-				printf("insert success\n");
+            	cnt ++;
 			}
 			else{
 				printf("Fail to insert\n");
 			}
 		}
+		printf("\n");
 		rmg->closeFile(*handler);
 		delete handler;
 	}
@@ -329,7 +356,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		}
 		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
 		int ret = getExpr(expr,whereExprs);
-		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+		// printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
 		int whereExprsize = whereExprs->size();
 		RM_FileScan* fileScan = new RM_FileScan;
 		RM_FileHandle *handler = new RM_FileHandle();
@@ -355,7 +382,6 @@ int executeCommand(const hsql::SQLStatement* stmt){
 				fileScan->OpenScan(*handler,colPos,true);
 			}
 			else{
-				printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
 				fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
 			}
 		}
@@ -374,19 +400,21 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		delete whereExprs;
 	}
 	else if(stmt->isType(hsql::kStmtUpdate)){
+		printf("Update test.\n");
 		if(rmg == NULL){
 			printf("current path is not DBPath\n");
 			return -1;
 		}	
+		printf("this is UpdateStatement\n");
 		string tableName = (string)(((hsql::UpdateStatement*)stmt)->table->name);
 		cout<<"tableName:"<<tableName<<endl;
 		std::vector<hsql::UpdateClause*> updates = ((hsql::UpdateStatement*)stmt)->updates[0];
 		//get whereclause
 		hsql::Expr *expr = ((hsql::UpdateStatement*)stmt)->where;
-		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
-		int ret = getExpr(expr,whereExprs);
-		printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
-		int whereExprsize = whereExprs->size();
+		bool whereAll = false;
+		if(expr == nullptr)
+			whereAll = true;
+
 		RM_FileScan* fileScan = new RM_FileScan;
 		RM_FileHandle *handler = new RM_FileHandle();	
 		rmg->openFile(((hsql::UpdateStatement*)stmt)->table->name,*handler);
@@ -401,30 +429,38 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			}
 			updatePos.push_back(upPos);			
 		}*/	
-		for(hsql::Expr *expr:*whereExprs){
-			int colPos;
-			int ret;
-			if(expr->opType != hsql::OperatorType::kOpNot) {
-				ret = handler->GetAttrIndex(expr->expr->name,colPos);
-			}
-			else {
-				ret = handler->GetAttrIndex(expr->expr->expr->name,colPos);
-			}
-			if(ret){
-				printf("attr not exist\n");
-				return -1;
-			}
-			printf("%s is col:%d\n", expr->expr->name,colPos);
-			if(expr->opType == hsql::OperatorType::kOpNot){
-				fileScan->OpenScan(*handler,colPos,false);
-			}
-			else if(expr->opType == hsql::OperatorType::kOpIsNull){
-				fileScan->OpenScan(*handler,colPos,true);
-			}
-			else{
-				printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
-				fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
-			}
+		std::vector<hsql::Expr*>* whereExprs = new std::vector<hsql::Expr*>();
+		if(!whereAll){
+			int ret = getExpr(expr,whereExprs);
+			// printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+			int whereExprsize = whereExprs->size();
+			for(hsql::Expr *expr:*whereExprs){
+				int colPos;
+				int ret;
+				if(expr->opType != hsql::OperatorType::kOpNot) {
+					ret = handler->GetAttrIndex(expr->expr->name,colPos);
+				}
+				else {
+					ret = handler->GetAttrIndex(expr->expr->expr->name,colPos);
+				}
+				if(ret){
+					printf("attr not exist\n");
+					return -1;
+				}
+				printf("%s is col:%d\n", expr->expr->name,colPos);
+				if(expr->opType == hsql::OperatorType::kOpNot){
+					fileScan->OpenScan(*handler,colPos,false);
+				}
+				else if(expr->opType == hsql::OperatorType::kOpIsNull){
+					fileScan->OpenScan(*handler,colPos,true);
+				}
+				else{
+					fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
+				}
+			}			
+		}
+		else{
+			fileScan->OpenScanAll(*handler);			
 		}
 		//get updateExprs
 		std::vector<UpdateExprPos> updatePoss;
@@ -432,7 +468,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		for(hsql::UpdateClause* update:updates){
 			int lPos,r1Pos,r2Pos;
 			hsql::OperatorType binaryOp;
-			printf("update:%s\n",update->column);
+			// printf("update:%s\n",update->column);
 			int ret = handler->GetAttrIndex(update->column,lPos);
 			if(ret){
 				printf("attr not exist\n");
@@ -503,7 +539,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 		std::vector<RM_Record> records;
 		int updateSize = updatePoss.size();
 		while(!fileScan->GetNextRec(*handler, nextRec)){
-			printf("update:\n");
+			// printf("update:\n");
 			for(UpdateExprPos upExpr:updatePoss){
 				if(upExpr.binaryOp == hsql::OperatorType::kOpNone){
 					if(upExpr.r->isType(hsql::ExprType::kExprColumnRef)){//x=z
@@ -715,7 +751,7 @@ int executeCommand(const hsql::SQLStatement* stmt){
 			whereAll = true;
 		else{
 			int ret = getExpr(expr,whereExprs);
-			printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
+			// printf("ret:%d exps.size:%d\n",ret,whereExprs->size());
 		}
 		if(tables.size() == 1){
 			if(whereAll){
@@ -781,7 +817,6 @@ int executeCommand(const hsql::SQLStatement* stmt){
 						fileScan->OpenScan(*handler,colPos,true);
 					}
 					else{
-						printf("compare to %s\n", (char*)(expr->expr2->strName.c_str()));
 						fileScan->OpenScan(*handler,colPos,transOp(expr->opType),(char*)(expr->expr2->strName.c_str()));
 					}
 				}
@@ -850,12 +885,39 @@ int executeCommand(const hsql::SQLStatement* stmt){
 						queryList.push_back(sQuery);
 					}
 					else{
-						printf("this is what we didn't consider...\n");
-						rmg->closeFile(*mainHandler);
-						rmg->closeFile(*viceHandler);
-						delete whereExprs;
+						if(tables[0].compare(l->table) == 0){
+							mainHandler->GetAttrIndex((string)(l->name),lPos);
+							if(expr->opType == hsql::OperatorType::kOpNot){
+								RM::ScanQuery sQuery(RM::ScanTarget::MAIN,lPos,false);
+								queryList.push_back(sQuery);
+							}
+							else if(expr->opType == hsql::OperatorType::kOpIsNull){
+								RM::ScanQuery sQuery(RM::ScanTarget::MAIN,lPos,true);
+								queryList.push_back(sQuery);
+							}
+							else{
+								RM::ScanQuery sQuery(RM::ScanTarget::MAIN, lPos, compOp,(char*)(r->strName.c_str()));
+								queryList.push_back(sQuery);
+							}							
+						}
+						else if(tables[1].compare(l->table) == 0){
+							viceHandler->GetAttrIndex((string)(l->name),lPos);
+							if(expr->opType == hsql::OperatorType::kOpNot){
+								RM::ScanQuery sQuery(RM::ScanTarget::VICE,lPos,false);
+								queryList.push_back(sQuery);
+							}
+							else if(expr->opType == hsql::OperatorType::kOpIsNull){
+								RM::ScanQuery sQuery(RM::ScanTarget::VICE,lPos,true);
+								queryList.push_back(sQuery);
+							}
+							else{
+								RM::ScanQuery sQuery(RM::ScanTarget::VICE, lPos, compOp,(char*)(r->strName.c_str()));
+								queryList.push_back(sQuery);
+							}
+						}
 					}
 				}
+				printf("queryList size:%d\n",queryList.size());
 				RM::DualScan *dualScan = new RM::DualScan(mainHandler, viceHandler);
 				dualScan->OpenScan(queryList);
 				pair<RID, list<RID>> item;
@@ -933,35 +995,38 @@ int executeCommand(const hsql::SQLStatement* stmt){
 	}
 	return 0;
 }
+void ParseCommand(string command)
+{
+	hsql::SQLParserResult result;
+    hsql::SQLParser::parse(command, &result);
+    if(result.isValid()){
+        // printf("Parsed successfully!\n");
+        // printf("Number of statements: %lu\n", result.size());
+        for (auto i = 0u; i < result.size(); ++i) {
+            //hsql::printStatementInfo(result.getStatement(i));
+            executeCommand(result.getStatement(i));
+        }
+    }
+    else {
+        int ret = ParseDBCommand(command);
+        if(ret < 0)
+        {
+            fprintf(stderr, "Given string is not a valid SQL query.\n");
+            fprintf(stderr, "%s (L%d:%d)\n",
+                    result.errorMsg(),
+                    result.errorLine(),
+                    result.errorColumn());
+        }
+    }
+}
 void ParseInput(string filePath){
 	string command;
 	printf(">");
 	ifstream fin(filePath);
 	getline(fin,command);
 	while(command != "exit"){
-		hsql::SQLParserResult result;
-		hsql::SQLParser::parse(command, &result);		
-		if(result.isValid()){
-			printf("Parsed successfully!\n");
-			printf("Number of statements: %lu\n", result.size());
-
-			for (auto i = 0u; i < result.size(); ++i) {
-				// Print a statement summary.
-				//hsql::printStatementInfo(result.getStatement(i));
-				executeCommand(result.getStatement(i));
-			}			
-		} else {
-			int ret = ParseDBCommand(command);
-			if(ret < 0){
-				fprintf(stderr, "Given string is not a valid SQL query.\n");
-				fprintf(stderr, "%s (L%d:%d)\n",
-						result.errorMsg(),
-						result.errorLine(),
-						result.errorColumn());
-			}
-			//return;
-		}
-		printf((currentDB+'>').c_str());
+		// printf((currentDB+'>').c_str());
+		ParseCommand(command);
 		if(!getline(fin,command))
 			break;
 	}

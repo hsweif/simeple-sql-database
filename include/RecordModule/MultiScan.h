@@ -28,23 +28,42 @@ class ScanQuery
 {
 public:
     QueryType queryType;
+    RM::ScanTarget target;
     int mainCol;
     IM::CompOp compOp;
     int viceCol;
-    ScanQuery(int mCol, IM::CompOp cp, int vCol);
-};
-
-class SingleScanQuery: ScanQuery
-{
-public:
     RM::ScanType scanType;
-    RM::ScanTarget target;
-    int colIndex;
-    IM::CompOp compOp;
     char *keyValue;
     bool isNull;
-    SingleScanQuery(RM::ScanTarget scanTarget, int col, IM::CompOp cmpOp, char *value);
-    SingleScanQuery(RM::ScanTarget scanTarget, int col, bool isNull);
+    ScanQuery(int mCol, IM::CompOp cp, int vCol);
+    ScanQuery(RM::ScanTarget scanTarget, int col, IM::CompOp cmpOp, char *value)
+    {
+        queryType = SINGLE;
+        scanType = RangeScan;
+        keyValue = new char[strlen(value)];
+        strcpy(keyValue, value);
+        compOp = cmpOp;
+        target = scanTarget;
+        if(target == MAIN) {
+            mainCol = col;
+        }
+        else if(target == VICE) {
+            viceCol = col;
+        }
+    }
+    ScanQuery(RM::ScanTarget scanTarget, int col, bool isNull)
+    {
+        queryType = SINGLE;
+        scanType = NullScan;
+        this->isNull = isNull;
+        target = scanTarget;
+        if(target == MAIN) {
+            mainCol = col;
+        }
+        else if(target == VICE) {
+            viceCol = col;
+        }
+    }
 };
 
 class DualScan {
@@ -59,7 +78,13 @@ public:
     ~DualScan();
     int OpenScan(list<ScanQuery> queryList);
     int CloseScan();
-    int ResultNum(){return scanResult->size();}
+    int ResultNum(){
+        int cnt = 0;
+        for(auto iter = scanResult->begin(); iter != scanResult->end(); iter ++) {
+            cnt += iter->second.size();
+        }
+        return cnt;
+    }
     int GetNextPair(pair<RID, list<RID>> &item);
 };
 

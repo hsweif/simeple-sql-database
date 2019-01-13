@@ -31,6 +31,7 @@ namespace RM{
         u.i = i;
         return u.f;
     }
+
 }
 
 RM_node::RM_node()
@@ -137,6 +138,8 @@ bool RM_node::CmpCtx(IM::CompOp compOp, string value)
     else{
         mValue = str;
     }
+    std::transform(value.begin(), value.end(), value.begin(), ::toupper);
+    std::transform(mValue.begin(), mValue.end(), mValue.begin(), ::toupper);
     int res = strcmp(value.c_str(), mValue.c_str());
     if(compOp == IM::EQ) {
         return res == 0;
